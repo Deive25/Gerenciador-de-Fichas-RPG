@@ -1,0 +1,186 @@
+<div class="body">
+    <h1 id="h1">Dashboard do Mestre</h1>
+    <div id="fichas">
+
+        <h2><img src="../../../../assets/fichas_icon.png" class="icons"> FICHAS E PESONAGENS</h2>
+
+
+        <div class="sheet" *ngFor='let sheet of sheets'>
+            <img src="../../../../assets/user-icon-2098873_960_720.png" value="CharIcon">
+            <p id="names">{{sheet.nameC}}
+                <p>
+                    <p id="vida"><img src="../../../../assets/Screenshot_5.png" id="heart"> {{sheet.lifeA}}/{{sheet.lifeM}}</p>
+
+                    <a routerLink="/sheet-player-get/{{sheet.id}}"><img src="../../../../assets/Screenshot_1.png" class="icons" id="url"></a>
+                    <a routerLink="/sheet-player-update/{{sheet.id}}"><img src=" ../../../../assets/Screenshot_2.png " class="icons" id="editar"></a>
+                    <a (click)="delete(sheet)"><img src="../../../../assets/Screenshot_3.png" class="icons" id="excluir"></a>
+        </div>
+        <button mat-raised-button (click)="navigateToSheet()">
+            +
+         </button>
+    </div>
+
+    <br>
+    <div id="atributos">
+
+        <h2><img src="../../../../assets/atributos_icon.png" class="icons"> ATRIBUTOS</h2>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Força</h3>
+            <p>força mede o poder muscular de um investigador. Quanto maior for, mais o investigador conseguirá levantar ou se agarrar a algo. Este atributo determina o dano que o investigador causa no combate corpo-a-corpo. Reduzido a FOR 0, um investigador
+                estará inválido, incapaz de sair da cama.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Destreza</h3>
+            <p>Investigadores com valores altos de Destreza são mais rápidos, mais ágeis e mais fisicamente flexíveis. Um teste de DES pode ser feito para se agarrar em algum lugar e evitar uma queda, para se mover mais rápido do que um adversário ou para
+                realizar alguma tarefa delicada. Um investigador com zero de DES é descoordenado e incapaz de executar tarefas físicas.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Inteligencia</h3>
+            <p>A inteligência representa o quão bem os investigadores aprendem, lembram, analisam informações e resolvem enigmas complexos. Um investigador com INT zero é um idiota balbuciante e babão.</p>
+        </div>
+        <div class="atr">
+            <h3> <img src="../../../../assets/coolicon.png"> Constituição</h3>
+            <p>A constituição representa saúde, vigor e vitalidade. Venenos e doenças podem desafiar diretamente a constituição de um investigador. Investigadores com uma constituição alta muitas vezes têm mais pontos de vida — o que é melhor para resistir
+                a ferimentos e ataques. Lesões físicas graves ou ataques mágicos podem diminuir esse atributo, e, se a constituição chegar a zero, o investigador morre.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Carisma</h3>
+            <p>Carisma mede sua força de personalidade e capacidade de persuasão, além de uma mistura de simpatia e beleza física. Seu modificador de Carisma será aplicado em testes de Adestramento, Atuação, Diplomacia, Enganação, Intimidação e Jogatina.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Sabedoria</h3>
+            <p>A Sabedoria representa a percepção e força de vontade, além de bom senso e intuição. O modificador de Sabedoria é aplicado em testes de Cura, Intuição, Percepção, Religião, Sobrevivência e Vontade.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Tamanho</h3>
+            <p>O tamanho representa altura e peso, ambos em um único número. Para enxergar por sobre um muro, espremer-se através de uma pequena abertura ou até mesmo para saber a cabeça de quem pode estar despontando na grama, use o tamanho.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Sorte</h3>
+            <p>para gerar o atributo Poder. Poder indica a força de vontade: quanto maior o POD, maior a aptidão mágica e a resistência à magia. Um investigador com POD zero é apático e sem "propósito", além de ser incapaz de usar magia.</p>
+        </div>
+        <div class="atr">
+            <h3><img src="../../../../assets/coolicon.png"> Poder</h3>
+            <p>Poder indica a força de vontade: quanto maior o POD, maior a aptidão mágica e a resistência à magia. Um investigador com POD zero é apático e sem "propósito", além de ser incapaz de usar magia. Salvo quando indicado o contrário, o POD perdido
+                durante o jogo não pode ser recuperado.</p>
+        </div>
+
+
+    </div>
+    <div id="Pericias">
+
+        <h2><img src="../../../../assets/atributos_icon.png" class="icons"> PERICIAS</h2>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Acrobacia</h3>
+            <p>Você consegue fazer proezas acrobáticas</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Atletismo</h3>
+            <p>Esta perícia é utilizada para realizar façanhas atléticas, como escalar montanhas, cruzar rios e saltar sobre desfiladeiros.</p>
+        </div>
+        <div class="prc">
+            <h3><img src=".../../../../assets/coolicon.png"> Adestrar animais</h3>
+            <p>Você sabe lidar com animais.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Atuação/Labia</h3>
+            <p>Você sabe fazer apresentações artísticas, incluindo música, dança e dramaturgia.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Charme</h3>
+            <p>Charme assume muitas formas, incluindo atração física, sedução, lisonja ou simplesmente uma personalidade calorosa. O Charme pode ser usado para fazer alguém agir de determinada maneira, mas não de uma forma completamente contrária ao comportamento
+                normal dessa pessoa. Charme é resistido pelas perícias Charme ou Psicologia.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Esquiva</h3>
+            <p>Permite que um investigador instintivamente evite golpes, objetos atirados contra ele, e coisas do gênero</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Furtividade</h3>
+            <p>Você pode se esconder nas sombras, andar sem fazer barulho, seguir alguém sem ser notado etc.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Luta corpo a corpo</h3>
+            <p>Você tem a capacidade de enfrentar inimigos corpo a corpo, esta pericia mede sua habilidade de luta</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Luta arma branca</h3>
+            <p>Você tem a capacidade de enfrentar inimigos corpo a corpo com armas brancas, esta pericia mede sua habilidade de luta com armas como facas, katanas, machados, etc...</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Intimidação</h3>
+            <p>Você pode assustar ou coagir outras pessoas.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Intuição</h3>
+            <p>Esta perícia mede seu “sexto sentido”</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Investigação</h3>
+            <p>Você sabe como descobrir pistas e informações</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Armas de fogo - leves</h3>
+            <p>Permite que um investigador utilize armas de fogo leves como pistolas.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Armas de fogo - medias</h3>
+            <p>Permite que um investigador utilize armas de fogo medias como sub-metralhadoras.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Armas de fogo - pesadas</h3>
+            <p>Permite que um investigador utilize armas de fogo pesadas como rifles.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Percepção</h3>
+            <p>Esta perícia é utilizada para perceber coisas através dos sentidos</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Usar Bibliotecas</h3>
+            <p>Usar Bibliotecas habilita um investigador a encontrar uma informação, como um livro, jornal ou referência específica em uma biblioteca, coleção de documentos ou banco de dados, assumindo que o que se procura está lá.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Historia</h3>
+            <p>Habilita um investigador a recordar-se da importância de um país, cidade, região ou pessoa.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Cura</h3>
+            <p>O usuário pode diagnosticar e tratar ferimentos, doenças, envenenamentos etc., e fazer recomendações sobre saúde pública. Se determinada era não tiver um bom tratamento para uma doença, o esforço é limitado, incerto ou inconclusivo.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Malandragem</h3>
+            <p>Esta pericie mede suas habilidades de malandro, com mãos leves e mente suja, você sabe exercer as tarefas de um ladrão.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Ocultismo</h3>
+            <p>O usuário reconhece objetos, palavras e conceitos do ocultismo, bem como as tradições populares, e pode identificar grimórios de magia e códices de ocultismo.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Psicologia</h3>
+            <p>Uma perícia de percepção comum a todos os seres humanos, permite que usuário estude um indivíduo e forme uma ideia quanto às motivações e caráter de outra pessoa.</p>
+        </div>
+        <div class="prc">
+            <h3><img src="../../../../assets/coolicon.png"> Arremessar</h3>
+            <p>Use Arremessar para acertar um alvo com um objeto. Um objeto que caiba na mão e seja de peso razoável (ou uma arma projetada para ser arremessada) pode ser atirada até uma distância igual a Força dividido por 5 metros.</p>
+        </div>
+
+    </div>
+    <div id="dados">
+        <h2>DADOS</h2>
+        <br>
+
+        <img src="../../../../assets/D20.png" id="d20" (click)="roll(20)">
+        <img src="../../../../assets/D12.png" id="d12" (click)="roll(12)">
+        <img src="../../../../assets/D10.png" id="d10" (click)="roll(10)">
+        <img src="../../../../assets/D8.png" id="d8" (click)="roll(8)">
+        <img src="../../../../assets/D6.png" id="d6" (click)="roll(6)">
+        <img src="../../../../assets/D4.png" id="d4" (click)="roll(4)">
+        <div id="rollValueT">TOTAL
+            <div id="rollValue"></div>
+        </div>
+        <button id="resetarRoll" (click)="resetRoll()">RESETAR</button>
+    </div>
+    <br>
+    <br>
+    <br>
+</div>

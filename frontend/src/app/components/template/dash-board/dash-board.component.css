@@ -1,0 +1,342 @@
+.body {
+    background: #2B2B2B;
+    font-family: 'Poppins', sans-serif;
+}
+
+#h1 {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 24px;
+    line-height: 36px;
+    color: #C1C1C1;
+    text-align: center;
+}
+
+h2 {
+    margin-left: 20px;
+    padding-top: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-style: Bold;
+    font-size: 24px;
+    line-height: 36px;
+    line-height: 100%;
+    fill: solid;
+    color: #639EC2;
+}
+
+.icons {
+    width: 23px;
+}
+
+
+/*FICHAS*/
+
+#fichas {
+    width: 85%;
+    overflow: auto;
+    /*Posição*/
+    margin: 0 auto;
+    /* Background 2 */
+    background: #201E1E;
+    border-radius: 5px;
+    overflow: auto;
+}
+
+#fichas button {
+    background-color: #181717;
+    color: #639EC2;
+    margin: 15px;
+    display: inline;
+    width: 252px;
+    height: 121px;
+}
+
+.sheet {
+    width: 252px;
+    height: 121px;
+    background: #181717;
+    font-family: Poppins;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 13px;
+    line-height: 10px;
+    color: #FFFFFF;
+    margin: 15px;
+    border-radius: 5px;
+    position: relative;
+    display: inline;
+    float: left;
+}
+
+#names {
+    display: inline-block;
+    position: absolute;
+    top: 30px;
+    left: 95px;
+}
+
+#vida {
+    display: inline-block;
+    position: absolute;
+    top: 53px;
+    left: 95px;
+    color: #E80A67;
+}
+
+#barra {
+    display: inline-block;
+    color: #262626;
+}
+
+#heart {
+    width: 12px;
+}
+
+.sheet img[value="CharIcon"] {
+    width: 75px;
+    height: 80px;
+    border-radius: 90px;
+    margin-top: 25px;
+    margin-left: 10px;
+}
+
+.sheet img[class="icons"] {
+    width: 20px;
+    position: absolute;
+    top: 77px;
+}
+
+.sheet img[id="excluir"] {
+    left: 141px;
+}
+
+.sheet img[id="editar"] {
+    left: 118px;
+}
+
+.sheet img[id="url"] {
+    left: 95px;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+#imageSend {
+    left: 164px;
+}
+
+#image {
+    left: 10px;
+}
+
+
+/*FICHAS*/
+
+
+/*ATRIBUTOS*/
+
+#atributos {
+    overflow: auto;
+    width: 85%;
+    height: 452px;
+    /*Posição*/
+    margin: 0 auto;
+    margin-top: 25px;
+    /* Background 2 */
+    background: #201E1E;
+    border-radius: 5px;
+}
+
+.atr {
+    width: 252px;
+    height: 239px;
+    left: 136px;
+    top: 1594px;
+    background: #181717;
+    border-radius: 5px;
+    float: left;
+    padding-left: 5px;
+    margin: 0;
+    margin-left: 10px;
+    margin-bottom: 8px;
+    margin-right: 12px;
+}
+
+#atributos h3 {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 18px;
+    line-height: 27px;
+    /* identical to box height */
+    color: #FFFFFF;
+}
+
+#atributos p {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 18px;
+    color: #898989;
+}
+
+
+/*ATRIBUTOS*/
+
+
+/*PERICIAS*/
+
+#Pericias {
+    overflow: auto;
+    width: 85%;
+    height: 452px;
+    /*Posição*/
+    margin: 0 auto;
+    margin-top: 25px;
+    /* Background 2 */
+    background: #201E1E;
+    border-radius: 5px;
+}
+
+.prc {
+    width: 252px;
+    height: 239px;
+    left: 136px;
+    top: 1594px;
+    background: #181717;
+    border-radius: 5px;
+    padding-left: 5px;
+    margin: 0;
+    margin-left: 10px;
+    margin-bottom: 8px;
+    margin-right: 12px;
+    float: left;
+}
+
+#Pericias h3 {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 18px;
+    line-height: 27px;
+    /* identical to box height */
+    color: #FFFFFF;
+}
+
+#Pericias p {
+    font-family: 'Poppins', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+    line-height: 18px;
+    color: #898989;
+}
+
+
+/*PERICIAS*/
+
+
+/*DADOS*/
+
+#dados {
+    width: 85%;
+    height: 390px;
+    /*Posição*/
+    position: relative;
+    margin: 0 auto;
+    margin-top: 25px;
+    /* Background 2 */
+    background: #201E1E;
+    border-radius: 5px;
+    overflow: auto;
+}
+
+#dados img {
+    margin-top: 40px;
+    margin-left: 10px;
+    margin-right: 18px;
+}
+
+#rollValueT {
+    position: absolute;
+    right: 25px;
+    bottom: 15px;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 21px;
+    color: #FFFFFF;
+}
+
+#rollValue {
+    display: inline;
+    font-size: 20px;
+    line-height: 21px;
+}
+
+#resetarRoll {
+    background: #639EC2;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 21px;
+    color: #FFFFFF;
+    width: 117px;
+    height: 30px;
+    border: none;
+    position: absolute;
+    right: 100px;
+    bottom: 12px;
+}
+
+@media screen and (max-width: 1091px) {
+    #resetarRoll {
+        bottom: -85px;
+    }
+    #rollValueT {
+        bottom: -85px;
+    }
+    #rollValue {
+        bottom: -85px;
+    }
+}
+
+@media screen and (max-width: 655px) {
+    #resetarRoll {
+        bottom: -250px;
+    }
+    #rollValueT {
+        bottom: -250px;
+    }
+    #rollValue {
+        bottom: -250px;
+    }
+}
+
+@media screen and (max-width: 641px) {
+    #resetarRoll {
+        bottom: -290px;
+    }
+    #rollValueT {
+        bottom: -290px;
+    }
+    #rollValue {
+        bottom: -290px;
+    }
+}
+
+@media screen and (max-width: 449px) {
+    #resetarRoll {
+        bottom: -480px;
+    }
+    #rollValueT {
+        bottom: -480px;
+    }
+    #rollValue {
+        bottom: -480px;
+    }
+}
+
+
+/*DADOS*/

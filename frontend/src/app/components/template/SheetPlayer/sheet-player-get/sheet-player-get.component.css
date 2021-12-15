@@ -1,0 +1,278 @@
+#sheet {
+    /*display: flex;
+    flex-wrap: wrap; */
+    position: relative;
+    height: 1150px;
+}
+
+h2 {
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    color: #C1C1C1;
+    text-align: center;
+    font-weight: bold;
+}
+
+@media screen and (max-width: 991px) {
+    #Info2 {
+        margin-top: 37px;
+    }
+}
+
+
+/* Chrome, Safari, Edge, Opera */
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+/* Firefox */
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+
+/*INFORMAÇÕES PESSOAIS*/
+
+#info {
+    position: relative;
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    /*posição*/
+    top: 10px;
+}
+
+#info input {
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: #2B2B2B;
+}
+
+input[name="nameJ"] {
+    margin-top: 30px;
+    margin-left: 8px;
+    padding: 15px;
+}
+
+input[name="nameC"] {
+    margin-left: 8px;
+    padding: 15px;
+}
+
+input[name="age"] {
+    margin-right: 70px;
+    margin-left: 10px;
+    padding: 15px;
+}
+
+input[name="gender"] {
+    padding: 15px;
+}
+
+.Ip {
+    color: #639EC2;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 15px;
+    margin-left: 10px;
+}
+
+#info input[type="submit"] {
+    background-color: #639EC2;
+    border-color: #639EC2;
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    margin-left: 1%;
+}
+
+
+/*INFORMAÇÕES PESSOAIS*/
+
+
+/*INFORMAÇÕES PESSOAIS 2*/
+
+#Info2 {
+    position: relative;
+    font-family: 'Poppins', sans-serif;
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    /*posição*/
+    top: 10px;
+}
+
+.image {
+    margin-left: 40px;
+    border-style: none;
+}
+
+.image2 {
+    margin-top: 20px;
+    border-radius: 90px;
+}
+
+.atriInfo {
+    margin-left: 5%;
+    margin-top: 3px;
+}
+
+#vida {
+    width: 350px;
+    height: 20px;
+    background-color: red;
+    border-radius: 4px;
+    max-width: 350px;
+    left: 38px;
+    top: 251px;
+}
+
+#vidaM {
+    width: 350px;
+    height: 20px;
+    background-color: red;
+    opacity: 0.2;
+    border-radius: 4px;
+    margin-left: 5%;
+    max-width: 350px;
+    margin-bottom: 3px;
+}
+
+#sanidade {
+    width: 350px;
+    height: 20px;
+    background-color: rgb(55, 0, 255);
+    border-radius: 4px;
+    margin-left: 5%;
+    max-width: 350px;
+    top: 303px;
+}
+
+#sanidadeM {
+    width: 350px;
+    height: 20px;
+    background-color: rgb(55, 0, 255);
+    opacity: 0.2;
+    border-radius: 4px;
+    margin-left: 5%;
+}
+
+input[type='file'] {
+    display: none;
+}
+
+#Info2 input[type="number"] {
+    text-align: center;
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: #2B2B2B;
+    border: none;
+    width: 30px;
+    height: 20px;
+}
+
+
+/*INFORMAÇÕES PESSOAIS 2*/
+
+
+/*ATRIBUTOS*/
+
+#atributtes {
+    font-family: 'Poppins', sans-serif;
+    text-align: justify;
+    overflow: auto;
+    color: #C1C1C1;
+    width: 500px;
+    background: #181717;
+    border-radius: 5px;
+    /*posição*/
+    padding-left: 10px;
+    top: 348px;
+    left: 135px;
+}
+
+#atributtes input {
+    text-align: center;
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: #2B2B2B;
+    float: right;
+    width: 45px;
+    height: 30px;
+}
+
+input[id="save2"] {
+    background-color: #639EC2;
+    border-color: #639EC2;
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    margin-left: 412px;
+}
+
+#atributtes .card input {
+    margin-right: 10px;
+}
+
+
+/*ATRIBUTOS*/
+
+
+/*PERICIAS*/
+
+.card {
+    background-color: #181717 !important;
+    border: none;
+}
+
+#proficiency .card input {
+    margin-right: 10px;
+}
+
+#proficiency {
+    font-family: 'Poppins', sans-serif;
+    overflow: auto;
+    color: #C1C1C1;
+    width: 1000px;
+    background: #181717;
+    border-radius: 5px;
+    /*posição*/
+    padding-left: 10px;
+    top: 686px;
+    left: 135px;
+}
+
+#proficiency input[type="number"] {
+    text-align: center;
+    color: #C1C1C1;
+    background: #181717;
+    border-radius: 5px;
+    border-style: solid;
+    border-color: #2B2B2B;
+    float: right;
+    width: 45px;
+    height: 30px;
+    margin-bottom: 15px;
+}
+
+input[id="save3"] {
+    background-color: #639EC2;
+    border-color: #639EC2;
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    margin-left: 900px;
+}
+
+
+/*PROFICIENCIAS*/
