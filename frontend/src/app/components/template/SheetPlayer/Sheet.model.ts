@@ -1,0 +1,46 @@
+
+export interface Sheet{
+    id:number;
+    nameJ:String
+    nameC:String
+	gender:String
+	age: number
+	lifeA:number
+    lifeM:number
+	sanA:number
+    sanM:number
+	/*ATRIBUTOS*/
+	str:number
+    dex:number
+    cons:number
+    int:number
+    car:number
+    sab:number
+    tam:number
+    sor:number
+    pod:number
+	/*PERICIAS*/
+	atribute1:number
+    atribute2:number
+    atribute3:number
+    atribute4:number
+    atribute5:number
+    atribute6:number
+    atribute7:number
+    atribute8:number
+    atribute9:number
+    atribute10:number
+    atribute11:number
+    atribute12:number
+    atribute13:number
+    atribute14:number
+    atribute15:number
+    atribute16:number
+    atribute17:number
+    atribute18:number
+    atribute19:number
+    atribute20:number
+    atribute21:number
+    atribute22:number
+    atribute23:number
+}

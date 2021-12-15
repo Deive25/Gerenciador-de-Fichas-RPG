@@ -1,0 +1,235 @@
+<div class="body">
+    <h2>FICHA PLAYER</h2>
+    <div id="sheet">
+        <form class="teste" [formGroup]="formulario">
+            <div class="container">
+                <div class="row">
+                    <div class="col mx-3" id="info">
+                        <h3 class="Ip"><strong>INFORMAÇÕES PESSOAIS</strong></h3>
+                        <input type="text" name="nameJ" formControlName="nameJ" placeholder="Nome do jogador(a)" size="60">
+                        <br><br>
+                        <input type="text" name="nameC" formControlName="nameC" placeholder="Nome do Personagem" size="60">
+                        <br><br>
+                        <input type="number" name="age" formControlName="age" placeholder="Idade">
+                        <input type="text" name="gender" formControlName="gender" placeholder="Genero">
+                        <br><br>
+                    </div>
+                    <div class="col mx-3 " id="Info2">
+                        <label class="image"><img src="../../../../assets/user-icon-2098873_960_720.png" width="190px" class="image2"></label>
+
+
+                        <div class="my-3">
+                            <p class="atriInfo">Vida: <input type="number" name="life" max="999" placeholder="0" id="lifeA" formControlName="lifeA">/<input type="number" name="life" max="999" placeholder="0" id="lifeM" formControlName="lifeM"></p>
+
+                            <div id="vidaM"></div>
+                            <div class="position-absolute" id="vida"></div>
+
+                            <p class="atriInfo">Sanidade: <input type="number" name="san" max="999" placeholder="0" id="sanA" formControlName="sanA">/<input type="number" name="san" max="999" placeholder="0" id="sanM" formControlName="sanM"></p>
+
+                            <div id="sanidadeM"></div>
+                            <div class="position-absolute" id="sanidade"></div>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-6 mt-5 mx-3" id="atributtes">
+                        <h3 class="Ip"><strong>ATRIBUTOS</strong></h3>
+                        <div class="card-group">
+                            <div class="card">
+                                <p class="atr"> Força <input type="number" name="STR" formControlName="str" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Destreza <input type="number" name="DEX" formControlName="dex" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Inteligencia <input type="number" name="INT" formControlName="int" max="100" placeholder="0"></p>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <p class="atr">Constituição <input type="number" name="CONS" formControlName="cons" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Carisma <input type="number" name="CAR" formControlName="car" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Sabedoria <input type="number" name="SAB" formControlName="sab" max="100" placeholder="0"></p>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <p class="atr">Tamanho <input type="number" name="TAM" formControlName="tam" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Sorte <input type="number" name="SOR" formControlName="sor" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Poder <input type="number" name="POD" formControlName="pod" max="100" placeholder="0"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div id="proficiency" class="m-3 mt-5">
+                        <h3 class="Ip"><strong>PERICIAS</strong></h3>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <a>Acrobacia<input type="number" name="Atribute1" formControlName="atribute1" placeholder="0"></a>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Atletismo <input type="number" name="Atribute2" formControlName="atribute2" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Adestrar animais <input type="number" name="Atribute3" formControlName="atribute3" placeholder="0"></p>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <p>Atuação/Labia <input type="number" name="Atribute4" formControlName="atribute4" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Charme <input type="number" name="Atribute5" formControlName="atribute5" placeholder="0"></p>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="col">
+                                    <p>Esquiva <input type="number" name="Atribute6" formControlName="atribute6" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group">
+
+                            <div class="card">
+                                <div class="col">
+                                    <p>Furtividade <input type="number" name="Atribute7" formControlName="atribute7" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Luta corpo a corpo <input type="number" name="Atribute8" formControlName="atribute8" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Luta arma branca <input type="number" name="Atribute9" formControlName="atribute9" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <p>Intimidação <input type="number" name="Atribute10" formControlName="atribute10" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Intuição <input type="number" name="Atribute11" formControlName="atribute11" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Investigação <input type="number" name="Atribute12" formControlName="atribute12" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <p>Armas de fogo - leves <input type="number" name="Atribute13" formControlName="atribute13" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Armas de fogo - medias <input type="number" name="Atribute14" formControlName="atribute14" placeholder="0"></p>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="col">
+                                    <p>Armas de fogo - pesadas <input type="number" name="Atribute15" formControlName="atribute15" placeholder="0"></p>
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div class="card-group">
+
+                            <div class="card">
+                                <div class="col">
+                                    <p>Percepcao <input type="number" name="Atribute16" formControlName="atribute16" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Usar Bibliotecas <input type="number" name="Atribute17" formControlName="atribute17" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Arremessar <input type="number" name="Atribute23" formControlName="atribute23" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <p>Historia <input type="number" name="Atribute18" formControlName="atribute18" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Cura <input type="number" name="Atribute19" formControlName="atribute19" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Malandragem <input type="number" name="Atribute20" formControlName="atribute20" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group" id="last-card-group">
+
+                            <div class="card">
+                                <div class="col">
+                                    <p>Ocultismo <input type="number" name="Atribute21" formControlName="atribute21" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Psicologia <input type="number" name="Atribute22" formControlName="atribute22" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card-group">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="botao">
+                <button mat-raised-button (click)="createSheet()">SALVAR</button>
+            </div>
+
+
+        </form>
+    </div>
+
+</div>
