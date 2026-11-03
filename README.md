@@ -46,9 +46,9 @@ O modelo contempla dados do jogador e personagem, vida, sanidade, atributos e pe
 
 Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
 
-> Nota sobre o DELETE: com o upgrade para o Spring Boot 4 (Spring Data 3), `DELETE /sheetPlayer/{id}` de um id inexistente deixou de dar erro 500 e passou a responder 200 sem corpo, porque o Spring Data ignora o id. O 404 correto virá no incremento 1.3.
+> Nota sobre o DELETE: com o upgrade do Spring Boot (a mudança veio do Spring Data 3, já na etapa 3.5), `DELETE /sheetPlayer/{id}` de um id inexistente deixou de dar erro 500 e passou a responder 200 sem corpo, porque o Spring Data ignora o id. O 404 correto virá no incremento 1.3.
 
-> Nota sobre rotas removidas: até o incremento 1.1, uma dependência do Springfox trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD não intencional e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. No incremento 1.2 a dependência foi removida e essas rotas passaram a responder 404. Veja o [ADR 0005](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md).
+> Nota sobre rotas removidas: até o incremento 1.1, a dependência `spring-data-rest-hal-explorer`, adicionada junto com o Springfox, trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD não intencional e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. No incremento 1.2 a dependência foi removida e essas rotas passaram a responder 404. Veja o [ADR 0005](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md).
 
 ## Arquitetura
 
