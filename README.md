@@ -67,7 +67,12 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    ./mvnw spring-boot:run
    ```
 
-   No Windows (cmd/PowerShell), use `mvnw.cmd spring-boot:run`. A API fica em `http://localhost:8080/sheetPlayer`.
+   No PowerShell, use `.\mvnw.cmd spring-boot:run` (no cmd: `mvnw.cmd spring-boot:run`). A API fica em `http://localhost:8080/sheetPlayer`.
+
+   Observações:
+   - O MySQL leva alguns segundos para aceitar conexões depois do `docker compose up -d`; se o back-end falhar na primeira tentativa, rode de novo.
+   - O `.env` é procurado em `../.env`, relativo à pasta de onde o back-end é iniciado. Rode sempre de dentro de `Gerenciador de fichas RPG` (ou configure a IDE com esse diretório de trabalho). Se as variáveis não forem encontradas, o erro aparece como `URL must start with 'jdbc'`.
+   - `DB_USERNAME` não pode ser `root`: a imagem do MySQL usa `DB_ROOT_PASSWORD` para o root e cria o usuário da aplicação separadamente.
 
 Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados).
 
