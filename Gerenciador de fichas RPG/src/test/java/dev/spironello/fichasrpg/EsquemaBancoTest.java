@@ -13,12 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Registra o esquema que o Hibernate gera (ddl-auto=update) para a entidade SheetPlayer.
- * Quem já tem dados no banco depende destes nomes: se uma atualização do Hibernate ou do
- * Spring Boot mudar a estratégia de nomes, a aplicação passaria a enxergar colunas novas
- * e "perderia" as antigas. Também serve de linha de base para a migração com Flyway.
+ * Registra o esquema da tabela sheet_player, que agora vem das migrações Flyway
+ * (V1__cria_tabela_sheet_player.sql) e não mais do Hibernate: com ddl-auto=validate ele só confere.
+ * O teste protege os nomes de coluna e a nulabilidade que a entidade espera, e também mostra que
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com a versão 1 aplicada).
  */
-@DisplayName("Esquema da tabela da ficha (colunas geradas pelo Hibernate)")
+@DisplayName("Esquema da tabela da ficha (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
 
 	@Autowired
@@ -31,28 +31,40 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		Map<String, String> esperado = new LinkedHashMap<>();
 		esperado.put("id", "bigint/NO");
 		for (String c : List.of("namej", "namec", "gender")) {
-			esperado.put(c, "varchar/NO");
+			esperado.put(c, "character varying/NO");
 		}
 		for (String c : List.of("age", "lifea", "lifem", "sana", "sanm",
 				"str", "dex", "cons", "int", "car", "sab", "tam", "sor", "pod")) {
-			esperado.put(c, "int/YES");
+			esperado.put(c, "integer/YES");
 		}
 		for (int i = 1; i <= 23; i++) {
-			esperado.put("atribute" + i, "int/YES");
+			esperado.put("atribute" + i, "integer/YES");
 		}
 
 		List<Map<String, Object>> tabelas = jdbc.queryForList(
-				"select table_name from information_schema.tables where table_schema = database()");
-		assertThat(tabelas).extracting(t -> t.get("TABLE_NAME")).containsExactly("sheet_player");
+				"select table_name from information_schema.tables where table_schema = current_schema()");
+		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder("sheet_player", "flyway_schema_history");
 
 		Map<String, String> real = jdbc.queryForList(
 				"select column_name, data_type, is_nullable from information_schema.columns "
-						+ "where table_schema = database() and table_name = 'sheet_player'")
+						+ "where table_schema = current_schema() and table_name = 'sheet_player'")
 				.stream()
 				.collect(Collectors.toMap(
-						linha -> (String) linha.get("COLUMN_NAME"),
-						linha -> linha.get("DATA_TYPE") + "/" + linha.get("IS_NULLABLE")));
+						linha -> (String) linha.get("column_name"),
+						linha -> linha.get("data_type") + "/" + linha.get("is_nullable")));
 
 		assertThat(real).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("o Flyway aplicou a migração V1 com sucesso")
+	void flywayAplicouAV1() {
+		List<Map<String, Object>> historico = jdbc.queryForList(
+				"select version, description, success from flyway_schema_history");
+		assertThat(historico).hasSize(1);
+		assertThat(historico.get(0))
+				.containsEntry("version", "1")
+				.containsEntry("description", "cria tabela sheet player")
+				.containsEntry("success", true);
 	}
 }
