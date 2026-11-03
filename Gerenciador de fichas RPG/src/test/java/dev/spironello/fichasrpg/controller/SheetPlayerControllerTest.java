@@ -1,8 +1,8 @@
 package dev.spironello.fichasrpg.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -20,9 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import com.jayway.jsonpath.JsonPath;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -31,11 +33,12 @@ import dev.spironello.fichasrpg.model.SheetPlayer;
 import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /**
- * Testes de caracterização: registram o que a API FAZ HOJE, inclusive o que é bug.
- * Servem de rede de segurança para as próximas refatorações. Quando um bug for corrigido,
- * o teste correspondente deve ser atualizado de propósito para o novo comportamento.
+ * Especificam o comportamento esperado da API /sheetPlayer (códigos HTTP e corpos de erro).
+ * Nasceram como testes de caracterização, que registravam o comportamento de então, com
+ * bugs incluídos; no incremento 1.3 os bugs foram corrigidos e estes testes foram
+ * atualizados de propósito para exigir o comportamento correto.
  */
-@DisplayName("API /sheetPlayer (comportamento atual)")
+@DisplayName("API /sheetPlayer (comportamento esperado)")
 class SheetPlayerControllerTest extends IntegrationTestBase {
 
 	private static final Long ID_INEXISTENTE = 999_999L;
@@ -93,14 +96,14 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("GET /sheetPlayer/{id} inexistente devolve 200 com corpo \"null\"")
+	@DisplayName("GET /sheetPlayer/{id} inexistente devolve 404 com ProblemDetail")
 	void buscarFichaInexistente() throws Exception {
-		// Comportamento atual (bug): o controller devolve Optional.empty(), que o Jackson
-		// serializa como o texto "null". O cliente recebe 200 OK em vez de 404 Not Found.
-		// Será corrigido no incremento 1.3.
 		mockMvc.perform(get("/sheetPlayer/{id}", ID_INEXISTENTE))
-				.andExpect(status().isOk())
-				.andExpect(content().string("null"));
+				.andExpect(status().isNotFound())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.title").value("Ficha não encontrada"))
+				.andExpect(jsonPath("$.detail", containsString(String.valueOf(ID_INEXISTENTE))));
 	}
 
 	// ---------- POST /sheetPlayer ----------
@@ -115,7 +118,7 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 				"age", 30,
 				"str", 50)); // no JSON os atributos vão em minúsculas (getSTR -> "str")
 
-		mockMvc.perform(post("/sheetPlayer")
+		MvcResult resultado = mockMvc.perform(post("/sheetPlayer")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(corpo))
 				.andExpect(status().isCreated())
@@ -125,7 +128,11 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 				.andExpect(jsonPath("$.gender").value("F"))
 				.andExpect(jsonPath("$.age").value(30))
 				.andExpect(jsonPath("$.str").value(50))
-				.andExpect(jsonPath("$.lifeA", nullValue())); // campos opcionais não enviados ficam null
+				.andExpect(jsonPath("$.lifeA", nullValue())) // campos opcionais não enviados ficam null
+				.andReturn();
+
+		Number id = JsonPath.read(resultado.getResponse().getContentAsString(), "$.id");
+		assertThat(resultado.getResponse().getHeader("Location")).isEqualTo("/sheetPlayer/" + id);
 
 		assertThat(repository.findAll())
 				.singleElement()
@@ -136,19 +143,19 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("POST /sheetPlayer sem nameJ/nameC/gender falha no banco e nada é salvo")
+	@DisplayName("POST /sheetPlayer sem nameJ/nameC/gender devolve 400 com os erros por campo e nada é salvo")
 	void criarFichaSemCamposObrigatorios() throws Exception {
 		String corpo = objectMapper.writeValueAsString(Map.of("age", 30));
 
-		// Comportamento atual (bug): não há validação de entrada. A falta dos campos
-		// obrigatórios só é detectada ao salvar (DataIntegrityViolationException) e
-		// ninguém trata a exceção: na aplicação real o cliente recebe HTTP 500 em vez de
-		// 400 Bad Request. Deve ser tratado quando houver validação/tratamento de erros.
-		// (O MockMvc não simula a página de erro, por isso a exceção aparece direto.)
-		assertThatThrownBy(() -> mockMvc.perform(post("/sheetPlayer")
+		mockMvc.perform(post("/sheetPlayer")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(corpo)))
-				.hasCauseInstanceOf(DataIntegrityViolationException.class);
+				.content(corpo))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.errors.nameJ").value("é obrigatório"))
+				.andExpect(jsonPath("$.errors.nameC").value("é obrigatório"))
+				.andExpect(jsonPath("$.errors.gender").value("é obrigatório"));
 
 		assertThat(repository.count()).isZero();
 	}
@@ -184,7 +191,7 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("PUT /sheetPlayer/{id} troca a ficha inteira: campos omitidos viram null")
+	@DisplayName("PUT /sheetPlayer/{id} troca a ficha inteira, de propósito: campos omitidos viram null")
 	void atualizarFichaApagaCamposOmitidos() throws Exception {
 		SheetPlayer ficha = new SheetPlayer();
 		ficha.setNameJ("Arthur");
@@ -198,8 +205,9 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 				"nameC", "Ana",
 				"gender", "F"));
 
-		// Comportamento atual: o PUT copia TODOS os campos do corpo para a ficha; o que
-		// não vier no JSON é gravado como null (não é um "patch" parcial).
+		// Intencional (ADR 0008): o PUT é substituição completa. Copia TODOS os campos do
+		// corpo para a ficha; o que não vier no JSON é gravado como null. Não há PATCH
+		// porque o Angular sempre envia a ficha inteira.
 		mockMvc.perform(put("/sheetPlayer/{id}", ficha.getId())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(corpo))
@@ -213,7 +221,7 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("PUT /sheetPlayer/{id} inexistente devolve 404 sem corpo")
+	@DisplayName("PUT /sheetPlayer/{id} inexistente devolve 404 com ProblemDetail e não cria nada")
 	void atualizarFichaInexistente() throws Exception {
 		String corpo = objectMapper.writeValueAsString(Map.of(
 				"nameJ", "Arthur",
@@ -224,7 +232,9 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(corpo))
 				.andExpect(status().isNotFound())
-				.andExpect(content().string(""));
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.detail", containsString(String.valueOf(ID_INEXISTENTE))));
 
 		assertThat(repository.count()).isZero();
 	}
@@ -232,30 +242,26 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	// ---------- DELETE /sheetPlayer/{id} ----------
 
 	@Test
-	@DisplayName("DELETE /sheetPlayer/{id} existente devolve 200 sem corpo e remove a ficha")
+	@DisplayName("DELETE /sheetPlayer/{id} existente devolve 204 sem corpo e remove a ficha")
 	void excluirFichaExistente() throws Exception {
 		SheetPlayer ficha = salvar("Arthur", "Ana", "F");
 
-		// O status é 200 (e não 204 No Content), porque o método do controller é void.
 		mockMvc.perform(delete("/sheetPlayer/{id}", ficha.getId()))
-				.andExpect(status().isOk())
+				.andExpect(status().isNoContent())
 				.andExpect(content().string(""));
 
 		assertThat(repository.existsById(ficha.getId())).isFalse();
 	}
 
 	@Test
-	@DisplayName("DELETE /sheetPlayer/{id} inexistente devolve 200 sem corpo e não remove nada")
+	@DisplayName("DELETE /sheetPlayer/{id} inexistente devolve 404 com ProblemDetail e não remove nada")
 	void excluirFichaInexistente() throws Exception {
-		// Comportamento mudou com o upgrade do Spring Boot (Spring Data 3): antes era HTTP 500
-		// (EmptyResultDataAccessException lançada por deleteById); agora o Spring Data ignora
-		// o id inexistente e o controller (void) responde 200 sem corpo.
-		// O 404 correto vem no incremento 1.3.
 		salvar("Arthur", "Ana", "F");
 
 		mockMvc.perform(delete("/sheetPlayer/{id}", ID_INEXISTENTE))
-				.andExpect(status().isOk())
-				.andExpect(content().string(""));
+				.andExpect(status().isNotFound())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.status").value(404));
 
 		assertThat(repository.count()).isEqualTo(1);
 	}
