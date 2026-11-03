@@ -1,6 +1,6 @@
 # 0003. Manter o MySQL até o Flyway
 
-Status: aceita · Incremento 1.1 · 2026-11-03
+Status: concluída (substituída pelo [0009](0009-flyway-e-postgresql.md)) · Incremento 1.1 · 2026-11-03
 
 ## Contexto
 Pretendo migrar para PostgreSQL. Fazer isso agora misturaria duas coisas: criar a rede de segurança de testes e trocar o banco.
