@@ -42,7 +42,8 @@ public class SheetPlayer {
 	@Column(nullable=true)
 	@JsonProperty("cons")
 	private Integer CONS;
-	@Column(nullable=true)
+	// "int" e palavra reservada do MySQL: precisa de aspas (e so esta coluna precisa).
+	@Column(name = "\"int\"", nullable=true)
 	@JsonProperty("int")
 	private Integer INT;
 	@Column(nullable=true)
