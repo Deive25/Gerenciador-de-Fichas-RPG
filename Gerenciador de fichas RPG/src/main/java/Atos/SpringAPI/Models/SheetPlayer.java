@@ -1,5 +1,7 @@
 package Atos.SpringAPI.Models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,22 +34,31 @@ public class SheetPlayer {
 	private Integer sanM;
 	/*ATRIBUTOS*/
 	@Column(nullable=true)
+	@JsonProperty("str")
 	private Integer STR;
 	@Column(nullable=true)
+	@JsonProperty("dex")
 	private Integer DEX;
 	@Column(nullable=true)
+	@JsonProperty("cons")
 	private Integer CONS;
 	@Column(nullable=true)
+	@JsonProperty("int")
 	private Integer INT;
 	@Column(nullable=true)
+	@JsonProperty("car")
 	private Integer CAR;
 	@Column(nullable=true)
+	@JsonProperty("sab")
 	private Integer SAB;
 	@Column(nullable=true)
+	@JsonProperty("tam")
 	private Integer TAM;
 	@Column(nullable=true)
+	@JsonProperty("sor")
 	private Integer SOR;
 	@Column(nullable=true)
+	@JsonProperty("pod")
 	private Integer POD;
 	/*PERICIAS*/
 	@Column(nullable=true)
