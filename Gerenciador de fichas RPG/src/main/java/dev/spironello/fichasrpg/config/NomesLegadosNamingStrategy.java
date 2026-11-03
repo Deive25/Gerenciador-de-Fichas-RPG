@@ -1,4 +1,4 @@
-package Atos.SpringAPI.Config;
+package dev.spironello.fichasrpg.config;
 
 import java.util.Locale;
 

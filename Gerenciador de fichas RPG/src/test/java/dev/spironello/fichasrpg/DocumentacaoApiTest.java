@@ -1,4 +1,4 @@
-package Atos.SpringAPI;
+package dev.spironello.fichasrpg;
 
 import static org.hamcrest.Matchers.hasKey;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

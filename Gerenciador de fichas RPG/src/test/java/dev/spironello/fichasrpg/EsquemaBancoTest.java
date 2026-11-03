@@ -1,4 +1,4 @@
-package Atos.SpringAPI;
+package dev.spironello.fichasrpg;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,4 +1,4 @@
-package Atos.SpringAPI.Controllers;
+package dev.spironello.fichasrpg.controller;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import Atos.SpringAPI.Models.SheetPlayer;
-import Atos.SpringAPI.Repositories.SheetPlayerRepository;
+import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 @CrossOrigin(origins="http://localhost:4200")
