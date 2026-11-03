@@ -1,10 +1,10 @@
 package Atos.SpringAPI;
 
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -22,8 +22,8 @@ import org.testcontainers.utility.DockerImageName;
 public abstract class IntegrationTestBase {
 
 	// Mesma versão do docker-compose.yml, para testar no banco que se usa de verdade.
-	private static final MySQLContainer<?> MYSQL =
-			new MySQLContainer<>(DockerImageName.parse("mysql:8.4"));
+	private static final MySQLContainer MYSQL =
+			new MySQLContainer(DockerImageName.parse("mysql:8.4"));
 
 	static {
 		MYSQL.start();
