@@ -24,7 +24,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import Atos.SpringAPI.IntegrationTestBase;
 import Atos.SpringAPI.Models.SheetPlayer;
