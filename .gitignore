@@ -1,2 +1,6 @@
 # Segredos locais (o modelo versionado e o .env.example)
 .env
+
+# Saida de compilacao
+target/
+bin/
