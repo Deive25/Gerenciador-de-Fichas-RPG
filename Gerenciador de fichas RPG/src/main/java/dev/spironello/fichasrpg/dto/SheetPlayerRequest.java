@@ -1,16 +1,27 @@
 package dev.spironello.fichasrpg.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /**
  * Corpo de entrada do POST e do PUT. Não tem id: o id vem da URL (PUT) ou é gerado (POST).
  * Os nomes dos componentes são as próprias chaves do JSON, para não precisar de anotação.
  * "int" é palavra reservada do Java, por isso o componente se chama intel.
+ *
+ * O JSON de entrada é estrito: chave desconhecida dá 400. A única exceção é o "id", que o
+ * Angular sempre envia e que aqui é aceito e IGNORADO (ADR 0007).
+ *
+ * Só nameJ, nameC e gender têm regra (iguais às colunas not null varchar(255)). Os números não
+ * têm limites de domínio inventados (ADR 0008).
  */
+@JsonIgnoreProperties("id")
 public record SheetPlayerRequest(
-		String nameJ,
-		String nameC,
-		String gender,
+		@NotBlank(message = "é obrigatório") @Size(max = 255, message = "deve ter no máximo 255 caracteres") String nameJ,
+		@NotBlank(message = "é obrigatório") @Size(max = 255, message = "deve ter no máximo 255 caracteres") String nameC,
+		@NotBlank(message = "é obrigatório") @Size(max = 255, message = "deve ter no máximo 255 caracteres") String gender,
 		Integer age,
 		Integer lifeA,
 		Integer lifeM,

@@ -1,7 +1,6 @@
 package dev.spironello.fichasrpg.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.spironello.fichasrpg.dto.SheetPlayerRequest;
 import dev.spironello.fichasrpg.dto.SheetPlayerResponse;
+import dev.spironello.fichasrpg.exception.SheetPlayerNotFoundException;
+import dev.spironello.fichasrpg.model.SheetPlayer;
 import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /**
@@ -37,9 +38,11 @@ public class SheetPlayerService {
 	}
 
 	@Transactional(readOnly = true)
-	public Optional<SheetPlayerResponse> buscar(Long id) {
+	public SheetPlayerResponse buscar(Long id) {
 		log.debug("Buscando ficha id={}", id);
-		return repository.findById(id).map(mapper::toResponse);
+		return repository.findById(id)
+				.map(mapper::toResponse)
+				.orElseThrow(() -> new SheetPlayerNotFoundException(id));
 	}
 
 	@Transactional
@@ -49,18 +52,21 @@ public class SheetPlayerService {
 		return criada;
 	}
 
+	/** Substituição completa (ADR 0008): todos os campos do pedido são copiados, inclusive os nulos. */
 	@Transactional
-	public Optional<SheetPlayerResponse> atualizar(Long id, SheetPlayerRequest request) {
-		return repository.findById(id).map(ficha -> {
-			mapper.copyTo(request, ficha);
-			SheetPlayerResponse atualizada = mapper.toResponse(repository.save(ficha));
-			log.info("Ficha atualizada id={}", id);
-			return atualizada;
-		});
+	public SheetPlayerResponse atualizar(Long id, SheetPlayerRequest request) {
+		SheetPlayer ficha = repository.findById(id).orElseThrow(() -> new SheetPlayerNotFoundException(id));
+		mapper.copyTo(request, ficha);
+		SheetPlayerResponse atualizada = mapper.toResponse(repository.save(ficha));
+		log.info("Ficha atualizada id={}", id);
+		return atualizada;
 	}
 
 	@Transactional
 	public void excluir(Long id) {
+		if (!repository.existsById(id)) {
+			throw new SheetPlayerNotFoundException(id);
+		}
 		repository.deleteById(id);
 		log.info("Ficha excluida id={}", id);
 	}

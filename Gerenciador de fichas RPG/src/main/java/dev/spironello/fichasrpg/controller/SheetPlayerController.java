@@ -1,7 +1,7 @@
 package dev.spironello.fichasrpg.controller;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 
 import dev.spironello.fichasrpg.dto.SheetPlayerRequest;
 import dev.spironello.fichasrpg.dto.SheetPlayerResponse;
@@ -42,27 +44,26 @@ public class SheetPlayerController {
 
 	@Operation(summary = "Busca uma ficha pelo id")
 	@GetMapping("/{id}")
-	public Optional<SheetPlayerResponse> listarFicha(@PathVariable Long id) {
+	public SheetPlayerResponse listarFicha(@PathVariable Long id) {
 		return service.buscar(id);
 	}
 
 	@Operation(summary = "Cadastra uma nova ficha")
 	@PostMapping
-	@ResponseStatus(HttpStatus.CREATED)
-	public SheetPlayerResponse cadastrar(@RequestBody SheetPlayerRequest request) {
-		return service.criar(request);
+	public ResponseEntity<SheetPlayerResponse> cadastrar(@Valid @RequestBody SheetPlayerRequest request) {
+		SheetPlayerResponse criada = service.criar(request);
+		return ResponseEntity.created(URI.create("/sheetPlayer/" + criada.id())).body(criada);
 	}
 
 	@Operation(summary = "Substitui os dados de uma ficha existente")
 	@PutMapping("/{id}")
-	public ResponseEntity<SheetPlayerResponse> atualizar(@PathVariable Long id, @RequestBody SheetPlayerRequest request) {
-		return service.atualizar(id, request)
-				.map(ResponseEntity::ok)
-				.orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+	public SheetPlayerResponse atualizar(@PathVariable Long id, @Valid @RequestBody SheetPlayerRequest request) {
+		return service.atualizar(id, request);
 	}
 
 	@Operation(summary = "Exclui a ficha com o id informado")
 	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deletarSheetPlayer(@PathVariable Long id) {
 		service.excluir(id);
 	}
