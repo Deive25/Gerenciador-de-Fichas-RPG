@@ -1,0 +1,4 @@
+# Scripts do Maven Wrapper: o mvnw precisa de LF para rodar em Linux/macOS/Git Bash
+# (no Windows, o autocrlf converteria para CRLF e quebraria o #!/bin/sh).
+mvnw text eol=lf
+*.cmd text eol=crlf
