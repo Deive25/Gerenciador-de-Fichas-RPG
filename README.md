@@ -16,7 +16,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 1.2 | Upgrade para Java 21 e Spring Boot 4.1.2 em duas etapas, springdoc no lugar do Springfox, pacote `dev.spironello.fichasrpg` | Concluído nesta branch |
 | 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído nesta branch |
 | 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído nesta branch |
-| 1.4b | Perícias em tabela própria (migração V2) | Planejado |
+| 1.4b | Perícias em tabela própria (migração V2), sem mudar o JSON da API | Concluído nesta branch |
 | 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Planejado |
 | 1.6 | Ajustes mínimos no front-end e README final | Planejado |
 
@@ -85,7 +85,58 @@ flowchart LR
     B -.-> O["springdoc: /v3/api-docs"]
 ```
 
-O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê o controller e gera a especificação OpenAPI.
+O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. As 23 perícias ficam na tabela `ficha_pericia` (um `Map<Pericia, Integer>` na entidade); o mapper as converte de e para `atribute1`..`atribute23`, então o JSON não mudou. Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê o controller e gera a especificação OpenAPI.
+
+Modelo de dados (esquema criado pelas migrações V1 e V2):
+
+```mermaid
+erDiagram
+    sheet_player ||--o{ ficha_pericia : "tem (0 a 23)"
+    sheet_player {
+        bigint id PK
+        varchar namej "obrigatório"
+        varchar namec "obrigatório"
+        varchar gender "obrigatório"
+        integer outros_14_campos "idade, vida, sanidade e 9 atributos"
+    }
+    ficha_pericia {
+        bigint ficha_id PK, FK
+        varchar pericia PK "constante do enum Pericia"
+        integer valor
+    }
+```
+
+`sheet_player` tem 18 colunas. Perícia sem valor não tem linha em `ficha_pericia`; no JSON ela aparece como `null`.
+
+### Perícias
+
+O JSON mantém os nomes `atribute1`..`atribute23` (os nomes públicos mudam só no 1.6). O vínculo está no enum `Pericia` e fixado em teste:
+
+| Campo do JSON | Constante | Nome |
+| --- | --- | --- |
+| `atribute1` | `ACROBACIA` | Acrobacia |
+| `atribute2` | `ATLETISMO` | Atletismo |
+| `atribute3` | `ADESTRAR_ANIMAIS` | Adestrar animais |
+| `atribute4` | `ATUACAO_LABIA` | Atuação/Lábia |
+| `atribute5` | `CHARME` | Charme |
+| `atribute6` | `ESQUIVA` | Esquiva |
+| `atribute7` | `FURTIVIDADE` | Furtividade |
+| `atribute8` | `LUTA_CORPO_A_CORPO` | Luta corpo a corpo |
+| `atribute9` | `LUTA_ARMA_BRANCA` | Luta com arma branca |
+| `atribute10` | `INTIMIDACAO` | Intimidação |
+| `atribute11` | `INTUICAO` | Intuição |
+| `atribute12` | `INVESTIGACAO` | Investigação |
+| `atribute13` | `ARMAS_DE_FOGO_LEVES` | Armas de fogo leves |
+| `atribute14` | `ARMAS_DE_FOGO_MEDIAS` | Armas de fogo médias |
+| `atribute15` | `ARMAS_DE_FOGO_PESADAS` | Armas de fogo pesadas |
+| `atribute16` | `PERCEPCAO` | Percepção |
+| `atribute17` | `USAR_BIBLIOTECAS` | Usar bibliotecas |
+| `atribute18` | `HISTORIA` | História |
+| `atribute19` | `CURA` | Cura |
+| `atribute20` | `MALANDRAGEM` | Malandragem |
+| `atribute21` | `OCULTISMO` | Ocultismo |
+| `atribute22` | `PSICOLOGIA` | Psicologia |
+| `atribute23` | `ARREMESSAR` | Arremessar |
 
 Estrutura de pastas:
 
@@ -94,7 +145,7 @@ Estrutura de pastas:
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs e mapper.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidade JPA.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidade JPA e o enum `Pericia`.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
 - `Gerenciador de fichas RPG/src/test/java/dev/spironello/fichasrpg/`: testes.
 - `docs/decisoes/`: registros de decisões (ADRs).
@@ -140,6 +191,7 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    - O `.env` é procurado em `../.env`, relativo à pasta de onde o back-end é iniciado. Rode sempre de dentro de `Gerenciador de fichas RPG` (ou configure a IDE com esse diretório de trabalho). Se as variáveis não forem encontradas, o erro aparece como `URL must start with 'jdbc'`.
    - Dados que já estavam no MySQL local de versões anteriores **não são migrados automaticamente** (projeto de estudo, sem produção). Para limpar o ambiente antigo: `docker compose down --remove-orphans` e, se quiser descartar os dados, `docker volume rm gerenciador-de-fichas-rpg_mysql_data` (o nome exato aparece em `docker volume ls`).
    - O esquema é criado pelo Flyway na primeira subida da API (`src/main/resources/db/migration`); o Hibernate só confere (`ddl-auto=validate`).
+   - **Migração aplicada não se edita**: o Flyway guarda o checksum de cada arquivo em `flyway_schema_history` e recusa subir se um arquivo já aplicado mudar. Para corrigir, crie uma nova versão (V3, V4...). Se o seu banco **local** de desenvolvimento ficar com checksum divergente, `docker compose down -v` recria o volume, mas **apaga os dados locais**.
 
 Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados).
 
@@ -164,7 +216,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
 
-São 36 testes, em oito grupos:
+São 43 testes, em doze grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
@@ -174,7 +226,11 @@ São 36 testes, em oito grupos:
 | `ApiExceptionHandlerTest` | 1 | Unitário: o 500 genérico não vaza o texto interno da exceção |
 | `FichasRpgApplicationTests` | 1 | O contexto da aplicação sobe |
 | `ContratoJsonTest` | 1 | As 41 chaves do JSON que o Angular consome |
-| `EsquemaBancoTest` | 2 | Tabela `sheet_player` (nomes, tipos e nulabilidade das colunas) e prova de que o Flyway aplicou a V1 |
+| `EsquemaBancoTest` | 3 | Tabelas `sheet_player` (18 colunas) e `ficha_pericia` (nomes, tipos e nulabilidade) e prova de que o Flyway aplicou a V1 e a V2 |
+| `MigracaoPericiasTest` | 1 | Migra um schema separado até a V1, insere fichas no formato antigo e confere, após a V2, as linhas de `ficha_pericia`, a ausência das colunas `atributeN` e os demais dados intactos |
+| `PericiaTest` | 2 | Unitário: as 23 constantes, o nome e o campo legado de cada uma, e que os campos vão de `atribute1` a `atribute23` sem repetir |
+| `SheetPlayerMapperPericiasTest` | 2 | Unitário: cada `atributeN` vai para a perícia certa e volta na mesma chave; `null` não gera entrada e remove a anterior |
+| `ListagemSemNMaisUmTest` | 1 | Listar 3 fichas com perícias executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + 3 |
 | `DocumentacaoApiTest` | 2 | Swagger UI e OpenAPI respondem |
 
 Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. Comportamento atual da API:
@@ -194,6 +250,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0002 Testes de caracterização com Testcontainers](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md): testes contra um MySQL real antes de qualquer refatoração.
 - [0003 Manter o MySQL até o Flyway](docs/decisoes/0003-manter-mysql-ate-o-flyway.md): a troca de banco só acontece junto com as migrações (feita no 1.4a, ADR 0009).
 - [0009 Flyway e PostgreSQL](docs/decisoes/0009-flyway-e-postgresql.md): esquema versionado em SQL, `ddl-auto=validate` e troca de banco.
+- [0010 Perícias em tabela própria](docs/decisoes/0010-pericias-em-tabela-propria.md): `ficha_pericia` no lugar de 23 colunas, enum `Pericia`, migração V2 e `@EntityGraph`; JSON inalterado.
 - [0004 Upgrade em duas etapas](docs/decisoes/0004-upgrade-em-duas-etapas.md): Boot 2.5 → 3.5 → 4.1, com testes de contrato e de esquema escritos antes.
 - [0005 springdoc e remoção do Spring Data REST](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md): documentação nova e fim de uma API paralela acidental.
 - [0006 Compatibilidade de nomes no Boot 4](docs/decisoes/0006-compatibilidade-de-nomes-no-boot-4.md): como preservei o JSON e o esquema do banco, e por que troquei a primeira solução.
@@ -236,16 +293,25 @@ Porque é o padrão (RFC 9457) e o Spring já o suporta: não preciso inventar u
 Porque o Jackson 3 já me mostrou que um nome de campo pode mudar sem aviso, e um `"STR"` ignorado em silêncio vira dado perdido. Com o modo estrito o erro aparece na hora, com o nome da chave. O custo é que é uma configuração global; a exceção é o `id`, que aceito e ignoro porque o Angular o envia.
 
 **Por que trocar MySQL por PostgreSQL agora?**
-Porque o roteiro do portfólio já previa o PostgreSQL e esta é a hora mais barata: o projeto não tem usuários nem dados em produção, e a rede de testes com Testcontainers me diz na hora se algo quebrou. Fiz a troca junto com o Flyway, mas em um incremento só dele, sem mudar a API. Os 35 testes de API passaram sem mudar uma asserção; só o teste de esquema precisou dos tipos do PostgreSQL. O custo é que os dados do MySQL local não migram.
+Porque o roteiro do portfólio já previa o PostgreSQL e esta é a hora mais barata: o projeto não tem usuários nem dados em produção, e a rede de testes com Testcontainers me diz na hora se algo quebrou. Fiz a troca junto com o Flyway, mas em um incremento só dele, sem mudar a API. Os 34 testes que não tratam do esquema passaram sem mudar uma asserção; só o teste de esquema precisou dos tipos do PostgreSQL. O custo é que os dados do MySQL local não migram.
 
 **Por que Flyway com `ddl-auto=validate`?**
 Com `ddl-auto=update` o esquema depende de como o Hibernate decidir gerá-lo, não há histórico e uma mudança de versão pode alterar o banco sem aviso. Com Flyway cada mudança é um arquivo SQL versionado (`V1__...`), aplicado uma única vez e registrado em `flyway_schema_history`. O `validate` faz o Hibernate só conferir: se a entidade divergir da migração, a aplicação não sobe. O custo é escrever o SQL à mão e manter entidade e migração em sincronia.
+
+**Por que tabela própria e não 23 colunas ou JSONB?**
+Porque as 23 colunas `atribute1..23` não diziam nada, não dava para iterar sobre as perícias e cada perícia nova pedia um `ALTER TABLE`. O JSONB seria flexível, mas eu perderia tipo e integridade no banco e a consulta por perícia ficaria pior. Com a tabela `ficha_pericia` e um enum, o banco garante a chave e o valor inteiro, e perícia nova é uma constante. O custo é um join a mais e a lista de nomes valer só na aplicação (sem `check constraint`), o que está no [ADR 0010](docs/decisoes/0010-pericias-em-tabela-propria.md).
+
+**Como garantiu que a migração não perde dados?**
+Escrevi o teste antes da V2: ele migra um schema separado só até a V1, insere fichas no formato antigo (com `atribute1` e `atribute23` preenchidos, outras nulas e uma ficha sem nenhuma perícia) e migra até a última versão. Depois confere que as linhas de `ficha_pericia` são exatamente as esperadas, que as colunas antigas sumiram e que o resto da ficha está igual. A V2 copia antes de apagar as colunas e roda numa transação só, porque o PostgreSQL tem DDL transacional: se falhar no meio, nada fica pela metade. Também a rodei de verdade num banco novo pelo `docker compose`.
+
+**Como evitou N+1?**
+Ler as fichas e depois o mapa de perícias de cada uma geraria 1 consulta para a lista e mais 1 por ficha. Coloquei `@EntityGraph(attributePaths = "pericias")` no `findAll` e no `findById`, que faz o Hibernate trazer tudo num SELECT com join. Provei com as estatísticas do Hibernate num teste: com 3 fichas a listagem executa 1 consulta; sem o grafo, o mesmo teste contou 4. O custo é lembrar de repetir o grafo em qualquer método de leitura novo.
 
 ## Próximos passos
 
 - **1.3** (concluído nesta branch): serviço, DTOs, validação, ProblemDetail e logs. Falta revisar e abrir o PR.
 - **1.4a** (concluído nesta branch): migrações Flyway e troca do MySQL por PostgreSQL 17. Falta revisar e abrir o PR.
-- **1.4b**: perícias em tabela própria, com a migração V2.
+- **1.4b** (concluído nesta branch): perícias em tabela própria, com a migração V2. Falta revisar e abrir o PR.
 - **1.5**: teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável.
 - **1.6**: ajustes mínimos no front-end e README final.
 
