@@ -1,14 +1,10 @@
 package dev.spironello.fichasrpg.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 
 @Entity
 public class SheetPlayer {
@@ -34,32 +30,23 @@ public class SheetPlayer {
 	private Integer sanM;
 	/*ATRIBUTOS*/
 	@Column(nullable=true)
-	@JsonProperty("str")
 	private Integer STR;
 	@Column(nullable=true)
-	@JsonProperty("dex")
 	private Integer DEX;
 	@Column(nullable=true)
-	@JsonProperty("cons")
 	private Integer CONS;
 	// "int" e palavra reservada do MySQL: precisa de aspas (e so esta coluna precisa).
 	@Column(name = "\"int\"", nullable=true)
-	@JsonProperty("int")
 	private Integer INT;
 	@Column(nullable=true)
-	@JsonProperty("car")
 	private Integer CAR;
 	@Column(nullable=true)
-	@JsonProperty("sab")
 	private Integer SAB;
 	@Column(nullable=true)
-	@JsonProperty("tam")
 	private Integer TAM;
 	@Column(nullable=true)
-	@JsonProperty("sor")
 	private Integer SOR;
 	@Column(nullable=true)
-	@JsonProperty("pod")
 	private Integer POD;
 	/*PERICIAS*/
 	@Column(nullable=true)
