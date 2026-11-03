@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -246,15 +245,19 @@ class SheetPlayerControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("DELETE /sheetPlayer/{id} inexistente estoura exceção (HTTP 500 na aplicação real)")
-	void excluirFichaInexistente() {
-		// Comportamento atual (bug): deleteById lança EmptyResultDataAccessException e o
-		// controller não trata. Na aplicação real o cliente recebe HTTP 500 (Internal Server
-		// Error) com o JSON de erro padrão do Spring, em vez de 404 Not Found.
-		// (O MockMvc não simula a página de erro, por isso a exceção aparece direto.)
-		// Será corrigido no incremento 1.3.
-		assertThatThrownBy(() -> mockMvc.perform(delete("/sheetPlayer/{id}", ID_INEXISTENTE)))
-				.hasCauseInstanceOf(EmptyResultDataAccessException.class);
+	@DisplayName("DELETE /sheetPlayer/{id} inexistente devolve 200 sem corpo e não remove nada")
+	void excluirFichaInexistente() throws Exception {
+		// Comportamento mudou com o upgrade do Spring Boot (Spring Data 3): antes era HTTP 500
+		// (EmptyResultDataAccessException lançada por deleteById); agora o Spring Data ignora
+		// o id inexistente e o controller (void) responde 200 sem corpo.
+		// O 404 correto vem no incremento 1.3.
+		salvar("Arthur", "Ana", "F");
+
+		mockMvc.perform(delete("/sheetPlayer/{id}", ID_INEXISTENTE))
+				.andExpect(status().isOk())
+				.andExpect(content().string(""));
+
+		assertThat(repository.count()).isEqualTo(1);
 	}
 
 	// ---------- apoio ----------
