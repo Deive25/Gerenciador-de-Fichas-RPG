@@ -34,26 +34,57 @@ O modelo contempla dados do jogador e personagem, vida, sanidade, atributos e pe
 - `Gerenciador de fichas RPG/src/main/java/Atos/SpringAPI/Repositories/`: persistência.
 - `frontend/`: aplicação Angular.
 
-## Execução local
+## Como rodar
 
-Este é um projeto de estudo com dependências de versões anteriores. Os comandos abaixo descrevem a estrutura existente; a execução não foi validada nesta revisão de documentação.
+### Pré-requisitos
 
-### API
+- JDK 11 ou superior (o `pom.xml` compila para Java 11; os testes e a execução foram validados com o JDK 21).
+- Docker com Docker Compose (Docker Desktop no Windows). Ele é usado para o banco local **e** pelos testes.
+- Node.js compatível com Angular 13, apenas se for rodar a interface.
 
-1. Instale o JDK 11 e disponibilize um banco MySQL local.
-2. Configure URL, usuário e senha do banco em seu ambiente local. A aplicação lê a configuração de `src/main/resources/application.properties`; não publique credenciais.
-3. Na pasta do back-end, execute:
+### Banco de dados e API
+
+As credenciais do banco **não ficam no código**: a aplicação as lê das variáveis `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`. Para desenvolvimento, elas ficam em um arquivo `.env` local, que não é versionado.
+
+1. Na raiz do repositório, crie o seu `.env` a partir do modelo e troque as senhas de exemplo:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+   No PowerShell: `Copy-Item .env.example .env`.
+
+2. Suba o MySQL 8.4 em container (lê o `.env`; usa a porta 3306, então ela precisa estar livre):
+
+   ```sh
+   docker compose up -d
+   ```
+
+3. Rode o back-end. O `.env` da raiz é carregado automaticamente; se você definir as variáveis `DB_*` no ambiente, elas têm prioridade:
+
+   ```sh
+   cd "Gerenciador de fichas RPG"
+   ./mvnw spring-boot:run
+   ```
+
+   No Windows (cmd/PowerShell), use `mvnw.cmd spring-boot:run`. A API fica em `http://localhost:8080/sheetPlayer`.
+
+Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados).
+
+### Testes
 
 ```sh
 cd "Gerenciador de fichas RPG"
-./mvnw spring-boot:run
+./mvnw -B verify
 ```
 
-No Windows, utilize `mvnw.cmd spring-boot:run`.
+**Os testes precisam do Docker em execução.** Eles sobem o próprio MySQL descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`).
+
+Os testes em `src/test` registram o comportamento atual da API, inclusive comportamentos que são bugs conhecidos (por exemplo, `GET` e `DELETE` de um id inexistente), para servir de rede de segurança nas próximas refatorações.
 
 ### Interface
 
-Em outro terminal:
+A interface não foi validada neste incremento. Em outro terminal:
 
 ```sh
 cd frontend
