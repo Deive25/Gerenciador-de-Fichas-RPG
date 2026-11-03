@@ -2,6 +2,7 @@ package dev.spironello.fichasrpg.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -11,8 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -25,6 +30,10 @@ import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
  * estrito, limites de tamanho, tipos errados e o tratamento do id no corpo.
  */
 @DisplayName("API /sheetPlayer (validação de entrada e JSON estrito)")
+// O devtools (usado em spring-boot:run) liga este log por padrão e o Spring então registra, em WARN,
+// a exceção de validação com o valor rejeitado. Ligamos aqui para reproduzir esse cenário.
+@TestPropertySource(properties = "spring.mvc.log-resolved-exception=true")
+@ExtendWith(OutputCaptureExtension.class)
 class SheetPlayerValidacaoTest extends IntegrationTestBase {
 
 	@Autowired
@@ -143,6 +152,25 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 		enviar("POST", "/sheetPlayer", """
 				{"id": null, "nameJ": "Arthur", "nameC": "Ana", "gender": "F"}""")
 				.andExpect(status().isCreated());
+	}
+
+	@Test
+	@DisplayName("Validação que falha não escreve o valor rejeitado (dado pessoal) no log")
+	void valorRejeitadoNaoVaiParaOLog(CapturedOutput saida) throws Exception {
+		String nomeLongo = "NomeSecretoDoJogador" + "x".repeat(250);
+
+		problema400(enviar("POST", "/sheetPlayer", """
+				{"nameJ": "%s", "nameC": "Ana", "gender": "F"}""".formatted(nomeLongo)));
+
+		assertThat(saida.getAll()).doesNotContain("NomeSecretoDoJogador");
+	}
+
+	@Test
+	@DisplayName("GET com id não numérico devolve 400 em português")
+	void idNaoNumerico() throws Exception {
+		problema400(mockMvc.perform(get("/sheetPlayer/abc")))
+				.andExpect(jsonPath("$.title").value("Parâmetro inválido"))
+				.andExpect(jsonPath("$.detail").value("O parâmetro 'id' deve ser um número inteiro."));
 	}
 
 	// ---------- apoio ----------
