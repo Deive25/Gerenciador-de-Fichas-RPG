@@ -1,4 +1,4 @@
-package Atos.SpringAPI;
+package dev.spironello.fichasrpg;
 
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,4 +1,4 @@
-package Atos.SpringAPI.Models;
+package dev.spironello.fichasrpg.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

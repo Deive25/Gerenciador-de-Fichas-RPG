@@ -1,4 +1,4 @@
-package Atos.SpringAPI;
+package dev.spironello.fichasrpg;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -16,8 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.jayway.jsonpath.JsonPath;
 
-import Atos.SpringAPI.Models.SheetPlayer;
-import Atos.SpringAPI.Repositories.SheetPlayerRepository;
+import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /**
  * Trava o contrato JSON que o frontend Angular consome (Sheet.model.ts): o conjunto de

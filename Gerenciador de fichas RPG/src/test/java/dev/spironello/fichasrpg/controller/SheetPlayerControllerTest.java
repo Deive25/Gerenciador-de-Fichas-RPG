@@ -1,4 +1,4 @@
-package Atos.SpringAPI.Controllers;
+package dev.spironello.fichasrpg.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,9 +26,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.ObjectMapper;
 
-import Atos.SpringAPI.IntegrationTestBase;
-import Atos.SpringAPI.Models.SheetPlayer;
-import Atos.SpringAPI.Repositories.SheetPlayerRepository;
+import dev.spironello.fichasrpg.IntegrationTestBase;
+import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /**
  * Testes de caracterização: registram o que a API FAZ HOJE, inclusive o que é bug.
