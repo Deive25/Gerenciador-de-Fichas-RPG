@@ -14,7 +14,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | --- | --- | --- |
 | 1.1 | Base segura e testável: credenciais fora do código, `docker compose` com MySQL, testes de caracterização das 5 rotas, CI | Concluído (PR #1 aberto) |
 | 1.2 | Upgrade para Java 21 e Spring Boot 4.1.2 em duas etapas, springdoc no lugar do Springfox, pacote `dev.spironello.fichasrpg` | Concluído nesta branch |
-| 1.3 | Camada de serviço, DTOs, validação, erros padronizados, logs e correção dos comportamentos listados em [Testes](#testes) | Planejado |
+| 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído nesta branch |
 | 1.4 | Perícias em tabela própria, migrações Flyway e PostgreSQL | Planejado |
 | 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Planejado |
 | 1.6 | Ajustes mínimos no front-end e README final | Planejado |
@@ -27,26 +27,44 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | Banco de dados | MySQL 8.4 (Docker) |
 | Front-end | Angular 13, TypeScript 4.4, Angular Material, Bootstrap |
 | Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
-| Testes | JUnit, MockMvc, Testcontainers |
+| Testes | JUnit, MockMvc, Mockito, Testcontainers |
 | Build e CI | Maven e Angular CLI; GitHub Actions (`./mvnw -B verify`) |
 
 ## Funcionalidades da API
 
 O controlador `SheetPlayerController` expõe o recurso `/sheetPlayer`:
 
-| Método | Rota | Finalidade |
-| --- | --- | --- |
-| GET | `/sheetPlayer` | Listar fichas |
-| GET | `/sheetPlayer/{id}` | Consultar uma ficha |
-| POST | `/sheetPlayer` | Cadastrar uma ficha |
-| PUT | `/sheetPlayer/{id}` | Atualizar uma ficha |
-| DELETE | `/sheetPlayer/{id}` | Excluir uma ficha |
+| Método | Rota | Finalidade | Respostas |
+| --- | --- | --- | --- |
+| GET | `/sheetPlayer` | Listar fichas | 200 |
+| GET | `/sheetPlayer/{id}` | Consultar uma ficha | 200; 404 se não existe |
+| POST | `/sheetPlayer` | Cadastrar uma ficha | 201 com `Location: /sheetPlayer/{id}`; 400 se inválida |
+| PUT | `/sheetPlayer/{id}` | Substituir uma ficha | 200; 400 se inválida; 404 se não existe |
+| DELETE | `/sheetPlayer/{id}` | Excluir uma ficha | 204; 404 se não existe |
 
-O modelo contempla dados do jogador e personagem, vida, sanidade, atributos e perícias. A API permite chamadas da interface local em `http://localhost:4200`.
+Qualquer falha inesperada responde 500 com uma mensagem genérica; o detalhe fica só no log do servidor.
+
+**Entrada.** O JSON tem as 41 chaves de sempre (`nameJ`, `nameC`, `gender`, `age`, `lifeA`..., `str`..`pod`, `atribute1`..`atribute23`).
+- `nameJ`, `nameC` e `gender` são obrigatórios e têm no máximo 255 caracteres. Os números não têm limite ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
+- O JSON é **estrito**: uma chave desconhecida (por exemplo `"STR"` em vez de `"str"`) devolve 400 citando a chave, em vez de ser ignorada.
+- O `id` no corpo é aceito e **ignorado**, porque o Angular o envia sempre: no PUT vale o id da URL; no POST o id é gerado.
+- O PUT é substituição completa: campos omitidos viram `null`.
+
+**Erros** seguem o ProblemDetail (RFC 9457, `Content-Type: application/problem+json`). Exemplo de validação (`POST` sem `nameJ`):
+
+```json
+{
+  "title": "Dados inválidos",
+  "status": 400,
+  "detail": "Há campos inválidos na ficha. Veja a propriedade errors.",
+  "instance": "/sheetPlayer",
+  "errors": { "nameJ": "é obrigatório" }
+}
+```
+
+Decisões em [ADR 0007](docs/decisoes/0007-erros-padronizados-e-json-estrito.md). A API permite chamadas da interface local em `http://localhost:4200`.
 
 Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
-
-> Nota sobre o DELETE: com o upgrade do Spring Boot (a mudança veio do Spring Data 3, já na etapa 3.5), `DELETE /sheetPlayer/{id}` de um id inexistente deixou de dar erro 500 e passou a responder 200 sem corpo, porque o Spring Data ignora o id. O 404 correto virá no incremento 1.3.
 
 > Nota sobre rotas removidas: até o incremento 1.1, a dependência `spring-data-rest-hal-explorer`, adicionada junto com o Springfox, trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD não intencional e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. No incremento 1.2 a dependência foi removida e essas rotas passaram a responder 404. Veja o [ADR 0005](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md).
 
@@ -57,18 +75,24 @@ Estado atual:
 ```mermaid
 flowchart LR
     A["Angular (porta 4200)"] -->|HTTP/JSON| B[SheetPlayerController]
-    B --> C["SheetPlayerRepository (Spring Data JPA / Hibernate 7)"]
-    C --> D[("MySQL 8.4 (Docker)")]
-    B -.-> E["springdoc: /v3/api-docs"]
+    B -->|SheetPlayerRequest / Response| C[SheetPlayerService]
+    C --> M[SheetPlayerMapper]
+    C --> R["SheetPlayerRepository (Spring Data JPA / Hibernate 7)"]
+    R --> D[("MySQL 8.4 (Docker)")]
+    X["ApiExceptionHandler (ProblemDetail)"] -.->|traduz exceções em erros HTTP| B
+    B -.-> O["springdoc: /v3/api-docs"]
 ```
 
-O controlador recebe e devolve a própria entidade `SheetPlayer` e chama o repositório diretamente. Ainda não há camada de serviço nem DTOs: ambos vêm no incremento 1.3. O springdoc lê o controlador e gera a especificação OpenAPI em `/v3/api-docs` (e o Swagger UI).
+O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê o controller e gera a especificação OpenAPI.
 
 Estrutura de pastas:
 
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: modelo de dados.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs e mapper.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidade JPA.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
 - `Gerenciador de fichas RPG/src/test/java/dev/spironello/fichasrpg/`: testes.
 - `docs/decisoes/`: registros de decisões (ADRs).
@@ -135,26 +159,28 @@ cd "Gerenciador de fichas RPG"
 ./mvnw -B verify
 ```
 
-**Os testes precisam do Docker em execução.** Eles sobem o próprio MySQL 8.4 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o MySQL real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
+**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio MySQL 8.4 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o MySQL real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
 
-São 16 testes, em cinco grupos:
+São 32 testes, em sete grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
-| `SheetPlayerControllerTest` | 11 | Caracterização das 5 rotas: listar, buscar, criar, atualizar e excluir, com ids existentes e inexistentes |
+| `SheetPlayerControllerTest` | 11 | As 5 rotas: listar, buscar, criar (201 + `Location`), atualizar e excluir (204), com ids existentes e inexistentes (404 ProblemDetail) |
+| `SheetPlayerValidacaoTest` | 10 | 400 com `errors` por campo, limite de 255, chave desconhecida, tipo errado, JSON malformado, tratamento do `id` no corpo |
+| `SheetPlayerServiceTest` | 6 | Unitários do serviço com Mockito, sem Spring e sem Docker |
 | `FichasRpgApplicationTests` | 1 | O contexto da aplicação sobe |
 | `ContratoJsonTest` | 1 | As 41 chaves do JSON que o Angular consome |
 | `EsquemaBancoTest` | 1 | Tabela `sheet_player`: nomes, tipos e nulabilidade das colunas |
 | `DocumentacaoApiTest` | 2 | Swagger UI e OpenAPI respondem |
 
-Os testes de caracterização registram o comportamento **atual** da API, inclusive o que é errado, para servir de rede de segurança nas refatorações. Comportamentos registrados que serão corrigidos no incremento 1.3:
+Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. Comportamento atual da API:
 
-- `GET` de id inexistente responde 200 com corpo `null` (o esperado é 404).
-- `DELETE` de id inexistente responde 200 sem corpo. Antes do upgrade do Spring Boot respondia 500; a mudança veio do Spring Data 3 e o teste foi ajustado (o esperado é 404).
-- `POST` sem os campos obrigatórios responde 500 (o esperado é 400 com mensagem de validação).
-- `DELETE` de ficha existente responde 200 (o esperado é 204).
-- `PUT` substitui a ficha inteira: campos omitidos viram `null`.
-- Atributos enviados com nome em maiúsculas no JSON (`"STR"`) são ignorados sem aviso.
+- `GET`, `PUT` e `DELETE` de id inexistente respondem 404 com ProblemDetail.
+- `POST` e `PUT` sem os campos obrigatórios (ou com texto acima de 255 caracteres) respondem 400 com `errors` por campo.
+- `POST` responde 201 com o header `Location`; `DELETE` responde 204.
+- Chave desconhecida (`"STR"`), tipo errado (`"age": "abc"`) e JSON malformado respondem 400.
+- `PUT` substitui a ficha inteira, de propósito: campos omitidos viram `null`.
+- O `id` enviado no corpo é ignorado.
 
 ## Decisões e trade-offs
 
@@ -166,6 +192,8 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0004 Upgrade em duas etapas](docs/decisoes/0004-upgrade-em-duas-etapas.md): Boot 2.5 → 3.5 → 4.1, com testes de contrato e de esquema escritos antes.
 - [0005 springdoc e remoção do Spring Data REST](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md): documentação nova e fim de uma API paralela acidental.
 - [0006 Compatibilidade de nomes no Boot 4](docs/decisoes/0006-compatibilidade-de-nomes-no-boot-4.md): como preservei o JSON e o esquema do banco, e por que troquei a primeira solução.
+- [0007 Erros padronizados e JSON estrito](docs/decisoes/0007-erros-padronizados-e-json-estrito.md): ProblemDetail, códigos HTTP e rejeição de chaves desconhecidas.
+- [0008 PUT como substituição completa](docs/decisoes/0008-put-como-substituicao-completa.md): sem PATCH e sem regras numéricas inventadas.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -187,15 +215,24 @@ Os nomes mudando sozinhos. No Jackson 3, `getSTR()` passou a sair como `"STR"`, 
 **O que era a API acidental do Spring Data REST?**
 Uma dependência adicionada junto com o Springfox trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD sem validação e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. Removi a dependência e confirmei com a aplicação rodando que essas rotas respondem 404.
 
-**Por que o DELETE de id inexistente passou a responder 200?**
-Por causa do Spring Data 3: o `deleteById` passou a ignorar ids que não existem, em vez de lançar exceção (antes disso resultava em 500). Não escondi a mudança: ajustei o teste, documentei e deixei o 404 correto para o incremento 1.3, quando a camada de serviço tratar o caso.
+**Por que o DELETE de id inexistente passou a responder 200, e como ficou?**
+Por causa do Spring Data 3: o `deleteById` passou a ignorar ids que não existem, em vez de lançar exceção (antes disso resultava em 500). No 1.2 não escondi a mudança: ajustei o teste e documentei. No 1.3 a camada de serviço verifica a existência e lança `SheetPlayerNotFoundException`, que vira 404.
 
 **Por que o upgrade foi em duas etapas?**
 Porque Boot 2.5 → 4.1 junta muitas mudanças (Spring 6, Jakarta, Hibernate, Jackson 3). Passando antes pelo 3.5.16, cada quebra tem uma causa mais fácil de identificar, e cada etapa fica com `clean verify` verde. Custa mais commits, mas reduz o risco.
 
+**PUT ou PATCH?**
+PUT, como substituição completa. O Angular já envia a ficha inteira, então um PATCH seria código sem cliente que o use. Aceito o custo: quem mandar uma ficha parcial apaga os outros campos. Se surgir esse cliente, o PATCH entra como um incremento próprio ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
+
+**Por que ProblemDetail?**
+Porque é o padrão (RFC 9457) e o Spring já o suporta: não preciso inventar um formato de erro. O cliente recebe sempre `title`, `status` e `detail`, e na validação uma propriedade `errors` por campo. Mensagens em português e sem stack trace.
+
+**Por que rejeitar campos desconhecidos no JSON?**
+Porque o Jackson 3 já me mostrou que um nome de campo pode mudar sem aviso, e um `"STR"` ignorado em silêncio vira dado perdido. Com o modo estrito o erro aparece na hora, com o nome da chave. O custo é que é uma configuração global; a exceção é o `id`, que aceito e ignoro porque o Angular o envia.
+
 ## Próximos passos
 
-- **1.3**: camada de serviço, DTOs (`record`), Bean Validation, erros padronizados (ProblemDetail), logs e correção dos comportamentos listados em [Testes](#testes).
+- **1.3** (concluído nesta branch): serviço, DTOs, validação, ProblemDetail e logs. Falta revisar e abrir o PR.
 - **1.4**: perícias em tabela própria, migrações Flyway e troca do MySQL por PostgreSQL.
 - **1.5**: teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável.
 - **1.6**: ajustes mínimos no front-end e README final.
@@ -204,7 +241,8 @@ Porque Boot 2.5 → 4.1 junta muitas mudanças (Spring 6, Jakarta, Hibernate, Ja
 
 - Integração entre front-end TypeScript e API Java.
 - Operações CRUD com Spring MVC e Spring Data JPA.
-- Testes de caracterização contra banco real (Testcontainers) como rede de segurança para refatorar.
+- Testes de caracterização contra banco real (Testcontainers) como rede de segurança e, depois, como especificação do comportamento correto.
+- Camadas (controller, serviço, repository), DTOs com `record`, Bean Validation e erros padronizados (ProblemDetail).
 - Upgrade seguro de framework (Spring Boot 2.5 → 4.1, Java 11 → 21) com testes de contrato e de esquema.
 - Integração contínua com GitHub Actions e banco local reproduzível com Docker.
 - Documentação de endpoints com OpenAPI e Swagger UI (springdoc).
