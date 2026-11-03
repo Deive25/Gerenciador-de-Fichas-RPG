@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sem este arquivo o Testcontainers imprime milhares de linhas DEBUG do cliente Docker,
+     pois o container sobe antes do Spring configurar o log. -->
+<configuration>
+	<include resource="org/springframework/boot/logging/logback/base.xml"/>
+	<logger name="com.github.dockerjava" level="WARN"/>
+	<logger name="org.testcontainers" level="INFO"/>
+</configuration>
