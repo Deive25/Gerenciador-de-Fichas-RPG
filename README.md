@@ -6,10 +6,10 @@ Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fic
 
 | Camada | Stack do repositório |
 | --- | --- |
-| Back-end | Java 11, Spring Boot 2.5.7, Spring Web, Spring Data JPA |
+| Back-end | Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA (Hibernate 7) |
 | Banco de dados | MySQL |
 | Front-end | Angular 13, TypeScript 4.4, Angular Material, Bootstrap |
-| Documentação de API | Swagger / Springfox |
+| Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
 | Build | Maven e Angular CLI |
 
 ## Funcionalidades da API
@@ -26,19 +26,23 @@ O controlador `SheetPlayerController` expõe o recurso `/sheetPlayer`:
 
 O modelo contempla dados do jogador e personagem, vida, sanidade, atributos e perícias. A API permite chamadas da interface local em `http://localhost:4200`.
 
+Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
+
+> Nota: com o upgrade para o Spring Boot 4, `DELETE /sheetPlayer/{id}` de um id inexistente deixou de dar erro 500 e passou a responder 200 sem corpo (o Spring Data ignora o id). O 404 correto virá em um próximo incremento.
+
 ## Estrutura
 
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
-- `Gerenciador de fichas RPG/src/main/java/Atos/SpringAPI/Controllers/`: endpoints REST.
-- `Gerenciador de fichas RPG/src/main/java/Atos/SpringAPI/Models/`: modelo de dados.
-- `Gerenciador de fichas RPG/src/main/java/Atos/SpringAPI/Repositories/`: persistência.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: modelo de dados.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
 - `frontend/`: aplicação Angular.
 
 ## Como rodar
 
 ### Pré-requisitos
 
-- JDK 11 ou superior (o `pom.xml` compila para Java 11; os testes e a execução foram validados com o JDK 21).
+- JDK 21 (o `pom.xml` compila para Java 21).
 - Docker com Docker Compose (Docker Desktop no Windows). Ele é usado para o banco local **e** pelos testes.
 - Node.js compatível com Angular 13, apenas se for rodar a interface.
 
@@ -83,7 +87,7 @@ cd "Gerenciador de fichas RPG"
 ./mvnw -B verify
 ```
 
-**Os testes precisam do Docker em execução.** Eles sobem o próprio MySQL descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`).
+**Os testes precisam do Docker em execução.** Eles sobem o próprio MySQL descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
 
 Os testes em `src/test` registram o comportamento atual da API, inclusive comportamentos que são bugs conhecidos (por exemplo, `GET` e `DELETE` de um id inexistente), para servir de rede de segurança nas próximas refatorações.
 
@@ -104,7 +108,7 @@ Use uma versão do Node.js compatível com Angular 13. Acesse a interface em `ht
 - Integração entre front-end TypeScript e API Java.
 - Operações CRUD com Spring MVC e Spring Data JPA.
 - Modelagem e persistência de dados de personagens.
-- Documentação de endpoints com Swagger.
+- Documentação de endpoints com OpenAPI e Swagger UI (springdoc).
 
 ## Contexto do portfólio
 
