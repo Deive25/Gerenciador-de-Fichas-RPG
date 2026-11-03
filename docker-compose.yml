@@ -1,19 +1,19 @@
-# Banco MySQL para desenvolvimento local.
+# Banco PostgreSQL para desenvolvimento local.
 # As credenciais vem do arquivo .env (copie de .env.example).
+# A imagem e a mesma usada nos testes (IntegrationTestBase): mantenha as duas na mesma versao.
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: fichas-rpg-mysql
+  postgres:
+    image: postgres:17
+    container_name: fichas-rpg-postgres
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "127.0.0.1:3306:3306" # só acessível nesta máquina
+      - "127.0.0.1:5432:5432" # só acessível nesta máquina
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mysql_data:
+  postgres_data:

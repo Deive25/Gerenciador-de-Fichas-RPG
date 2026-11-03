@@ -1,6 +1,6 @@
 # Gerenciador de Fichas RPG
 
-Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fichas de personagens de RPG, com interface Angular e API REST em Java e Spring Boot, persistida em MySQL.
+Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fichas de personagens de RPG, com interface Angular e API REST em Java e Spring Boot, persistida em PostgreSQL, com o esquema versionado por migrações Flyway.
 
 ## Problema
 
@@ -12,10 +12,11 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 
 | Incremento | Entrega | Situação |
 | --- | --- | --- |
-| 1.1 | Base segura e testável: credenciais fora do código, `docker compose` com MySQL, testes de caracterização das 5 rotas, CI | Concluído (PR #1 aberto) |
+| 1.1 | Base segura e testável: credenciais fora do código, `docker compose` com o banco local, testes de caracterização das 5 rotas, CI | Concluído (PR #1 aberto) |
 | 1.2 | Upgrade para Java 21 e Spring Boot 4.1.2 em duas etapas, springdoc no lugar do Springfox, pacote `dev.spironello.fichasrpg` | Concluído nesta branch |
 | 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído nesta branch |
-| 1.4 | Perícias em tabela própria, migrações Flyway e PostgreSQL | Planejado |
+| 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído nesta branch |
+| 1.4b | Perícias em tabela própria (migração V2) | Planejado |
 | 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Planejado |
 | 1.6 | Ajustes mínimos no front-end e README final | Planejado |
 
@@ -24,7 +25,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | Camada | Stack do repositório |
 | --- | --- |
 | Back-end | Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA (Hibernate 7) |
-| Banco de dados | MySQL 8.4 (Docker) |
+| Banco de dados | PostgreSQL 17 (Docker), migrações com Flyway 12 |
 | Front-end | Angular 13, TypeScript 4.4, Angular Material, Bootstrap |
 | Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
 | Testes | JUnit, MockMvc, Mockito, Testcontainers |
@@ -78,7 +79,8 @@ flowchart LR
     B -->|SheetPlayerRequest / Response| C[SheetPlayerService]
     C --> M[SheetPlayerMapper]
     C --> R["SheetPlayerRepository (Spring Data JPA / Hibernate 7)"]
-    R --> D[("MySQL 8.4 (Docker)")]
+    R --> D[("PostgreSQL 17 (Docker)")]
+    F["Flyway: migrações em db/migration"] -.->|cria o esquema| D
     X["ApiExceptionHandler (ProblemDetail)"] -.->|traduz exceções em erros HTTP| B
     B -.-> O["springdoc: /v3/api-docs"]
 ```
@@ -118,7 +120,7 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
 
    No PowerShell: `Copy-Item .env.example .env`.
 
-2. Suba o MySQL 8.4 em container (lê o `.env`; usa a porta 3306, então ela precisa estar livre):
+2. Suba o PostgreSQL 17 em container (lê o `.env`; usa a porta 5432, então ela precisa estar livre):
 
    ```sh
    docker compose up -d
@@ -134,9 +136,10 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    No PowerShell, use `.\mvnw.cmd spring-boot:run` (no cmd: `mvnw.cmd spring-boot:run`). A API fica em `http://localhost:8080/sheetPlayer`.
 
    Observações:
-   - O MySQL leva alguns segundos para aceitar conexões depois do `docker compose up -d`; se o back-end falhar na primeira tentativa, rode de novo.
+   - O PostgreSQL leva alguns segundos para aceitar conexões depois do `docker compose up -d`; se o back-end falhar na primeira tentativa, rode de novo.
    - O `.env` é procurado em `../.env`, relativo à pasta de onde o back-end é iniciado. Rode sempre de dentro de `Gerenciador de fichas RPG` (ou configure a IDE com esse diretório de trabalho). Se as variáveis não forem encontradas, o erro aparece como `URL must start with 'jdbc'`.
-   - `DB_USERNAME` não pode ser `root`: a imagem do MySQL usa `DB_ROOT_PASSWORD` para o root e cria o usuário da aplicação separadamente.
+   - Dados que já estavam no MySQL local de versões anteriores **não são migrados automaticamente** (projeto de estudo, sem produção). Para limpar o ambiente antigo: `docker compose down --remove-orphans` e, se quiser descartar os dados, `docker volume rm gerenciador-de-fichas-rpg_mysql_data` (o nome exato aparece em `docker volume ls`).
+   - O esquema é criado pelo Flyway na primeira subida da API (`src/main/resources/db/migration`); o Hibernate só confere (`ddl-auto=validate`).
 
 Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados).
 
@@ -159,9 +162,9 @@ cd "Gerenciador de fichas RPG"
 ./mvnw -B verify
 ```
 
-**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio MySQL 8.4 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o MySQL real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
+**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
 
-São 35 testes, em oito grupos:
+São 36 testes, em oito grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
@@ -171,7 +174,7 @@ São 35 testes, em oito grupos:
 | `ApiExceptionHandlerTest` | 1 | Unitário: o 500 genérico não vaza o texto interno da exceção |
 | `FichasRpgApplicationTests` | 1 | O contexto da aplicação sobe |
 | `ContratoJsonTest` | 1 | As 41 chaves do JSON que o Angular consome |
-| `EsquemaBancoTest` | 1 | Tabela `sheet_player`: nomes, tipos e nulabilidade das colunas |
+| `EsquemaBancoTest` | 2 | Tabela `sheet_player` (nomes, tipos e nulabilidade das colunas) e prova de que o Flyway aplicou a V1 |
 | `DocumentacaoApiTest` | 2 | Swagger UI e OpenAPI respondem |
 
 Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. Comportamento atual da API:
@@ -189,7 +192,8 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 
 - [0001 Credenciais em variáveis de ambiente](docs/decisoes/0001-credenciais-em-variaveis-de-ambiente.md): a senha saiu do código e vem do ambiente ou de um `.env` local.
 - [0002 Testes de caracterização com Testcontainers](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md): testes contra um MySQL real antes de qualquer refatoração.
-- [0003 Manter o MySQL até o Flyway](docs/decisoes/0003-manter-mysql-ate-o-flyway.md): a troca de banco só acontece junto com as migrações, no 1.4.
+- [0003 Manter o MySQL até o Flyway](docs/decisoes/0003-manter-mysql-ate-o-flyway.md): a troca de banco só acontece junto com as migrações (feita no 1.4a, ADR 0009).
+- [0009 Flyway e PostgreSQL](docs/decisoes/0009-flyway-e-postgresql.md): esquema versionado em SQL, `ddl-auto=validate` e troca de banco.
 - [0004 Upgrade em duas etapas](docs/decisoes/0004-upgrade-em-duas-etapas.md): Boot 2.5 → 3.5 → 4.1, com testes de contrato e de esquema escritos antes.
 - [0005 springdoc e remoção do Spring Data REST](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md): documentação nova e fim de uma API paralela acidental.
 - [0006 Compatibilidade de nomes no Boot 4](docs/decisoes/0006-compatibilidade-de-nomes-no-boot-4.md): como preservei o JSON e o esquema do banco, e por que troquei a primeira solução.
@@ -205,7 +209,7 @@ O projeto já funcionava e tinha um front-end acoplado ao formato do JSON. Reesc
 Tirei do código e passei a lê-la de variáveis de ambiente ou de um `.env` ignorado pelo Git, com um `.env.example` de modelo. Como a senha antiga continua no histórico do Git, a trato como comprometida: o certo é trocá-la onde foi usada. Reescrever o histórico é uma decisão separada.
 
 **Por que Testcontainers e não H2?**
-Porque quero testar no banco que uso de verdade. O H2 tem diferenças de SQL e de tipos, e o próprio problema da coluna `int` (palavra reservada no MySQL) é o tipo de coisa que um banco diferente esconderia. O custo é exigir Docker e ser um pouco mais lento.
+Porque quero testar no banco que uso de verdade. O H2 tem diferenças de SQL e de tipos, e o próprio problema da coluna `int` (palavra reservada no SQL) é o tipo de coisa que um banco diferente esconderia. O custo é exigir Docker e ser um pouco mais lento.
 
 **Como você garantiu que o upgrade não quebrou nada?**
 Antes de mexer nas versões, escrevi testes de caracterização das 5 rotas e dois testes extras: um com as 41 chaves do JSON que o Angular consome e outro com o esquema da tabela. Depois atualizei e só aceitei as etapas com `clean verify` verde. Os dois testes extras pegaram justamente as duas mudanças silenciosas mais perigosas.
@@ -231,10 +235,17 @@ Porque é o padrão (RFC 9457) e o Spring já o suporta: não preciso inventar u
 **Por que rejeitar campos desconhecidos no JSON?**
 Porque o Jackson 3 já me mostrou que um nome de campo pode mudar sem aviso, e um `"STR"` ignorado em silêncio vira dado perdido. Com o modo estrito o erro aparece na hora, com o nome da chave. O custo é que é uma configuração global; a exceção é o `id`, que aceito e ignoro porque o Angular o envia.
 
+**Por que trocar MySQL por PostgreSQL agora?**
+Porque o roteiro do portfólio já previa o PostgreSQL e esta é a hora mais barata: o projeto não tem usuários nem dados em produção, e a rede de testes com Testcontainers me diz na hora se algo quebrou. Fiz a troca junto com o Flyway, mas em um incremento só dele, sem mudar a API. Os 35 testes de API passaram sem mudar uma asserção; só o teste de esquema precisou dos tipos do PostgreSQL. O custo é que os dados do MySQL local não migram.
+
+**Por que Flyway com `ddl-auto=validate`?**
+Com `ddl-auto=update` o esquema depende de como o Hibernate decidir gerá-lo, não há histórico e uma mudança de versão pode alterar o banco sem aviso. Com Flyway cada mudança é um arquivo SQL versionado (`V1__...`), aplicado uma única vez e registrado em `flyway_schema_history`. O `validate` faz o Hibernate só conferir: se a entidade divergir da migração, a aplicação não sobe. O custo é escrever o SQL à mão e manter entidade e migração em sincronia.
+
 ## Próximos passos
 
 - **1.3** (concluído nesta branch): serviço, DTOs, validação, ProblemDetail e logs. Falta revisar e abrir o PR.
-- **1.4**: perícias em tabela própria, migrações Flyway e troca do MySQL por PostgreSQL.
+- **1.4a** (concluído nesta branch): migrações Flyway e troca do MySQL por PostgreSQL 17. Falta revisar e abrir o PR.
+- **1.4b**: perícias em tabela própria, com a migração V2.
 - **1.5**: teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável.
 - **1.6**: ajustes mínimos no front-end e README final.
 
