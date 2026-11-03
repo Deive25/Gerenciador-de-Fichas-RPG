@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -47,10 +48,22 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		Map<String, String> erros = new LinkedHashMap<>();
 		ex.getBindingResult().getFieldErrors()
 				.forEach(erro -> erros.putIfAbsent(erro.getField(), erro.getDefaultMessage()));
+		// Só os NOMES dos campos: o valor rejeitado pode ser dado pessoal e não vai para o log.
+		log.warn("Validação falhou nos campos {}", erros.keySet());
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
 				"Há campos inválidos na ficha. Veja a propriedade errors.");
 		problema.setTitle("Dados inválidos");
 		problema.setProperty("errors", erros);
+		return handleExceptionInternal(ex, problema, headers, status, request);
+	}
+
+	/** Parâmetro de rota com tipo errado (ex.: GET /sheetPlayer/abc): mensagem em português. */
+	@Override
+	protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
+			HttpStatusCode status, WebRequest request) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+				"O parâmetro '" + ex.getPropertyName() + "' deve ser um número inteiro.");
+		problema.setTitle("Parâmetro inválido");
 		return handleExceptionInternal(ex, problema, headers, status, request);
 	}
 
