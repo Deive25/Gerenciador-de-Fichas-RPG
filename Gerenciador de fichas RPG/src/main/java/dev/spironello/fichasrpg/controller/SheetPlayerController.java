@@ -1,4 +1,4 @@
-package Atos.SpringAPI.Controllers;
+package dev.spironello.fichasrpg.controller;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import Atos.SpringAPI.Models.SheetPlayer;
-import Atos.SpringAPI.Repositories.SheetPlayerRepository;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 @CrossOrigin(origins="http://localhost:4200")
-@Api(value="Swagger2RestController", description="REST API relacionada aos CRUD de Fichas!")
+@Tag(name = "Fichas", description = "CRUD de fichas de personagem")
 @RestController
 @RequestMapping("/sheetPlayer")
 public class SheetPlayerController {
@@ -29,14 +29,14 @@ public class SheetPlayerController {
 	@Autowired
 	private SheetPlayerRepository sheetPlayerRepository;
 
-	@ApiOperation(value="Retorna todas as Fichas cadastradas",response=Iterable.class, tags="getFichas")
+	@Operation(summary = "Lista todas as fichas cadastradas")
 	@GetMapping
 	public List<SheetPlayer> listar(){
 		
 		return sheetPlayerRepository.findAll();
 	}
 	
-	@ApiOperation(value="Retorna uma Ficha com o id recebido da URL(PathVariable)",response=Iterable.class, tags="getFichas")
+	@Operation(summary = "Busca uma ficha pelo id")
 	@GetMapping("/{id}")
 	public Optional<SheetPlayer> listarFicha(@PathVariable Long id){
 		try {
@@ -47,7 +47,7 @@ public class SheetPlayerController {
 		}
 	}
 	
-	@ApiOperation(value="Cadastra uma nova ficha na base de dados!", response=Iterable.class,tags="postFicha")
+	@Operation(summary = "Cadastra uma nova ficha")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public SheetPlayer cadastrar(@RequestBody SheetPlayer sheetPlayer) {
@@ -56,7 +56,7 @@ public class SheetPlayerController {
 		return sheetPlayerRepository.save(sheetPlayer);
 	}
 	
-	@ApiOperation(value="Altera uma Ficha, recebendo a outra ficha no RequestBody e o Id no PathVariable",response=Iterable.class,tags="putFicha")
+	@Operation(summary = "Substitui os dados de uma ficha existente")
 	@PutMapping("/{id}")
 	public ResponseEntity<SheetPlayer> updatePessoa(@RequestBody SheetPlayer sheetPlayer, @PathVariable Long id) {
 		return sheetPlayerRepository.findById(id)
@@ -114,7 +114,7 @@ public class SheetPlayerController {
 	}
 	
 	
-	@ApiOperation(value="Deleta uma ficha com o id informado",response=Iterable.class,tags="deleteFicha")
+	@Operation(summary = "Exclui a ficha com o id informado")
 	@DeleteMapping("/{id}")
 	public void deletarSheetPlayer(@PathVariable Long id) {
 		System.out.println(id);

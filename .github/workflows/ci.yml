@@ -1,8 +1,10 @@
 name: CI
 
-# Roda em todo push e em todo pull request.
+# Roda em push na main e em todo pull request. Push em outras branches so dispara o CI
+# quando houver PR aberto; assim um commit enviado para uma branch com PR nao roda duas vezes.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
