@@ -192,9 +192,14 @@ export class FichaFormulario {
     const id = this.id();
     const requisicao: Observable<Ficha> =
       id === undefined ? this.api.criar(entrada) : this.api.atualizar(Number(id), entrada);
-    requisicao.pipe(finalize(() => this.salvando.set(false))).subscribe({
+    // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
+    // permitiria um segundo envio (ficha duplicada) enquanto a navegação termina.
+    requisicao.subscribe({
       next: (ficha) => void this.router.navigate(['/fichas', ficha.id]),
-      error: (erro: ApiError) => this.mostrarErro(erro),
+      error: (erro: ApiError) => {
+        this.salvando.set(false);
+        this.mostrarErro(erro);
+      },
     });
   }
 

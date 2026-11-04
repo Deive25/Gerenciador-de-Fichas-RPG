@@ -104,6 +104,59 @@ describe('FichaDetalhe', () => {
     expect(navegar).toHaveBeenCalledWith(['/fichas']);
   });
 
+  it('tentar de novo limpa o erro anterior quando a ficha carrega', () => {
+    const indisponivel: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
+    const buscar = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => indisponivel))
+      .mockReturnValueOnce(of(FICHA));
+    const { fixture, el } = montar({ buscar });
+    expect(el.textContent).toContain('Servidor indisponível');
+
+    botao(el, 'Tentar de novo').click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Detetive Lia');
+    expect(el.textContent).not.toContain('Servidor indisponível');
+  });
+
+  it('rolagem bem-sucedida limpa o erro da rolagem anterior', () => {
+    const indisponivel: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
+    const testarPericia = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => indisponivel))
+      .mockReturnValueOnce(of(RESULTADO));
+    const { fixture, el } = montar({ buscar: vi.fn(() => of(FICHA)), testarPericia });
+    const rolar = () => {
+      (el.querySelector('button[aria-label="Rolar Investigação"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+
+    rolar();
+    expect(el.textContent).toContain('Servidor indisponível');
+    rolar();
+
+    expect(el.textContent).toContain('Investigação: 23 → Sucesso');
+    expect(el.textContent).not.toContain('Servidor indisponível');
+  });
+
+  it('sim excluir continua bloqueado ate a navegacao terminar', () => {
+    const excluir = vi.fn(() => of(undefined));
+    const { fixture, el, navegar } = montar({ buscar: vi.fn(() => of(FICHA)), excluir });
+    navegar.mockReturnValue(new Promise<boolean>(() => undefined));
+
+    botao(el, 'Excluir ficha').click();
+    fixture.detectChanges();
+    const confirmar = botao(el, 'Sim, excluir');
+    confirmar.click();
+    fixture.detectChanges();
+    confirmar.click();
+    fixture.detectChanges();
+
+    expect(excluir).toHaveBeenCalledTimes(1);
+    expect(confirmar.disabled).toBe(true);
+  });
+
   it('ficha inexistente', () => {
     const erro: ApiError = { status: 404, titulo: 'Ficha não encontrada', detalhe: 'Não existe ficha com o id 7.', campos: {} };
     const { el } = montar({ buscar: vi.fn(() => throwError(() => erro)) });
