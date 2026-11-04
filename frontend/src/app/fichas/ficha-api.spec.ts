@@ -86,6 +86,24 @@ describe('FichaApi', () => {
     req.flush({ pericia: 'CURA', nome: 'Cura', valor: 0, rolagem: 50, resultado: 'FALHA' });
   });
 
+  it('avisa que as fichas mudaram so depois de criar, atualizar ou excluir com sucesso', () => {
+    expect(api.versaoFichas()).toBe(0);
+
+    api.criar(ENTRADA).subscribe();
+    http.expectOne(`${API}/fichas`).flush({ id: 1, ...ENTRADA });
+    api.atualizar(1, ENTRADA).subscribe();
+    http.expectOne(`${API}/fichas/1`).flush({ id: 1, ...ENTRADA });
+    api.excluir(1).subscribe();
+    http.expectOne(`${API}/fichas/1`).flush(null, { status: 204, statusText: 'No Content' });
+    expect(api.versaoFichas()).toBe(3);
+
+    api.criar(ENTRADA).subscribe({ error: () => undefined });
+    http.expectOne(`${API}/fichas`).flush({ title: 'Dados inválidos' }, { status: 400, statusText: 'Bad Request' });
+    api.listar().subscribe();
+    http.expectOne(`${API}/fichas`).flush([]);
+    expect(api.versaoFichas()).toBe(3);
+  });
+
   it('erros chegam como ApiError', () => {
     let recebido: ApiError | undefined;
     api.buscar(9).subscribe({ error: (e: ApiError) => (recebido = e) });
