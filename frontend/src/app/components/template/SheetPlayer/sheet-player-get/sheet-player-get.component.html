@@ -6,12 +6,12 @@
                 <div class="row">
                     <div class="col mx-3" id="info">
                         <h3 class="Ip"><strong>INFORMAÇÕES PESSOAIS</strong></h3>
-                        <input type="text" name="nameJ" formControlName="nameJ" placeholder="Nome do jogador(a)" size="60">
+                        <input type="text" name="jogador" formControlName="jogador" placeholder="Nome do jogador(a)" size="60">
                         <br><br>
-                        <input type="text" name="nameC" formControlName="nameC" placeholder="Nome do Personagem" size="60">
+                        <input type="text" name="personagem" formControlName="personagem" placeholder="Nome do Personagem" size="60">
                         <br><br>
-                        <input type="number" name="age" formControlName="age" placeholder="Idade">
-                        <input type="text" name="gender" formControlName="gender" placeholder="Genero">
+                        <input type="number" name="idade" formControlName="idade" placeholder="Idade">
+                        <input type="text" name="genero" formControlName="genero" placeholder="Genero">
                         <br><br>
                     </div>
                     <div class="col mx-3 " id="Info2">
@@ -19,12 +19,12 @@
 
 
                         <div class="my-3">
-                            <p class="atriInfo">Vida: <input type="number" name="life" max="999" placeholder="0" id="lifeA" formControlName="lifeA">/<input type="number" name="life" max="999" placeholder="0" id="lifeM" formControlName="lifeM"></p>
+                            <p class="atriInfo">Vida: <input type="number" name="life" max="999" placeholder="0" id="lifeA" formControlName="vidaAtual">/<input type="number" name="life" max="999" placeholder="0" id="lifeM" formControlName="vidaMaxima"></p>
 
                             <div id="vidaM"></div>
                             <div class="position-absolute" id="vida"></div>
 
-                            <p class="atriInfo">Sanidade: <input type="number" name="san" max="999" placeholder="0" id="sanA" formControlName="sanA">/<input type="number" name="san" max="999" placeholder="0" id="sanM" formControlName="sanM"></p>
+                            <p class="atriInfo">Sanidade: <input type="number" name="san" max="999" placeholder="0" id="sanA" formControlName="sanidadeAtual">/<input type="number" name="san" max="999" placeholder="0" id="sanM" formControlName="sanidadeMaxima"></p>
 
                             <div id="sanidadeM"></div>
                             <div class="position-absolute" id="sanidade"></div>
@@ -41,35 +41,35 @@
                         <h3 class="Ip"><strong>ATRIBUTOS</strong></h3>
                         <div class="card-group">
                             <div class="card">
-                                <p class="atr"> Força <input type="number" name="STR" formControlName="str" max="100" placeholder="0"></p>
+                                <p class="atr"> Força <input type="number" name="STR" formControlName="forca" max="100" placeholder="0"></p>
                             </div>
                             <div class="card">
-                                <p class="atr">Destreza <input type="number" name="DEX" formControlName="dex" max="100" placeholder="0"></p>
+                                <p class="atr">Destreza <input type="number" name="DEX" formControlName="destreza" max="100" placeholder="0"></p>
                             </div>
                             <div class="card">
-                                <p class="atr">Inteligencia <input type="number" name="INT" formControlName="int" max="100" placeholder="0"></p>
-                            </div>
-                        </div>
-                        <div class="card-group">
-                            <div class="card">
-                                <p class="atr">Constituição <input type="number" name="CONS" formControlName="cons" max="100" placeholder="0"></p>
-                            </div>
-                            <div class="card">
-                                <p class="atr">Carisma <input type="number" name="CAR" formControlName="car" max="100" placeholder="0"></p>
-                            </div>
-                            <div class="card">
-                                <p class="atr">Sabedoria <input type="number" name="SAB" formControlName="sab" max="100" placeholder="0"></p>
+                                <p class="atr">Inteligencia <input type="number" name="INT" formControlName="inteligencia" max="100" placeholder="0"></p>
                             </div>
                         </div>
                         <div class="card-group">
                             <div class="card">
-                                <p class="atr">Tamanho <input type="number" name="TAM" formControlName="tam" max="100" placeholder="0"></p>
+                                <p class="atr">Constituição <input type="number" name="CONS" formControlName="constituicao" max="100" placeholder="0"></p>
                             </div>
                             <div class="card">
-                                <p class="atr">Sorte <input type="number" name="SOR" formControlName="sor" max="100" placeholder="0"></p>
+                                <p class="atr">Carisma <input type="number" name="CAR" formControlName="carisma" max="100" placeholder="0"></p>
                             </div>
                             <div class="card">
-                                <p class="atr">Poder <input type="number" name="POD" formControlName="pod" max="100" placeholder="0"></p>
+                                <p class="atr">Sabedoria <input type="number" name="SAB" formControlName="sabedoria" max="100" placeholder="0"></p>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <p class="atr">Tamanho <input type="number" name="TAM" formControlName="tamanho" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Sorte <input type="number" name="SOR" formControlName="sorte" max="100" placeholder="0"></p>
+                            </div>
+                            <div class="card">
+                                <p class="atr">Poder <input type="number" name="POD" formControlName="poder" max="100" placeholder="0"></p>
                             </div>
                         </div>
                     </div>
@@ -77,22 +77,22 @@
             </div>
             <div class="container">
                 <div class="row">
-                    <div id="proficiency" class="m-3 mt-5">
+                    <div id="proficiency" class="m-3 mt-5" formGroupName="pericias">
                         <h3 class="Ip"><strong>PERICIAS</strong></h3>
                         <div class="card-group">
                             <div class="card">
                                 <div class="col">
-                                    <a>Acrobacia<input type="number" name="Atribute1" formControlName="atribute1" placeholder="0"></a>
+                                    <a>Acrobacia<input type="number" name="ACROBACIA" formControlName="ACROBACIA" placeholder="0"></a>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Atletismo <input type="number" name="Atribute2" formControlName="atribute2" placeholder="0"></p>
+                                    <p>Atletismo <input type="number" name="ATLETISMO" formControlName="ATLETISMO" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Adestrar animais <input type="number" name="Atribute3" formControlName="atribute3" placeholder="0"></p>
+                                    <p>Adestrar animais <input type="number" name="ADESTRAR_ANIMAIS" formControlName="ADESTRAR_ANIMAIS" placeholder="0"></p>
                                 </div>
                             </div>
 
@@ -100,18 +100,18 @@
                         <div class="card-group">
                             <div class="card">
                                 <div class="col">
-                                    <p>Atuação/Labia <input type="number" name="Atribute4" formControlName="atribute4" placeholder="0"></p>
+                                    <p>Atuação/Labia <input type="number" name="ATUACAO_LABIA" formControlName="ATUACAO_LABIA" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Charme <input type="number" name="Atribute5" formControlName="atribute5" placeholder="0"></p>
+                                    <p>Charme <input type="number" name="CHARME" formControlName="CHARME" placeholder="0"></p>
                                 </div>
                             </div>
 
                             <div class="card">
                                 <div class="col">
-                                    <p>Esquiva <input type="number" name="Atribute6" formControlName="atribute6" placeholder="0"></p>
+                                    <p>Esquiva <input type="number" name="ESQUIVA" formControlName="ESQUIVA" placeholder="0"></p>
                                 </div>
                             </div>
                         </div>
@@ -119,52 +119,52 @@
 
                             <div class="card">
                                 <div class="col">
-                                    <p>Furtividade <input type="number" name="Atribute7" formControlName="atribute7" placeholder="0"></p>
+                                    <p>Furtividade <input type="number" name="FURTIVIDADE" formControlName="FURTIVIDADE" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Luta corpo a corpo <input type="number" name="Atribute8" formControlName="atribute8" placeholder="0"></p>
+                                    <p>Luta corpo a corpo <input type="number" name="LUTA_CORPO_A_CORPO" formControlName="LUTA_CORPO_A_CORPO" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Luta arma branca <input type="number" name="Atribute9" formControlName="atribute9" placeholder="0"></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-group">
-                            <div class="card">
-                                <div class="col">
-                                    <p>Intimidação <input type="number" name="Atribute10" formControlName="atribute10" placeholder="0"></p>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="col">
-                                    <p>Intuição <input type="number" name="Atribute11" formControlName="atribute11" placeholder="0"></p>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="col">
-                                    <p>Investigação <input type="number" name="Atribute12" formControlName="atribute12" placeholder="0"></p>
+                                    <p>Luta arma branca <input type="number" name="LUTA_ARMA_BRANCA" formControlName="LUTA_ARMA_BRANCA" placeholder="0"></p>
                                 </div>
                             </div>
                         </div>
                         <div class="card-group">
                             <div class="card">
                                 <div class="col">
-                                    <p>Armas de fogo - leves <input type="number" name="Atribute13" formControlName="atribute13" placeholder="0"></p>
+                                    <p>Intimidação <input type="number" name="INTIMIDACAO" formControlName="INTIMIDACAO" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Armas de fogo - medias <input type="number" name="Atribute14" formControlName="atribute14" placeholder="0"></p>
+                                    <p>Intuição <input type="number" name="INTUICAO" formControlName="INTUICAO" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Investigação <input type="number" name="INVESTIGACAO" formControlName="INVESTIGACAO" placeholder="0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-group">
+                            <div class="card">
+                                <div class="col">
+                                    <p>Armas de fogo - leves <input type="number" name="ARMAS_DE_FOGO_LEVES" formControlName="ARMAS_DE_FOGO_LEVES" placeholder="0"></p>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="col">
+                                    <p>Armas de fogo - medias <input type="number" name="ARMAS_DE_FOGO_MEDIAS" formControlName="ARMAS_DE_FOGO_MEDIAS" placeholder="0"></p>
                                 </div>
                             </div>
 
                             <div class="card">
                                 <div class="col">
-                                    <p>Armas de fogo - pesadas <input type="number" name="Atribute15" formControlName="atribute15" placeholder="0"></p>
+                                    <p>Armas de fogo - pesadas <input type="number" name="ARMAS_DE_FOGO_PESADAS" formControlName="ARMAS_DE_FOGO_PESADAS" placeholder="0"></p>
                                 </div>
                             </div>
 
@@ -174,34 +174,34 @@
 
                             <div class="card">
                                 <div class="col">
-                                    <p>Percepcao <input type="number" name="Atribute16" formControlName="atribute16" placeholder="0"></p>
+                                    <p>Percepcao <input type="number" name="PERCEPCAO" formControlName="PERCEPCAO" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Usar Bibliotecas <input type="number" name="Atribute17" formControlName="atribute17" placeholder="0"></p>
+                                    <p>Usar Bibliotecas <input type="number" name="USAR_BIBLIOTECAS" formControlName="USAR_BIBLIOTECAS" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Arremessar <input type="number" name="Atribute23" formControlName="atribute23" placeholder="0"></p>
+                                    <p>Arremessar <input type="number" name="ARREMESSAR" formControlName="ARREMESSAR" placeholder="0"></p>
                                 </div>
                             </div>
                         </div>
                         <div class="card-group">
                             <div class="card">
                                 <div class="col">
-                                    <p>Historia <input type="number" name="Atribute18" formControlName="atribute18" placeholder="0"></p>
+                                    <p>Historia <input type="number" name="HISTORIA" formControlName="HISTORIA" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Cura <input type="number" name="Atribute19" formControlName="atribute19" placeholder="0"></p>
+                                    <p>Cura <input type="number" name="CURA" formControlName="CURA" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Malandragem <input type="number" name="Atribute20" formControlName="atribute20" placeholder="0"></p>
+                                    <p>Malandragem <input type="number" name="MALANDRAGEM" formControlName="MALANDRAGEM" placeholder="0"></p>
                                 </div>
                             </div>
                         </div>
@@ -209,12 +209,12 @@
 
                             <div class="card">
                                 <div class="col">
-                                    <p>Ocultismo <input type="number" name="Atribute21" formControlName="atribute21" placeholder="0"></p>
+                                    <p>Ocultismo <input type="number" name="OCULTISMO" formControlName="OCULTISMO" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card">
                                 <div class="col">
-                                    <p>Psicologia <input type="number" name="Atribute22" formControlName="atribute22" placeholder="0"></p>
+                                    <p>Psicologia <input type="number" name="PSICOLOGIA" formControlName="PSICOLOGIA" placeholder="0"></p>
                                 </div>
                             </div>
                             <div class="card-group">

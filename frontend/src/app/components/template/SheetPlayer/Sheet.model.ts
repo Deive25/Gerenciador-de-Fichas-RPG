@@ -1,46 +1,31 @@
+// Contrato da API /fichas (ADR 0012). Os codigos sao os do enum Pericia do backend.
+export type CodigoPericia =
+	'ACROBACIA' | 'ATLETISMO' | 'ADESTRAR_ANIMAIS' | 'ATUACAO_LABIA' | 'CHARME' | 'ESQUIVA' |
+	'FURTIVIDADE' | 'LUTA_CORPO_A_CORPO' | 'LUTA_ARMA_BRANCA' | 'INTIMIDACAO' | 'INTUICAO' |
+	'INVESTIGACAO' | 'ARMAS_DE_FOGO_LEVES' | 'ARMAS_DE_FOGO_MEDIAS' | 'ARMAS_DE_FOGO_PESADAS' |
+	'PERCEPCAO' | 'USAR_BIBLIOTECAS' | 'HISTORIA' | 'CURA' | 'MALANDRAGEM' | 'OCULTISMO' |
+	'PSICOLOGIA' | 'ARREMESSAR'
 
 export interface Sheet{
     id:number;
-    nameJ:String
-    nameC:String
-	gender:String
-	age: number
-	lifeA:number
-    lifeM:number
-	sanA:number
-    sanM:number
+    jogador:String
+    personagem:String
+	genero:String
+	idade: number
+	vidaAtual:number
+    vidaMaxima:number
+	sanidadeAtual:number
+    sanidadeMaxima:number
 	/*ATRIBUTOS*/
-	str:number
-    dex:number
-    cons:number
-    int:number
-    car:number
-    sab:number
-    tam:number
-    sor:number
-    pod:number
-	/*PERICIAS*/
-	atribute1:number
-    atribute2:number
-    atribute3:number
-    atribute4:number
-    atribute5:number
-    atribute6:number
-    atribute7:number
-    atribute8:number
-    atribute9:number
-    atribute10:number
-    atribute11:number
-    atribute12:number
-    atribute13:number
-    atribute14:number
-    atribute15:number
-    atribute16:number
-    atribute17:number
-    atribute18:number
-    atribute19:number
-    atribute20:number
-    atribute21:number
-    atribute22:number
-    atribute23:number
+	forca:number
+    destreza:number
+    constituicao:number
+    inteligencia:number
+    carisma:number
+    sabedoria:number
+    tamanho:number
+    sorte:number
+    poder:number
+	/*PERICIAS: a API devolve so as preenchidas; o formulario envia as 23 (null nas vazias)*/
+	pericias: { [codigo in CodigoPericia]?: number | null }
 }
