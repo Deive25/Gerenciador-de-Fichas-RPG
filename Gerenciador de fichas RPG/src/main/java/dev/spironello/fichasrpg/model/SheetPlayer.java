@@ -35,7 +35,7 @@ public class SheetPlayer {
 	private Integer DEX;
 	@Column(nullable=true)
 	private Integer CONS;
-	// "int" e palavra reservada do MySQL: precisa de aspas (e so esta coluna precisa).
+	// "int" e palavra reservada do SQL: precisa de aspas (e so esta coluna precisa).
 	@Column(name = "\"int\"", nullable=true)
 	private Integer INT;
 	@Column(nullable=true)
