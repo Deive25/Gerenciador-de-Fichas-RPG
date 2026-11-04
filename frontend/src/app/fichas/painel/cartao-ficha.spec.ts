@@ -7,7 +7,7 @@ const BASE: Ficha = {
   id: 7, jogador: 'Arthur', personagem: 'Jack Moreau', genero: 'M', idade: 34,
   vidaAtual: 9, vidaMaxima: 12, sanidadeAtual: 48, sanidadeMaxima: 60,
   forca: null, destreza: null, constituicao: null, inteligencia: null, carisma: null,
-  sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {},
+  sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {}, retratoVersao: null,
 };
 
 beforeEach(() => {
