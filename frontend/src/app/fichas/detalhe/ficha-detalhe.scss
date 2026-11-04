@@ -35,6 +35,16 @@
   gap: 0.5rem;
 }
 
+// O resultado fica preso logo abaixo da barra do topo: no celular, quem rola uma perícia
+// do fim da lista continua vendo o resultado sem precisar subir a tela.
+.resultado {
+  position: sticky;
+  top: 3.6rem;
+  z-index: 5;
+  background: var(--cor-fundo);
+  border-radius: 10px;
+}
+
 .itens {
   list-style: none;
   margin: 0;
