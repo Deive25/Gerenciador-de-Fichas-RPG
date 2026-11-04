@@ -55,7 +55,7 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
 | `/fichas/:id` | Ficha |
 | `/fichas/:id/editar` | Formulário (editar) |
 
-- **Topo fixo** em todas as telas: marca "✦ Grimório" (leva ao painel) e "+ Nova ficha". No painel, a busca fica no topo no computador e logo abaixo dele no celular.
+- **Topo fixo** em todas as telas: marca "✦ Grimório" (leva ao painel) e "+ Nova ficha". A busca fica no próprio painel, na linha dos filtros, logo abaixo dos contadores.
 - **Saem:** a coluna lateral com a lista (computador) e a navegação de baixo (celular), incluindo as abas "Mesa · Minha ficha · Rolagens" previstas na spec da fase 2. O serviço `Layout` sai se nada mais o usar.
 - **Rolagens ao vivo (2.4):** não voltam a ser uma coluna fixa. A preferência é um painel lateral que abre por um botão, decidido no 2.4.
 - **Campanhas (2.3):** a tela da campanha reaproveita o painel, filtrado pela campanha.
@@ -69,7 +69,7 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
   - **sanidade baixa** = sanidade atual ≤ metade da sanidade máxima;
   - uma ficha sem o valor atual ou sem o máximo (ou com máximo 0) não entra nesses filtros, e a barra dela mostra "—".
 - **Busca:** por personagem ou jogador, sem diferenciar maiúsculas e acentos.
-- **Cartão:** medalhão (retrato ou iniciais), nome em versalete, ocupação e jogador, barras de PV e SAN com os números, e uma etiqueta "Ferido" ou "Sanidade baixa" quando for o caso. O cartão inteiro é um link para a ficha.
+- **Cartão:** medalhão (retrato ou iniciais), nome em versalete, jogador e idade, barras de PV e SAN com os números, e uma etiqueta "Ferido" ou "Sanidade baixa" quando for o caso. O cartão inteiro é um link para a ficha. A ficha não tem campo de ocupação (os mockups usavam "Detetive" só como ilustração); acrescentá-lo mudaria o contrato e fica fora deste redesign.
 - **Fonte dos dados:** tudo acontece no navegador, sobre a lista que `GET /fichas` já devolve, sem rota nova. É simples e basta enquanto a lista é pequena; a paginação no servidor fica para quando houver muitas fichas por campanha.
 - **Estados:** carregando (cartões esqueleto), vazio ("Nenhuma ficha ainda" + criar), erro com "Tentar de novo" e "Servidor indisponível" quando o status é 0, como já existe hoje.
 - **Grade:** 1 coluna no celular, 2 a partir de 600 px e 3 a partir de 900 px.
@@ -77,7 +77,7 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
 ### 3.3 Ficha
 
 **Blocos:**
-1. Retrato + nome + ocupação/idade + "Trocar imagem" (o botão só entra no 2.1c).
+1. Retrato + nome + jogador · idade · gênero + "Trocar imagem" (o botão só entra no 2.1c).
 2. Anéis de vida e de sanidade, com os números escritos ao lado (o anel não é a única forma de ler o valor).
 3. Atributos em grade 3×3.
 4. Perícias: as 23 do catálogo, na ordem do catálogo. Cada uma mostra uma barra até o valor, a marca do sucesso extremo em ⌊valor/5⌋, o valor e o botão "Rolar". As perícias com valor 0 ficam esmaecidas, mas podem ser roladas (a regra conta 0).
