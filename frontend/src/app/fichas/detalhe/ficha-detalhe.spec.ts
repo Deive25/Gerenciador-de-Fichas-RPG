@@ -1,5 +1,7 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { signal } from '@angular/core';
+import { Provider, signal } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { RetratoCache } from '../retrato-cache';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
@@ -14,16 +16,17 @@ const FICHA: Ficha = {
   forca: 45, destreza: 60, constituicao: null, inteligencia: 75, carisma: null,
   sabedoria: null, tamanho: null, sorte: null, poder: null,
   pericias: { INVESTIGACAO: 70 },
+  retratoVersao: null,
 };
 
 const RESULTADO: TestePericiaResultado = {
   pericia: 'INVESTIGACAO', nome: 'Investigação', valor: 70, rolagem: 23, resultado: 'SUCESSO',
 };
 
-function montar(api: Partial<Record<keyof FichaApi, unknown>>) {
+function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[] = []) {
   TestBed.configureTestingModule({
     imports: [FichaDetalhe],
-    providers: [provideRouter([]), { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } }],
+    providers: [provideRouter([]), { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } }, ...extras],
   });
   const router = TestBed.inject(Router);
   const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -66,6 +69,81 @@ describe('marcaExtremo e larguraBarra', () => {
     expect(larguraBarra(70)).toBe(70);
     expect(larguraBarra(130)).toBe(100);
     expect(larguraBarra(-5)).toBe(0);
+  });
+});
+
+describe('FichaDetalhe · retrato', () => {
+  const JPEG = new Blob(['jpeg'], { type: 'image/jpeg' });
+
+  function escolherArquivo(fixture: ComponentFixture<FichaDetalhe>): void {
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [new File(['x'], 'foto.jpg', { type: 'image/jpeg' })] });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  it('escolher uma foto abre o recorte, envia o JPEG e recarrega a ficha', () => {
+    const buscar = vi.fn(() => of(FICHA));
+    const enviarRetrato = vi.fn(() => of(undefined));
+    const abrir = vi.fn(() => ({ afterClosed: () => of(JPEG) }));
+    const { fixture } = montar({ buscar, enviarRetrato }, [{ provide: MatDialog, useValue: { open: abrir } }]);
+
+    escolherArquivo(fixture);
+
+    expect(abrir).toHaveBeenCalledTimes(1);
+    expect(enviarRetrato).toHaveBeenCalledWith(7, JPEG);
+    expect(buscar).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancelar o recorte nao envia nada', () => {
+    const enviarRetrato = vi.fn(() => of(undefined));
+    const abrir = vi.fn(() => ({ afterClosed: () => of(undefined) }));
+    const { fixture } = montar({ buscar: vi.fn(() => of(FICHA)), enviarRetrato }, [
+      { provide: MatDialog, useValue: { open: abrir } },
+    ]);
+
+    escolherArquivo(fixture);
+
+    expect(enviarRetrato).not.toHaveBeenCalled();
+  });
+
+  it('Remover imagem so aparece com retrato e pede confirmacao', () => {
+    const removerRetrato = vi.fn(() => of(undefined));
+    const esquecer = vi.fn();
+    const comRetrato = { ...FICHA, retratoVersao: 100 };
+    const buscar = vi.fn(() => of(comRetrato));
+    const { fixture, el } = montar({ buscar, removerRetrato }, [
+      { provide: RetratoCache, useValue: { url: () => of('blob:x'), esquecer } },
+    ]);
+
+    botao(el, 'Remover imagem').click();
+    fixture.detectChanges();
+    expect(removerRetrato).not.toHaveBeenCalled();
+    botao(el, 'Sim, remover').click();
+    fixture.detectChanges();
+
+    expect(removerRetrato).toHaveBeenCalledWith(7);
+    expect(esquecer).toHaveBeenCalledWith(7);
+    expect(buscar).toHaveBeenCalledTimes(2);
+  });
+
+  it('sem retrato nao mostra Remover imagem', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    expect(botao(el, 'Remover imagem')).toBeUndefined();
+    expect(botao(el, 'Trocar imagem')).toBeDefined();
+  });
+
+  it('erro ao enviar a foto aparece na tela', () => {
+    const erro: ApiError = { status: 413, titulo: 'Imagem grande demais', detalhe: 'A imagem pode ter no máximo 200 KB.', campos: {} };
+    const abrir = vi.fn(() => ({ afterClosed: () => of(JPEG) }));
+    const { fixture, el } = montar(
+      { buscar: vi.fn(() => of(FICHA)), enviarRetrato: vi.fn(() => throwError(() => erro)) },
+      [{ provide: MatDialog, useValue: { open: abrir } }],
+    );
+
+    escolherArquivo(fixture);
+
+    expect(el.textContent).toContain('Imagem grande demais: A imagem pode ter no máximo 200 KB.');
   });
 });
 

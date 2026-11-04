@@ -1,3 +1,14 @@
+@if (editavel()) {
+  <button
+    type="button"
+    class="ajuste"
+    [attr.aria-label]="'Diminuir ' + nomeMinusculo()"
+    [disabled]="!podeDiminuir()"
+    (click)="ajustar.emit(-1)"
+  >
+    −
+  </button>
+}
 <svg viewBox="0 0 42 42" aria-hidden="true">
   <circle class="trilho" cx="21" cy="21" r="16" />
   @if (percentual() !== null) {
@@ -16,5 +27,39 @@
 </svg>
 <span class="legenda">
   <span class="rotulo">{{ rotulo() }}</span>
-  <span class="valor">{{ texto() }}</span>
+  @if (editando()) {
+    <input
+      #campo
+      type="number"
+      inputmode="numeric"
+      class="campo"
+      [attr.aria-label]="rotulo() + ' atual'"
+      [value]="atual() ?? 0"
+      (keydown.enter)="confirmar(campo)"
+      (keydown.escape)="cancelar()"
+      (blur)="confirmar(campo)"
+    />
+  } @else if (editavel()) {
+    <button
+      type="button"
+      class="valor editar"
+      [attr.aria-label]="'Editar ' + nomeMinusculo() + ', ' + texto()"
+      (click)="editando.set(true)"
+    >
+      {{ texto() }}
+    </button>
+  } @else {
+    <span class="valor">{{ texto() }}</span>
+  }
 </span>
+@if (editavel()) {
+  <button
+    type="button"
+    class="ajuste"
+    [attr.aria-label]="'Aumentar ' + nomeMinusculo()"
+    [disabled]="!podeAumentar()"
+    (click)="ajustar.emit(1)"
+  >
+    +
+  </button>
+}

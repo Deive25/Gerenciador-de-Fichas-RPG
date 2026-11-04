@@ -37,8 +37,10 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
 | Inc. | Entrega | Pronto quando |
 |---|---|---|
 | **2.1b** | Novo visual (§3): tema, topo novo, painel e ficha em blocos, formulário com o tema novo. Só frontend; API sem mudança. | O fluxo completo (painel → ficha → rolar → editar → excluir → criar) funciona a 375 px e a 1280 px. Os testes unitários ficam verdes, `ng build` passa no CI dentro do orçamento e as cores de texto passam no contraste AA. |
-| **2.1c** | Retrato (§4): migração V3, rotas do retrato, `retratoVersao` no JSON, recorte no navegador e medalhão com retrato ou iniciais. | Os testes de integração da §4.5 ficam verdes, o recorte tem testes unitários, e trocar e remover o retrato funcionam no navegador. |
+| **2.1c** | Retrato (§4): migração V3, rotas do retrato, `retratoVersao` no JSON, recorte no navegador e medalhão com retrato ou iniciais. Mais a **edição rápida de vida e sanidade** na ficha (§4.6), pedida pelo Arthur depois de ver o 2.1b. | Os testes de integração da §4.5 ficam verdes, o recorte e a edição rápida têm testes unitários, e trocar e remover o retrato e ajustar vida e sanidade funcionam no navegador a 375 px e a 1280 px. |
 | **2.1d** | Dado 3D (§5): spike, sobreposição com dois d10 forçados, plano B automático e toque para pular. | A conversão e a escolha entre 3D e plano B têm testes. A rolagem é conferida a 375 px e a 1280 px com captura de tela, e o build mostra a biblioteca 3D num pedaço separado do pacote inicial. |
+
+**Ordem revista pelo Arthur em 2026-11-04**, depois de ver o 2.1b: 2.1c → **suporte a vários sistemas** (Ordem Paranormal, D&D 5e e D&D 2024; spec própria, a escrever) → 2.1d. O dado animado vem depois dos sistemas porque precisa do d20 (D&D), de vários d20 (Ordem Paranormal) e do d100 (sistema atual). A §5 será revista na spec dos sistemas.
 
 **Novos ADRs** (próximos números livres a partir de 0014):
 - retrato no PostgreSQL, numa tabela separada (alternativa: armazenamento de objetos, reavaliado no 2.6);
@@ -158,7 +160,8 @@ Tudo em ProblemDetail, como hoje.
 **JSON da ficha:**
 - ganha `retratoVersao` (número, ou `null` sem retrato), que é o instante do último envio em milissegundos (`atualizado_em`). Ele muda a cada `PUT` e volta a `null` no `DELETE`;
 - não pode ser um contador: remover e enviar de novo recomeçaria em 1, e o navegador mostraria a imagem antiga guardada em cache;
-- só aparece na **resposta**: o front nunca o envia, e o JSON estrito continua recusando chaves desconhecidas na entrada.
+- só aparece na **resposta**: o front nunca o envia, e o JSON estrito continua recusando chaves desconhecidas na entrada;
+- o instante vem de um `Clock` injetável (como o `Dado` do ADR 0011) e é truncado em milissegundos. Se o novo envio cair no mesmo milissegundo (ou antes) do retrato atual, a versão nova é a anterior + 1 ms, para nunca se repetir. Nos testes, o relógio é controlado.
 
 ### 4.3 Validação no servidor
 
@@ -208,7 +211,23 @@ create table retrato_ficha (
 - a conta do recorte em vários tamanhos e proporções de imagem e com zoom no limite;
 - o serviço de retrato (cria e revoga as URLs);
 - o diálogo (salvar envia JPEG, cancelar não envia);
-- o medalhão (retrato, ou iniciais quando não há).
+- o medalhão (retrato, ou iniciais quando não há);
+- a edição rápida (§4.6).
+
+### 4.6 Edição rápida de vida e sanidade
+
+Pedido do Arthur ao ver o 2.1b: mudar a vida e a sanidade **atuais** sem abrir o formulário.
+
+- **Onde:** no bloco de vida e sanidade da ficha. Cada anel ganha um botão **−** e um **+** (44 px, 1 ponto por toque), com os nomes acessíveis "Diminuir vida", "Aumentar vida", "Diminuir sanidade" e "Aumentar sanidade". Tocar no número abre um campo para **digitar o valor** (Enter confirma, Esc cancela). Os máximos continuam só no formulário.
+- **Limites:** o valor atual fica entre 0 e o máximo. Sem máximo, o único limite é "no mínimo 0".
+- **Salvamento:**
+  - a tela muda na hora e salva sozinha **0,8 s depois do último toque**, então vários toques seguidos viram um salvamento só;
+  - usa a rota que já existe (`PUT /fichas/{id}` com a ficha inteira), **sem mudar a API**. Com os vários sistemas, cada um terá recursos próprios (PV, SAN, PE, pontos de vida…), e uma rota dedicada nasce lá;
+  - o corpo do `PUT` sai da ficha carregada, sem `id` e sem `retratoVersao` (o JSON estrito recusaria);
+  - durante o salvamento aparece um "salvando…" discreto. Se falhar, o valor volta ao último salvo e o erro aparece;
+  - um toque durante um salvamento agenda outro salvamento depois dele, e a resposta do primeiro não apaga o toque novo.
+- **Painel:** o `versaoFichas` muda depois do `PUT`, então o painel já mostra o valor novo ao voltar.
+- **Testes:** limites de 0 ao máximo; vários toques viram um `PUT` (com relógio simulado); erro volta o valor; toque durante o salvamento; digitar o valor; nomes acessíveis.
 
 ## 5. Dado 3D (2.1d)
 

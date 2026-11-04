@@ -13,6 +13,7 @@ const FICHA: Ficha = {
   forca: 45, destreza: null, constituicao: null, inteligencia: null, carisma: null,
   sabedoria: null, tamanho: null, sorte: null, poder: null,
   pericias: { INVESTIGACAO: 70, PERCEPCAO: 60 },
+  retratoVersao: null,
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, id?: string) {

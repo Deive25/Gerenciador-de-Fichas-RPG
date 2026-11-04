@@ -59,10 +59,21 @@ export interface Ficha {
   poder: number | null;
   /** Só as perícias preenchidas. */
   pericias: Partial<Record<CodigoPericia, number>>;
+  /** Versão do retrato (ms) para o cache do navegador, ou null sem retrato. Só vem na resposta (2.1c). */
+  retratoVersao: number | null;
 }
 
-/** Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale). */
-export type FichaEntrada = Omit<Ficha, 'id'>;
+/**
+ * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
+ * `retratoVersao` (o retrato tem rota própria). O JSON estrito da API recusa chaves a mais.
+ */
+export type FichaEntrada = Omit<Ficha, 'id' | 'retratoVersao'>;
+
+/** Corpo do PUT a partir de uma ficha carregada (ex.: edição rápida de vida e sanidade). */
+export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
+  const { id: _id, retratoVersao: _retratoVersao, pericias, ...resto } = ficha;
+  return { ...resto, pericias: { ...pericias } };
+}
 
 export interface TestePericiaResultado {
   pericia: CodigoPericia;

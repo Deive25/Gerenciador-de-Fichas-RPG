@@ -1,4 +1,5 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { RetratoCache } from '../retrato-cache';
 
 /** Fundos das iniciais: tons escuros que combinam com o dourado do aro. */
 export const DEGRADES = [
@@ -30,24 +31,58 @@ export function degradeDe(semente: number): string {
 }
 
 /**
- * Retrato oval 4:5 com aro dourado. Sem imagem (até o 2.1c), mostra as iniciais sobre um
- * degradê. Fica fora da leitura de tela porque o nome já está escrito ao lado.
+ * Retrato oval 4:5 com aro dourado. Com retrato (2.1c), mostra a imagem, baixada pelo RetratoCache.
+ * Sem retrato, ou se a imagem falhar, mostra as iniciais sobre um degradê; nesse caso fica fora
+ * da leitura de tela, porque o nome já está escrito ao lado.
  */
 @Component({
   selector: 'app-medalhao',
-  template: '{{ sigla() }}',
+  template: `
+    @if (mostrarFoto()) {
+      <img [src]="urlFoto()" [alt]="'Retrato de ' + nome()" (error)="falhou.set(true)" />
+    } @else {
+      {{ sigla() }}
+    }
+  `,
   styleUrl: './medalhao.scss',
   host: {
-    'aria-hidden': 'true',
+    '[attr.aria-hidden]': "mostrarFoto() ? null : 'true'",
     '[class.grande]': "tamanho() === 'grande'",
     '[style.--degrade]': 'degrade()',
   },
 })
 export class Medalhao {
+  private readonly cache = inject(RetratoCache);
+
   readonly nome = input.required<string>();
+  /** Id da ficha: escolhe o degradê e identifica o retrato no cache. */
   readonly semente = input.required<number>();
   readonly tamanho = input<'pequeno' | 'grande'>('pequeno');
+  /** retratoVersao da ficha; null = sem retrato. */
+  readonly retratoVersao = input<number | null>(null);
 
   readonly sigla = computed(() => iniciais(this.nome()));
   readonly degrade = computed(() => degradeDe(this.semente()));
+
+  readonly urlFoto = signal<string | null>(null);
+  readonly falhou = signal(false);
+  readonly mostrarFoto = computed(() => this.urlFoto() !== null && !this.falhou());
+
+  constructor() {
+    // Busca a URL local sempre que a ficha ou a versão mudam; cancela o pedido anterior.
+    effect((aoLimpar) => {
+      const fichaId = this.semente();
+      const versao = this.retratoVersao();
+      this.urlFoto.set(null);
+      this.falhou.set(false);
+      if (versao === null) {
+        return;
+      }
+      const inscricao = this.cache.url(fichaId, versao).subscribe({
+        next: (url) => this.urlFoto.set(url),
+        error: () => this.falhou.set(true),
+      });
+      aoLimpar(() => inscricao.unsubscribe());
+    });
+  }
 }
