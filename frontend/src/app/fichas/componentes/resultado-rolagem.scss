@@ -1,0 +1,32 @@
+.resultado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--cor-borda);
+  text-align: center;
+
+  small {
+    opacity: 0.8;
+  }
+
+  &.extremo {
+    color: var(--cor-acao);
+    border-color: var(--cor-acao);
+    background: #2a2416;
+  }
+
+  &.sucesso {
+    color: var(--cor-sanidade);
+    border-color: #2e5c4c;
+    background: #1e2a24;
+  }
+
+  &.falha {
+    color: #e48a7c;
+    border-color: #6b2d25;
+    background: #2a1a18;
+  }
+}
