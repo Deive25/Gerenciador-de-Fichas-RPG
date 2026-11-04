@@ -30,3 +30,27 @@ jobs:
       # Os testes sobem um PostgreSQL em container (Testcontainers); o ubuntu-latest ja tem Docker.
       - name: Build e testes
         run: ./mvnw -B verify
+
+  # Roda em paralelo com o backend. So garante que o Angular compila (nao ha testes de frontend).
+  frontend:
+    name: Frontend (ng build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # Angular 13 pede Node 12, 14 ou 16.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "16"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build
+        run: npx ng build
