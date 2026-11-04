@@ -53,12 +53,15 @@
 
 // Celular: blocos empilhados. Computador: retrato à esquerda (duas linhas), status e
 // atributos à direita, perícias embaixo em largura total.
+// minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo (ex.: "Constituição ⓘ")
+// e a ficha passa da largura do celular.
 .bento {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 
   @media (min-width: 900px) {
-    grid-template-columns: minmax(240px, 1fr) 2fr;
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
 
     .retrato {
       grid-row: span 2;
@@ -109,10 +112,15 @@ ul {
   align-items: center;
 }
 
+// 3×3 a partir de 600 px; no celular os nomes completos só cabem em 2 colunas.
 .grade-atributos {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.2rem 1rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 
   li {
     display: flex;
@@ -134,14 +142,14 @@ ul {
   gap: 0.15rem 1.5rem;
 
   @media (min-width: 900px) {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 // Nome e valor em cima, barra embaixo, botão de rolar à direita das duas linhas.
 .pericia {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   grid-template-areas:
     'nome valor rolar'
     'barra barra rolar';

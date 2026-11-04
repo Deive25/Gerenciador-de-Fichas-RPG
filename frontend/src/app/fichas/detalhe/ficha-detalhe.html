@@ -102,7 +102,9 @@
                 </span>
                 <span class="barra" aria-hidden="true">
                   <i [style.width.%]="larguraBarra(valor)"></i>
-                  <em [style.left.%]="marcaExtremo(valor)"></em>
+                  @if (valor > 0) {
+                    <em [style.left.%]="marcaExtremo(valor)"></em>
+                  }
                 </span>
                 <strong class="valor">{{ valor }}</strong>
                 <button

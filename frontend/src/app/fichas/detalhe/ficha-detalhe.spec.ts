@@ -80,6 +80,8 @@ describe('FichaDetalhe', () => {
     const rolar = el.querySelector('button[aria-label="Rolar Acrobacia, 0"]') as HTMLButtonElement;
     expect(rolar.disabled).toBe(false);
     expect(rolar.closest('.pericia')?.classList).toContain('sem-valor');
+    // Sem valor não há faixa de extremo: a marca não aparece (ficaria um traço solto no início da barra).
+    expect(rolar.closest('.pericia')?.querySelector('.barra em')).toBeNull();
     expect(el.querySelector('button[aria-label="Rolar Investigação, 70"]')?.closest('.pericia')?.classList).not.toContain(
       'sem-valor',
     );
