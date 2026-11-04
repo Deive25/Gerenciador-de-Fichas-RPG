@@ -18,7 +18,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
  * Prova que a migração V2 move as perícias das colunas atributeN para a tabela ficha_pericia
  * sem perder nem inventar dados. Usa a API do Flyway num schema próprio (migracao_teste) do mesmo
  * container, para não interferir no schema "public" que os outros testes usam.
- * Roteiro: migra só até a V1, insere fichas no formato antigo, migra até a última versão e confere.
+ * Roteiro: migra só até a V1, insere fichas no formato antigo, migra até a V2 e confere.
  */
 @DisplayName("Migração V2: perícias das colunas para a tabela ficha_pericia")
 class MigracaoPericiasTest extends IntegrationTestBase {
@@ -60,7 +60,8 @@ class MigracaoPericiasTest extends IntegrationTestBase {
 		jdbc.update("insert into " + SCHEMA + ".sheet_player (id, namej, namec, gender) "
 				+ "overriding system value values (3, 'Caio', 'Zed', 'X')");
 
-		Flyway ultima = Flyway.configure().dataSource(dataSource).schemas(SCHEMA).load();
+		// Até a V2 (e não até a última): o teste é da V2; migrações novas (V3+) têm testes próprios.
+		Flyway ultima = Flyway.configure().dataSource(dataSource).schemas(SCHEMA).target("2").load();
 		ultima.migrate();
 
 		// as linhas de ficha_pericia são exatamente as esperadas (ficha, código, valor); o 0 é valor e não ausência

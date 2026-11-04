@@ -25,8 +25,8 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | Incremento | Entrega | Situação |
 | --- | --- | --- |
 | 2.1 | Frontend refeito em Angular 22, visual "investigação sombria", pensado primeiro para o celular | Concluído (PR #8) |
-| 2.1b | Redesign: painel de fichas e tela própria para cada ficha, visual "Moderno com alma gótica" ([spec](docs/superpowers/specs/2026-11-04-j1-redesign-design.md)) | Concluído nesta branch |
-| 2.1c | Retrato do personagem enviado pelo jogador (recorte no navegador, tabela `retrato_ficha`) | Planejado |
+| 2.1b | Redesign: painel de fichas e tela própria para cada ficha, visual "Moderno com alma gótica" ([spec](docs/superpowers/specs/2026-11-04-j1-redesign-design.md)) | Concluído (PR #9) |
+| 2.1c | Retrato do personagem enviado pelo jogador (recorte no navegador, tabela `retrato_ficha`) e edição rápida de vida e sanidade na ficha | Concluído nesta branch |
 | 2.1d | Dado 3D com física, mostrando o número que o servidor sorteou | Planejado |
 | 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
 | 2.3 | Campanhas, convite por link, papéis Mestre/Jogador, nomes claros no banco | Planejado |
@@ -57,6 +57,16 @@ O controlador `SheetPlayerController` expõe o recurso `/fichas`:
 | PUT | `/fichas/{id}` | Substituir uma ficha | 200; 400 se inválida; 404 se não existe |
 | DELETE | `/fichas/{id}` | Excluir uma ficha | 204; 404 se não existe |
 
+O `RetratoController` cuida da imagem do personagem (incremento 2.1c, [ADR 0014](docs/decisoes/0014-retrato-no-postgresql-em-tabela-separada.md)):
+
+| Método | Rota | Finalidade | Respostas |
+| --- | --- | --- | --- |
+| PUT | `/fichas/{id}/retrato` | Enviar ou trocar o retrato: o corpo é o próprio JPEG (`Content-Type: image/jpeg`) | 204; 404 se a ficha não existe; 415 se não for `image/jpeg`; 413 acima de 200 KB; 422 se não for um JPEG legível ou passar de 1000 px por lado |
+| GET | `/fichas/{id}/retrato` | Baixar o retrato | 200 `image/jpeg` com `Cache-Control: private, max-age=31536000, immutable` e `nosniff`; 404 se a ficha não existe ou não tem retrato |
+| DELETE | `/fichas/{id}/retrato` | Remover o retrato | 204 (também sem retrato); 404 se a ficha não existe |
+
+O servidor confere o tamanho pelo **cabeçalho** do JPEG antes de decodificar: um arquivo de poucos bytes que "diz" ter 50000×50000 é recusado com 422, sem a API alocar gigabytes de memória.
+
 Qualquer falha inesperada responde 500 com uma mensagem genérica; o detalhe fica só no log do servidor.
 
 ### Formato da ficha
@@ -70,9 +80,12 @@ Os campos escalares são planos e o objeto `pericias` usa como chaves os código
   "vidaAtual": 10, "vidaMaxima": 12, "sanidadeAtual": 50, "sanidadeMaxima": 60,
   "forca": 50, "destreza": 40, "constituicao": 45, "inteligencia": 60, "carisma": 55,
   "sabedoria": 50, "tamanho": 65, "sorte": 40, "poder": 50,
-  "pericias": { "ACROBACIA": 40, "PERCEPCAO": 55 }
+  "pericias": { "ACROBACIA": 40, "PERCEPCAO": 55 },
+  "retratoVersao": 1772366400250
 }
 ```
+
+`retratoVersao` só existe na **resposta**: é o instante do último envio do retrato em milissegundos (ou `null` sem retrato), e a interface o usa na URL da imagem (`/retrato?v=…`) para o cache do navegador nunca mostrar uma foto velha. Enviado no corpo do `POST` ou `PUT`, ele é recusado como chave desconhecida.
 
 **Entrada** (`POST` e `PUT`, sem o `id`, que vem da URL):
 - `jogador`, `personagem` e `genero` são obrigatórios e têm no máximo 255 caracteres. Os números não têm limite ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
@@ -174,11 +187,12 @@ O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entida
 
 O teste de perícia tem camadas próprias, para o CRUD ficar intacto: o `TestePericiaService` busca a ficha (404 com a mesma `SheetPlayerNotFoundException`), lê o valor da perícia (0 se ausente), pede a rolagem ao `Dado` e aplica a `RegraTestePericia`. A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma rolagem fixa nos testes.
 
-Modelo de dados (esquema criado pelas migrações V1 e V2):
+Modelo de dados (esquema criado pelas migrações V1, V2 e V3):
 
 ```mermaid
 erDiagram
     sheet_player ||--o{ ficha_pericia : "tem (0 a 23)"
+    sheet_player ||--o| retrato_ficha : "tem (0 ou 1)"
     sheet_player {
         bigint id PK
         varchar namej "obrigatório"
@@ -191,7 +205,14 @@ erDiagram
         varchar pericia PK "constante do enum Pericia"
         integer valor
     }
+    retrato_ficha {
+        bigint ficha_id PK, FK "on delete cascade"
+        bytea conteudo "JPEG até 200 KB"
+        timestamptz atualizado_em "vira o retratoVersao"
+    }
 ```
+
+O retrato fica numa tabela própria para a listagem nunca ler bytes de imagem: a ficha só traz o `retratoVersao`, por uma subconsulta (`@Formula`) no mesmo SELECT, então listar continua sendo uma consulta só.
 
 `sheet_player` tem 18 colunas, com os nomes antigos (`namej`, `lifea`...): o banco e a entidade não mudaram no 1.6, e o `SheetPlayerMapper` traduz para o JSON. Perícia sem valor não tem linha em `ficha_pericia`; no JSON ela não aparece em `pericias`.
 
@@ -230,7 +251,8 @@ Estrutura de pastas:
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, mapper, o teste de perícia e o `Dado`.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, mapper, o teste de perícia e o `Dado`, e o retrato (`RetratoService` e `ValidadorRetrato`).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/config/`: o `Clock` da aplicação (`RelogioConfig`), injetável como o `Dado` para os testes escolherem o instante.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidade JPA e o enum `Pericia`.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
@@ -278,7 +300,7 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    - O `.env` é procurado em `../.env`, relativo à pasta de onde o back-end é iniciado. Rode sempre de dentro de `Gerenciador de fichas RPG` (ou configure a IDE com esse diretório de trabalho). Se as variáveis não forem encontradas, o erro aparece como `URL must start with 'jdbc'`.
    - Dados que já estavam no MySQL local de versões anteriores **não são migrados automaticamente** (projeto de estudo, sem produção). Para limpar o ambiente antigo: `docker compose down --remove-orphans` e, se quiser descartar os dados, `docker volume rm gerenciador-de-fichas-rpg_mysql_data` (o nome exato aparece em `docker volume ls`).
    - O esquema é criado pelo Flyway na primeira subida da API (`src/main/resources/db/migration`); o Hibernate só confere (`ddl-auto=validate`).
-   - **Migração aplicada não se edita**: o Flyway guarda o checksum de cada arquivo em `flyway_schema_history` e recusa subir se um arquivo já aplicado mudar. Para corrigir, crie uma nova versão (V3, V4...). Se o seu banco **local** de desenvolvimento ficar com checksum divergente, `docker compose down -v` recria o volume, mas **apaga os dados locais**.
+   - **Migração aplicada não se edita**: o Flyway guarda o checksum de cada arquivo em `flyway_schema_history` e recusa subir se um arquivo já aplicado mudar. Para corrigir, crie uma nova versão (V4, V5...). Se o seu banco **local** de desenvolvimento ficar com checksum divergente, `docker compose down -v` recria o volume, mas **apaga os dados locais**.
 
 Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados). Para um ambiente isolado, use um nome de projeto: `docker compose -p meu-teste up -d` (o `docker-compose.yml` não fixa o nome do container, então o projeto isola de verdade).
 
@@ -288,6 +310,8 @@ A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma
 
 - **Painel (`/fichas`):** contadores (investigadores, feridos e sanidade baixa), busca por personagem ou jogador sem diferenciar acentos, filtros "Feridos" e "Sanidade baixa" (vida ou sanidade atual ≤ metade da máxima) e um cartão por ficha, com medalhão, barras de vida e sanidade e etiquetas.
 - **Ficha (`/fichas/:id`), em blocos:** retrato com nome, anéis de vida e sanidade, os 9 atributos e as 23 perícias. Cada perícia tem uma barra até o valor, uma marca no limite do sucesso extremo (⌊valor/5⌋) e o botão "🎲 Rolar"; o resultado mostra as faixas "extremo ≤ X · sucesso ≤ Y". Editar e Excluir ficam no menu ⋮, e excluir pede confirmação.
+- **Retrato do personagem:** "Trocar imagem" abre um recorte na moldura oval 4:5 (arrastar ou setas para posicionar, controle de zoom). O navegador reduz a foto para 400×500 em JPEG antes de enviar, então uma foto de celular de vários MB vira dezenas de KB. "Remover imagem" pede confirmação e volta às iniciais.
+- **Edição rápida de vida e sanidade:** botões − e + em cada anel e o número clicável para digitar o valor. A tela muda na hora e salva sozinha 0,8 s depois do último toque (vários toques viram um salvamento). Se falhar, o valor volta ao último salvo; sair da ficha com um ajuste pendente salva na hora.
 - **Formulário de criar e editar:** as mesmas regras de validação da API, com o erro do servidor mostrado no campo certo.
 - **API fora do ar ou "acordando":** a tela mostra "Servidor indisponível" com o botão "Tentar de novo", em vez de ficar em branco.
 - A ficha e o formulário carregam sob demanda, para a primeira tela abrir rápido no celular.
@@ -300,7 +324,11 @@ A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma
 | --- | --- |
 | ![Painel de fichas no computador](docs/capturas/painel-computador.jpg) | ![Ficha no computador, com o resultado de uma rolagem](docs/capturas/ficha-computador.jpg) |
 
-As capturas usam fichas de demonstração, num banco separado.
+| Retrato e edição rápida no celular | Retrato e edição rápida no computador |
+| --- | --- |
+| ![Ficha com retrato e botões − e + no celular](docs/capturas/ficha-retrato-celular.jpg) | ![Ficha com retrato e botões − e + no computador](docs/capturas/ficha-retrato-computador.jpg) |
+
+As capturas usam fichas de demonstração.
 
 Com a API e o banco no ar (seção anterior):
 
@@ -329,16 +357,18 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 100 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco:
+**Front-end:** 138 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco:
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura);
 - regras do painel (ferido e sanidade baixa na metade exata, valores ausentes e máximo 0, busca sem acento, contadores);
 - o painel (cartões, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
 - medalhão (iniciais e cor estável por ficha) e status em barra e em anel (limitados a 0–100%);
 - o catálogo de perícias e as faixas da regra, e o cliente da API (URLs, corpos e tradução de erros, inclusive a API fora do ar);
 - a ficha (23 botões de rolar com o valor no nome acessível, barra e marca do extremo, perícia sem valor esmaecida sem perder o contraste, toque duplo bloqueado, menu ⋮ com exclusão confirmada, 404);
-- o formulário (obrigatórios, número inteiro, vazio como `null`, erro do servidor no campo, envio duplo bloqueado, edição).
+- o formulário (obrigatórios, número inteiro, vazio como `null`, erro do servidor no campo, envio duplo bloqueado, edição);
+- o retrato: a conta do recorte 4:5 (proporções, zoom de 1 a 4, janela empurrada para dentro da imagem), o diálogo (salvar, cancelar, imagem que não abre), o cache de URLs locais (baixa uma vez por versão e revoga a antiga), o medalhão com foto, e trocar e remover na ficha;
+- a edição rápida: limites (o + para no máximo, o − em 0, 15/12 desce para 14), vários toques viram um `PUT` só (relógio simulado), erro volta o valor, toque durante o salvamento, salvar ao sair, digitar com Enter e cancelar com Esc, e o corpo do `PUT` sem `id` nem `retratoVersao`.
 
-**Back-end:** são 74 testes, em quinze grupos:
+**Back-end:** são 98 testes, em dezenove grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
@@ -347,9 +377,13 @@ cd "Gerenciador de fichas RPG"
 | `SheetPlayerServiceTest` | 6 | Unitários do serviço com Mockito, sem Spring e sem Docker |
 | `ApiExceptionHandlerTest` | 1 | Unitário: o 500 genérico não vaza o texto interno da exceção |
 | `FichasRpgApplicationTests` | 1 | O contexto da aplicação sobe |
-| `ContratoJsonTest` | 1 | O retrato do contrato: as 18 chaves escalares (com `id`) mais `pericias` como objeto |
-| `EsquemaBancoTest` | 3 | Tabelas `sheet_player` (18 colunas) e `ficha_pericia` (nomes, tipos e nulabilidade) e prova de que o Flyway aplicou a V1 e a V2 |
+| `ContratoJsonTest` | 1 | O retrato do contrato: as 18 chaves escalares (com `id`), `pericias` como objeto e `retratoVersao` |
+| `EsquemaBancoTest` | 4 | Tabelas `sheet_player` (18 colunas), `ficha_pericia` e `retrato_ficha` (nomes, tipos e nulabilidade) e prova de que o Flyway aplicou a V1, a V2 e a V3 |
 | `MigracaoPericiasTest` | 1 | Migra um schema separado até a V1, insere fichas no formato antigo e confere, após a V2, as linhas de `ficha_pericia`, a ausência das colunas `atributeN` e os demais dados intactos |
+| `MigracaoRetratoTest` | 1 | Migra até a V2, insere uma ficha e confere, após a V3, que ela continua lá e sem retrato |
+| `RetratoFichaRepositoryTest` | 2 | Grava e lê os bytes e o instante; excluir a ficha apaga o retrato (cascata no banco) |
+| `ValidadorRetratoTest` | 7 | Unitário: JPEG válido e no limite de 1000 px, imagem maior, PNG, vazio, bytes corrompidos e a "bomba de decodificação" (JPEG minúsculo que diz ter 50000×50000, recusado pelo cabeçalho) |
+| `RetratoControllerTest` | 13 | As 3 rotas do retrato: 204, bytes e cabeçalhos do `GET`, versão que nunca se repete (relógio de teste), 415, 413, 422 (inclusive a bomba), 404 de ficha e de retrato, `DELETE` idempotente e `retratoVersao` na busca e na listagem |
 | `PericiaTest` | 2 | Unitário: as 23 constantes, o nome e o campo legado de cada uma, e que os campos vão de `atribute1` a `atribute23` sem repetir |
 | `SheetPlayerMapperPericiasTest` | 2 | Unitário: cada perícia do objeto `pericias` vai para a perícia certa da entidade e volta; `null` não gera entrada e remove a anterior |
 | `ListagemSemNMaisUmTest` | 1 | Listar 3 fichas com perícias executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + 3 |
@@ -384,6 +418,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0008 PUT como substituição completa](docs/decisoes/0008-put-como-substituicao-completa.md): sem PATCH e sem regras numéricas inventadas.
 - [0012 Contrato com nomes claros](docs/decisoes/0012-contrato-com-nomes-claros.md): rota `/fichas`, JSON em português com `pericias` como objeto, sem versionar a API; a entidade e o banco só mudam depois.
 - [0013 Frontend novo em Angular 22](docs/decisoes/0013-frontend-novo-em-angular-22.md): refazer as telas na versão atual em vez de atualizar o Angular 13 versão a versão.
+- [0014 Retrato no PostgreSQL em tabela separada](docs/decisoes/0014-retrato-no-postgresql-em-tabela-separada.md): a imagem do personagem numa tabela própria (a listagem nunca lê os bytes), validada no servidor pelo cabeçalho do JPEG antes de decodificar.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -459,11 +494,17 @@ Porque a lista inteira já chega pelo `GET /fichas` e ela é pequena: são as fi
 **Como você garantiu que o redesign não quebrou nada?**
 Antes de apagar os componentes antigos, fiz um mapa de testes: cada teste que saía migrou para o componente novo que herdou o comportamento, ou foi reescrito quando o comportamento saiu de propósito (as duas colunas). Nenhum comportamento ficou sem teste. Mesmo assim, a conferência manual no celular achou um bug que os testes não pegam: a ficha passava da largura da tela, porque a coluna do grid crescia até o conteúdo mais largo. Corrigi com `minmax(0, 1fr)` e medi no navegador. A revisão independente ainda achou o texto da perícia "esmaecida" abaixo do contraste AA; troquei a opacidade pela cor de texto suave.
 
+**Por que guardar a imagem no banco, e não num serviço de arquivos?**
+Para o portfólio, com poucas fichas, uma tabela `retrato_ficha` separada resolve sem serviço novo, credenciais ou cartão: o backup do banco já leva as imagens e excluir a ficha apaga o retrato junto. A separação é o ponto importante: a listagem nunca lê bytes, só o `retratoVersao`, por uma subconsulta no mesmo SELECT (o teste que conta as consultas não mudou). O navegador já reduz a foto para cerca de 50 KB. Se o volume crescer, o armazenamento de objetos (R2/S3) volta à mesa no deploy ([ADR 0014](docs/decisoes/0014-retrato-no-postgresql-em-tabela-separada.md)).
+
+**Como você protege o upload de imagem?**
+O servidor não confia no navegador: só aceita `image/jpeg` (415), lê no máximo 200 KB do corpo (413) e confere os bytes iniciais do JPEG. A revisão independente achou o ponto mais sutil: eu decodificava a imagem antes de conferir o limite de 1000 px, e um JPEG de poucos bytes com o cabeçalho dizendo 50000×50000 derrubava a API por falta de memória ("bomba de decodificação"). Agora o tamanho vem do cabeçalho, antes de decodificar, com um teste que reproduz o ataque. O `GET` responde com `nosniff` e SVG nunca é aceito, porque pode carregar script.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- **2.1c Retrato** do personagem enviado pelo jogador e **2.1d dado 3D** com o resultado do servidor (spec do redesign).
+- **Vários sistemas de RPG** (Ordem Paranormal, D&D 5e e D&D 2024) e, em seguida, o **2.1d dado animado** já com d20 e d100 (pedidos do Arthur depois do 2.1b).
 - **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
 - **2.3 Campanhas** com convite e papéis Mestre/Jogador, junto com a renomeação da entidade e das colunas para os nomes claros (`SheetPlayer` para `Ficha`, `namej` para `jogador` etc.), que hoje o `SheetPlayerMapper` traduz.
 - **2.4 Rolagens ao vivo** para toda a mesa (WebSocket).

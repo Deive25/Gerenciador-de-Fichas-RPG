@@ -6,7 +6,7 @@ function ficha(parcial: Partial<Ficha>): Ficha {
     id: 1, jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: null,
     vidaAtual: 12, vidaMaxima: 12, sanidadeAtual: 60, sanidadeMaxima: 60,
     forca: null, destreza: null, constituicao: null, inteligencia: null, carisma: null,
-    sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {},
+    sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {}, retratoVersao: null,
     ...parcial,
   };
 }

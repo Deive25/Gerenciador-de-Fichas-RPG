@@ -1,0 +1,44 @@
+<h2 mat-dialog-title class="nome-versalete">Retrato</h2>
+
+<mat-dialog-content>
+  @if (erro(); as mensagem) {
+    <p class="aviso-erro" role="alert">{{ mensagem }}</p>
+  } @else {
+    <p class="aviso dica-uso">Arraste para posicionar e use o zoom para aproximar.</p>
+  }
+
+  <div
+    class="moldura"
+    tabindex="0"
+    role="img"
+    aria-label="Prévia do retrato. Use as setas para posicionar."
+    (pointerdown)="iniciarArraste($event)"
+    (pointermove)="arrastar($event)"
+    (pointerup)="soltar()"
+    (pointercancel)="soltar()"
+    (keydown)="aoTeclar($event)"
+  >
+    <canvas #previa width="240" height="300"></canvas>
+  </div>
+
+  <label class="zoom">
+    <span>Zoom</span>
+    <input
+      type="range"
+      aria-label="Zoom"
+      [min]="zoomMinimo"
+      [max]="zoomMaximo"
+      step="0.05"
+      [value]="zoom()"
+      [disabled]="!carregada()"
+      (input)="aoMudarZoom($event)"
+    />
+  </label>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="botao-neutro" (click)="cancelar()">Cancelar</button>
+  <button type="button" class="botao" [disabled]="!carregada() || salvando()" (click)="salvar()">
+    {{ salvando() ? 'Salvando…' : 'Salvar' }}
+  </button>
+</mat-dialog-actions>

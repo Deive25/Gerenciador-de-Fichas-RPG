@@ -1,0 +1,27 @@
+@let f = ficha();
+<div class="aneis">
+  <app-anel-status
+    rotulo="Vida"
+    tipo="vida"
+    [atual]="vidaAtual()"
+    [maximo]="f.vidaMaxima"
+    editavel
+    (ajustar)="ajustar('vidaAtual', $event)"
+    (definir)="definir('vidaAtual', $event)"
+  />
+  <app-anel-status
+    rotulo="Sanidade"
+    tipo="sanidade"
+    [atual]="sanidadeAtual()"
+    [maximo]="f.sanidadeMaxima"
+    editavel
+    (ajustar)="ajustar('sanidadeAtual', $event)"
+    (definir)="definir('sanidadeAtual', $event)"
+  />
+</div>
+@if (salvando()) {
+  <p class="estado" role="status">salvando…</p>
+}
+@if (erro(); as e) {
+  <p class="erro" role="alert">{{ e.titulo }}: {{ e.detalhe }}</p>
+}

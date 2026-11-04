@@ -27,5 +27,7 @@ public record SheetPlayerResponse(
 		Integer tamanho,
 		Integer sorte,
 		Integer poder,
-		Map<Pericia, Integer> pericias) {
+		Map<Pericia, Integer> pericias,
+		/** Versão do retrato (ms) para o cache do navegador, ou null sem retrato (2.1c). Só na resposta. */
+		Long retratoVersao) {
 }
