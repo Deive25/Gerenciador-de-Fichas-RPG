@@ -40,7 +40,7 @@ class EsquemaBancoTest extends IntegrationTestBase {
 
 		List<Map<String, Object>> tabelas = jdbc.queryForList(
 				"select table_name from information_schema.tables where table_schema = current_schema()");
-		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder("sheet_player", "ficha_pericia", "flyway_schema_history");
+		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder("sheet_player", "ficha_pericia", "retrato_ficha", "flyway_schema_history");
 
 		Map<String, String> real = jdbc.queryForList(
 				"select column_name, data_type, is_nullable from information_schema.columns "
@@ -74,11 +74,34 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1 e V2 com sucesso")
+	@DisplayName("a tabela retrato_ficha tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDaTabelaDeRetratos() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("conteudo", "bytea/NO");
+		esperado.put("atualizado_em", "timestamp with time zone/NO");
+
+		Map<String, String> real = jdbc.queryForList(
+				"select column_name, data_type, is_nullable from information_schema.columns "
+						+ "where table_schema = current_schema() and table_name = 'retrato_ficha'")
+				.stream()
+				.collect(Collectors.toMap(
+						linha -> (String) linha.get("column_name"),
+						linha -> linha.get("data_type") + "/" + linha.get("is_nullable")));
+
+		assertThat(real).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("o Flyway aplicou as migrações V1, V2 e V3 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(2);
+		assertThat(historico).hasSize(3);
+		assertThat(historico.get(2))
+				.containsEntry("version", "3")
+				.containsEntry("description", "cria tabela retrato ficha")
+				.containsEntry("success", true);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
