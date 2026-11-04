@@ -48,6 +48,35 @@
           <app-medalhao tamanho="grande" [nome]="f.personagem" [semente]="f.id" [retratoVersao]="f.retratoVersao" />
           <h1 class="nome-versalete">{{ f.personagem }}</h1>
           <p class="legenda">{{ legenda(f) }}</p>
+          <div class="acoes-retrato">
+            <input #seletorArquivo type="file" accept="image/*" hidden (change)="aoEscolherArquivo($event)" />
+            @if (confirmandoRemocaoRetrato()) {
+              <span>Remover a imagem?</span>
+              <button type="button" class="botao-perigo" [disabled]="enviandoRetrato()" (click)="removerRetrato()">
+                Sim, remover
+              </button>
+              <button type="button" class="botao-neutro" (click)="confirmandoRemocaoRetrato.set(false)">Cancelar</button>
+            } @else {
+              <button
+                type="button"
+                class="botao-neutro"
+                [disabled]="enviandoRetrato()"
+                (click)="seletorArquivo.click()"
+              >
+                {{ enviandoRetrato() ? 'Enviando…' : '📷 Trocar imagem' }}
+              </button>
+              @if (f.retratoVersao !== null) {
+                <button
+                  type="button"
+                  class="botao-neutro"
+                  [disabled]="enviandoRetrato()"
+                  (click)="confirmandoRemocaoRetrato.set(true)"
+                >
+                  Remover imagem
+                </button>
+              }
+            }
+          </div>
         </section>
 
         <section class="status bloco" aria-label="Vida e sanidade">
