@@ -89,48 +89,6 @@
   border-top: 1px solid var(--cor-borda);
 }
 
-.botao-neutro,
-.botao-perigo,
-.botao {
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.botao-neutro {
-  background: transparent;
-  color: var(--cor-texto);
-  border: 1px solid var(--cor-borda);
-}
-
-.botao-perigo {
-  background: var(--cor-vida);
-  color: #fff;
-  border: none;
-}
-
-.botao {
-  background: var(--cor-acao);
-  color: var(--cor-fundo);
-  border: none;
-}
-
-.aviso {
-  color: var(--cor-texto-suave);
-}
-
-.aviso-erro {
-  padding: 1rem;
-  border: 1px solid var(--cor-vida);
-  border-radius: var(--raio);
-  background: #2a1a18;
-
-  p {
-    margin: 0.25rem 0 0.75rem;
-  }
-}
-
 .erro-acao {
   color: #e48a7c;
   margin: 0;
