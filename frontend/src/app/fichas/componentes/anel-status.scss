@@ -1,0 +1,58 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+svg {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+
+circle {
+  fill: none;
+  stroke-width: 4;
+}
+
+.trilho {
+  stroke: var(--cor-trilho);
+}
+
+.arco {
+  stroke-linecap: round;
+
+  &.vida {
+    stroke: var(--cor-vida);
+  }
+
+  &.sanidade {
+    stroke: var(--cor-sanidade);
+  }
+}
+
+text {
+  fill: var(--cor-titulo);
+  font-family: var(--fonte-titulo);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legenda {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rotulo {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  color: var(--cor-titulo);
+}

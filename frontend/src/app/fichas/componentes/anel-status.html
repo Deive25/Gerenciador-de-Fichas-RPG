@@ -1,0 +1,20 @@
+<svg viewBox="0 0 42 42" aria-hidden="true">
+  <circle class="trilho" cx="21" cy="21" r="16" />
+  @if (percentual() !== null) {
+    <circle
+      class="arco"
+      [class.vida]="tipo() === 'vida'"
+      [class.sanidade]="tipo() === 'sanidade'"
+      cx="21"
+      cy="21"
+      r="16"
+      [attr.stroke-dasharray]="tracos()"
+      transform="rotate(-90 21 21)"
+    />
+  }
+  <text x="21" y="25" text-anchor="middle">{{ atual() ?? '—' }}</text>
+</svg>
+<span class="legenda">
+  <span class="rotulo">{{ rotulo() }}</span>
+  <span class="valor">{{ texto() }}</span>
+</span>
