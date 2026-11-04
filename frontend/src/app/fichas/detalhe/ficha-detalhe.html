@@ -18,22 +18,22 @@
   }
   @default {
     @if (ficha(); as f) {
-      <header class="cabecalho">
-        <div class="identificacao">
-          <h1>{{ f.personagem }}</h1>
-          <p class="jogador">
-            {{ f.jogador }}@if (f.idade !== null) {
-              · {{ f.idade }} anos
-            }
-          </p>
-        </div>
-        <a class="editar" [routerLink]="['/fichas', f.id, 'editar']">Editar</a>
-      </header>
+      <nav class="barra-acoes" aria-label="Ficha">
+        <a class="voltar" routerLink="/fichas">← Investigadores</a>
+        <button type="button" class="mais" aria-label="Mais ações" [matMenuTriggerFor]="acoes">⋮</button>
+        <mat-menu #acoes="matMenu" xPosition="before">
+          <a mat-menu-item [routerLink]="['/fichas', f.id, 'editar']">Editar</a>
+          <button mat-menu-item type="button" (click)="confirmandoExclusao.set(true)">Excluir</button>
+        </mat-menu>
+      </nav>
 
-      <div class="status">
-        <app-barra-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
-        <app-barra-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
-      </div>
+      @if (confirmandoExclusao()) {
+        <section class="confirmacao bloco">
+          <span>Excluir {{ f.personagem }} de vez?</span>
+          <button type="button" class="botao-perigo" [disabled]="excluindo()" (click)="excluir()">Sim, excluir</button>
+          <button type="button" class="botao-neutro" (click)="confirmandoExclusao.set(false)">Cancelar</button>
+        </section>
+      }
 
       @if (ultimoResultado(); as resultado) {
         <app-resultado-rolagem class="resultado" [resultado]="resultado" />
@@ -43,11 +43,23 @@
         <p class="erro-acao" role="alert">{{ erro()?.titulo }}: {{ erro()?.detalhe }}</p>
       }
 
-      <mat-tab-group [selectedIndex]="1" animationDuration="0ms" mat-stretch-tabs="true">
-        <mat-tab label="Atributos">
-          <ul class="itens">
+      <div class="bento">
+        <section class="retrato bloco bloco-dourado">
+          <app-medalhao tamanho="grande" [nome]="f.personagem" [semente]="f.id" />
+          <h1 class="nome-versalete">{{ f.personagem }}</h1>
+          <p class="legenda">{{ legenda(f) }}</p>
+        </section>
+
+        <section class="status bloco" aria-label="Vida e sanidade">
+          <app-anel-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
+          <app-anel-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
+        </section>
+
+        <section class="atributos bloco">
+          <h2 class="titulo-secao">Atributos</h2>
+          <ul class="grade-atributos">
             @for (atributo of atributos; track atributo.chave) {
-              <li class="item">
+              <li>
                 <span class="nome">
                   {{ atributo.nome }}
                   <button
@@ -66,11 +78,14 @@
               </li>
             }
           </ul>
-        </mat-tab>
-        <mat-tab label="Perícias">
-          <ul class="itens">
+        </section>
+
+        <section class="pericias bloco">
+          <h2 class="titulo-secao">Perícias</h2>
+          <ul class="lista-pericias">
             @for (pericia of pericias; track pericia.chave) {
-              <li class="item">
+              @let valor = valorPericia(pericia.chave);
+              <li class="pericia" [class.sem-valor]="valor <= 0">
                 <span class="nome">
                   {{ pericia.nome }}
                   <button
@@ -84,32 +99,26 @@
                   >
                     ⓘ
                   </button>
-                  <strong>{{ valorPericia(pericia.chave) ?? '—' }}</strong>
                 </span>
+                <span class="barra" aria-hidden="true">
+                  <i [style.width.%]="larguraBarra(valor)"></i>
+                  <em [style.left.%]="marcaExtremo(valor)"></em>
+                </span>
+                <strong class="valor">{{ valor }}</strong>
                 <button
                   type="button"
                   class="rolar"
-                  [attr.aria-label]="'Rolar ' + pericia.nome"
+                  [attr.aria-label]="'Rolar ' + pericia.nome + ', ' + valor"
                   [disabled]="rolando() !== null"
                   (click)="rolar(pericia.chave)"
                 >
-                  🎲
+                  🎲 Rolar
                 </button>
               </li>
             }
           </ul>
-        </mat-tab>
-      </mat-tab-group>
-
-      <section class="perigo">
-        @if (confirmandoExclusao()) {
-          <span>Excluir de vez?</span>
-          <button type="button" class="botao-perigo" [disabled]="excluindo()" (click)="excluir()">Sim, excluir</button>
-          <button type="button" class="botao-neutro" (click)="confirmandoExclusao.set(false)">Cancelar</button>
-        } @else {
-          <button type="button" class="botao-neutro" (click)="confirmandoExclusao.set(true)">Excluir ficha</button>
-        }
-      </section>
+        </section>
+      </div>
     }
   }
 }
