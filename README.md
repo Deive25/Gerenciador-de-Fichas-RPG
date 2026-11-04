@@ -24,7 +24,10 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 
 | Incremento | Entrega | Situação |
 | --- | --- | --- |
-| 2.1 | Frontend refeito em Angular 22, visual "investigação sombria", pensado primeiro para o celular | Concluído nesta branch |
+| 2.1 | Frontend refeito em Angular 22, visual "investigação sombria", pensado primeiro para o celular | Concluído (PR #8) |
+| 2.1b | Redesign: painel de fichas e tela própria para cada ficha, visual "Moderno com alma gótica" ([spec](docs/superpowers/specs/2026-11-04-j1-redesign-design.md)) | Concluído nesta branch |
+| 2.1c | Retrato do personagem enviado pelo jogador (recorte no navegador, tabela `retrato_ficha`) | Planejado |
+| 2.1d | Dado 3D com física, mostrando o número que o servidor sorteou | Planejado |
 | 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
 | 2.3 | Campanhas, convite por link, papéis Mestre/Jogador, nomes claros no banco | Planejado |
 | 2.4 | Rolagens gravadas e ao vivo (WebSocket STOMP) | Planejado |
@@ -281,13 +284,23 @@ Para parar o banco: `docker compose down` (acrescente `-v` para apagar também o
 
 ### Interface
 
-A interface é um projeto Angular 22 em `frontend/`, no visual "investigação sombria" e pensado primeiro para o celular:
+A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma gótica". A organização é de app moderno (busca, filtros, blocos) e a aparência é de grimório: fundo grafite com névoa púrpura, dourado, títulos em EB Garamond (fonte de licença aberta servida pelo próprio app) e retrato em medalhão. É pensada primeiro para o celular, e é a mesma tela no computador, só com mais colunas:
 
-- **Celular:** uma tela por vez, com a barra no topo e a navegação embaixo ("Fichas" e "Nova ficha").
-- **Computador (a partir de 900 px):** duas colunas, com a lista de fichas fixa à esquerda e a ficha aberta à direita.
-- **Telas:** lista com barras de vida e sanidade; ficha com abas "Atributos" e "Perícias" (🎲 em cada perícia, com o resultado e as faixas "extremo ≤ X · sucesso ≤ Y"); formulário de criar e editar, com as mesmas regras de validação da API e o erro do servidor mostrado no campo certo.
+- **Painel (`/fichas`):** contadores (investigadores, feridos e sanidade baixa), busca por personagem ou jogador sem diferenciar acentos, filtros "Feridos" e "Sanidade baixa" (vida ou sanidade atual ≤ metade da máxima) e um cartão por ficha, com medalhão, barras de vida e sanidade e etiquetas.
+- **Ficha (`/fichas/:id`), em blocos:** retrato com nome, anéis de vida e sanidade, os 9 atributos e as 23 perícias. Cada perícia tem uma barra até o valor, uma marca no limite do sucesso extremo (⌊valor/5⌋) e o botão "🎲 Rolar"; o resultado mostra as faixas "extremo ≤ X · sucesso ≤ Y". Editar e Excluir ficam no menu ⋮, e excluir pede confirmação.
+- **Formulário de criar e editar:** as mesmas regras de validação da API, com o erro do servidor mostrado no campo certo.
 - **API fora do ar ou "acordando":** a tela mostra "Servidor indisponível" com o botão "Tentar de novo", em vez de ficar em branco.
 - A ficha e o formulário carregam sob demanda, para a primeira tela abrir rápido no celular.
+
+| Painel no celular | Ficha no celular |
+| --- | --- |
+| ![Painel de fichas no celular](docs/capturas/painel-celular.jpg) | ![Ficha no celular](docs/capturas/ficha-celular.jpg) |
+
+| Painel no computador | Ficha no computador |
+| --- | --- |
+| ![Painel de fichas no computador](docs/capturas/painel-computador.jpg) | ![Ficha no computador, com o resultado de uma rolagem](docs/capturas/ficha-computador.jpg) |
+
+As capturas usam fichas de demonstração, num banco separado.
 
 Com a API e o banco no ar (seção anterior):
 
@@ -316,7 +329,14 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 43 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco: o shell nas duas larguras, o catálogo de perícias e as faixas da regra, o cliente da API (URLs, corpos e tradução de erros, inclusive a API fora do ar), a lista (vazia, com erro e "Tentar de novo"), a ficha (23 botões de rolar, toque duplo bloqueado, exclusão com confirmação, 404) e o formulário (obrigatórios, número inteiro, vazio como `null`, erro do servidor no campo, envio duplo bloqueado, edição).
+**Front-end:** 100 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco:
+- rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura);
+- regras do painel (ferido e sanidade baixa na metade exata, valores ausentes e máximo 0, busca sem acento, contadores);
+- o painel (cartões, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
+- medalhão (iniciais e cor estável por ficha) e status em barra e em anel (limitados a 0–100%);
+- o catálogo de perícias e as faixas da regra, e o cliente da API (URLs, corpos e tradução de erros, inclusive a API fora do ar);
+- a ficha (23 botões de rolar com o valor no nome acessível, barra e marca do extremo, perícia sem valor esmaecida sem perder o contraste, toque duplo bloqueado, menu ⋮ com exclusão confirmada, 404);
+- o formulário (obrigatórios, número inteiro, vazio como `null`, erro do servidor no campo, envio duplo bloqueado, edição).
 
 **Back-end:** são 74 testes, em quinze grupos:
 
@@ -433,10 +453,17 @@ Escrevi primeiro os testes no contrato novo e os vi falhar (34 falhas), depois m
 **Por que refazer o frontend em vez de atualizar o Angular 13?**
 O backend eu refatorei passo a passo porque tinha regra e contrato a preservar. O frontend antigo eram 3 formulários e um painel, e o design ia mudar inteiro de qualquer jeito. Atualizar 9 versões (13 → 22) para depois jogar as telas fora seria esforço sem retorno. Refiz as telas no Angular atual (standalone, signals, Vitest) contra a mesma API, com testes primeiro, e conferi o fluxo no navegador nas larguras de celular e de computador. O custo é que o frontend não tem a história de "upgrade seguro" que o backend tem ([ADR 0013](docs/decisoes/0013-frontend-novo-em-angular-22.md)).
 
+**Por que a busca e os filtros do painel rodam no navegador, e não na API?**
+Porque a lista inteira já chega pelo `GET /fichas` e ela é pequena: são as fichas de uma mesa. Filtrar no navegador responde na hora, sem rota nova nem requisição a cada letra digitada. As regras ("ferido" = vida atual ≤ metade da máxima) são funções puras, testadas à parte, inclusive nos casos sem valor. O custo aparece quando houver muitas fichas por campanha: aí a busca e a paginação vão para o servidor.
+
+**Como você garantiu que o redesign não quebrou nada?**
+Antes de apagar os componentes antigos, fiz um mapa de testes: cada teste que saía migrou para o componente novo que herdou o comportamento, ou foi reescrito quando o comportamento saiu de propósito (as duas colunas). Nenhum comportamento ficou sem teste. Mesmo assim, a conferência manual no celular achou um bug que os testes não pegam: a ficha passava da largura da tela, porque a coluna do grid crescia até o conteúdo mais largo. Corrigi com `minmax(0, 1fr)` e medi no navegador. A revisão independente ainda achou o texto da perícia "esmaecida" abaixo do contraste AA; troquei a opacidade pela cor de texto suave.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
+- **2.1c Retrato** do personagem enviado pelo jogador e **2.1d dado 3D** com o resultado do servidor (spec do redesign).
 - **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
 - **2.3 Campanhas** com convite e papéis Mestre/Jogador, junto com a renomeação da entidade e das colunas para os nomes claros (`SheetPlayer` para `Ficha`, `namej` para `jogador` etc.), que hoje o `SheetPlayerMapper` traduz.
 - **2.4 Rolagens ao vivo** para toda a mesa (WebSocket).
