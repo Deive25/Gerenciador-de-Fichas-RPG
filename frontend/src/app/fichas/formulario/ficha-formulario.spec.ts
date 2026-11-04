@@ -119,6 +119,19 @@ describe('FichaFormulario', () => {
     expect(criar).toHaveBeenCalledTimes(1);
   });
 
+  it('salvar continua bloqueado depois da resposta ate a navegacao terminar', () => {
+    const criar = vi.fn(() => of({ ...FICHA, id: 9 }));
+    const { el, navegar, salvar, componente } = montar({ criar });
+    navegar.mockReturnValue(new Promise<boolean>(() => undefined));
+    preencherObrigatorios(componente);
+
+    salvar();
+    salvar();
+
+    expect(criar).toHaveBeenCalledTimes(1);
+    expect((el.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('as dicas ficam em botoes pequenos, nunca no campo inteiro', () => {
     // No celular o tooltip desliga os gestos nativos do elemento onde está; num campo
     // inteiro isso impede rolar a tela com o dedo. Só os botões "ⓘ" podem ter dica.

@@ -46,6 +46,7 @@ export class FichaDetalhe {
 
   carregar(id: number): void {
     this.estado.set('carregando');
+    this.erro.set(null);
     this.ultimoResultado.set(null);
     this.confirmandoExclusao.set(false);
     this.api.buscar(id).subscribe({
@@ -70,6 +71,7 @@ export class FichaDetalhe {
       return;
     }
     this.rolando.set(codigo);
+    this.erro.set(null);
     this.api
       .testarPericia(ficha.id, codigo)
       .pipe(finalize(() => this.rolando.set(null)))
@@ -84,13 +86,15 @@ export class FichaDetalhe {
     if (!ficha || this.excluindo()) {
       return;
     }
+    // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
+    // permitiria um segundo DELETE durante a navegação.
     this.excluindo.set(true);
-    this.api
-      .excluir(ficha.id)
-      .pipe(finalize(() => this.excluindo.set(false)))
-      .subscribe({
-        next: () => void this.router.navigate(['/fichas']),
-        error: (erro: ApiError) => this.erro.set(erro),
-      });
+    this.api.excluir(ficha.id).subscribe({
+      next: () => void this.router.navigate(['/fichas']),
+      error: (erro: ApiError) => {
+        this.excluindo.set(false);
+        this.erro.set(erro);
+      },
+    });
   }
 }
