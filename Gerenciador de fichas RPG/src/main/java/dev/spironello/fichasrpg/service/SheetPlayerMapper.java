@@ -82,6 +82,7 @@ public class SheetPlayerMapper {
 				entity.getTAM(),
 				entity.getSOR(),
 				entity.getPOD(),
-				pericias);
+				pericias,
+				entity.getRetratoVersao());
 	}
 }
