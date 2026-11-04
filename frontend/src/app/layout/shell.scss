@@ -8,92 +8,55 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--cor-fundo);
+  background: rgba(11, 10, 15, 0.85);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--cor-borda);
 }
 
+.barra-interna,
+.conteudo {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.barra-interna {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+}
+
 .marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
   font-family: var(--fonte-titulo);
-  color: var(--cor-titulo);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e9d9b4;
   text-decoration: none;
 }
 
-.navegacao-superior {
-  display: flex;
-  gap: 1.25rem;
-
-  a {
-    color: var(--cor-texto-suave);
-    text-decoration: none;
-    padding: 0.25rem 0;
-    border-bottom: 2px solid transparent;
-
-    &.ativo {
-      color: var(--cor-acao);
-      border-bottom-color: var(--cor-acao);
-    }
-  }
+.selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--cor-acao);
+  border-radius: 50%;
+  color: var(--cor-acao);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  box-shadow: 0 0 10px rgba(201, 164, 92, 0.25);
 }
 
 .conteudo {
   flex: 1;
-  padding: 1rem;
-  min-width: 0;
-}
-
-// Espaço para a navegação fixa no rodapé não cobrir o conteúdo.
-.conteudo-celular {
-  padding-bottom: 5rem;
-}
-
-.navegacao-inferior {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  background: var(--cor-fundo);
-  border-top: 1px solid var(--cor-borda);
-  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
-
-  a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 6rem;
-    padding: 0.25rem 0.5rem;
-    color: var(--cor-texto-suave);
-    text-decoration: none;
-    font-size: 0.8rem;
-
-    &.ativo {
-      color: var(--cor-acao);
-    }
-  }
-}
-
-.corpo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.duas-colunas {
-  display: grid;
-  grid-template-columns: minmax(280px, 380px) 1fr;
-}
-
-.coluna-lateral {
-  border-right: 1px solid var(--cor-borda);
-  padding: 1rem;
-  overflow-y: auto;
-  max-height: calc(100vh - 3.5rem);
-  position: sticky;
-  top: 3.5rem;
+  padding: 1rem 1rem 2.5rem;
 }

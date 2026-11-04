@@ -1,4 +1,3 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -6,15 +5,11 @@ import { of } from 'rxjs';
 import { App } from './app';
 import { FichaApi } from './fichas/ficha-api';
 
-function montar(desktop: boolean) {
+function montar() {
   const listar = vi.fn(() => of([]));
   TestBed.configureTestingModule({
     imports: [App],
-    providers: [
-      provideRouter([]),
-      { provide: BreakpointObserver, useValue: { observe: () => of({ matches: desktop, breakpoints: {} }) } },
-      { provide: FichaApi, useValue: { listar, versaoFichas: signal(0) } },
-    ],
+    providers: [provideRouter([]), { provide: FichaApi, useValue: { listar, versaoFichas: signal(0) } }],
   });
   const fixture = TestBed.createComponent(App);
   fixture.detectChanges();
@@ -23,18 +18,15 @@ function montar(desktop: boolean) {
 
 describe('App', () => {
   it('deve criar o componente raiz', () => {
-    expect(montar(false).fixture.componentInstance).toBeTruthy();
+    expect(montar().fixture.componentInstance).toBeTruthy();
   });
 
-  it('no celular nao cria a lista lateral nem chama a API por ela', () => {
-    const { el, listar } = montar(false);
-    expect(el.querySelector('app-ficha-lista')).toBeNull();
+  // Reescrito no 2.1b: a coluna lateral com a lista saiu de propósito (spec do redesign §3.1).
+  // Quem lista as fichas agora é só o painel da rota /fichas.
+  it('nao cria lista propria nem chama a API', () => {
+    const { el, listar } = montar();
+    expect(el.querySelector('app-shell')).not.toBeNull();
+    expect(el.querySelector('app-ficha-lista, app-painel')).toBeNull();
     expect(listar).not.toHaveBeenCalled();
-  });
-
-  it('no computador mostra a lista na coluna lateral', () => {
-    const { el, listar } = montar(true);
-    expect(el.querySelector('.coluna-lateral app-ficha-lista')).not.toBeNull();
-    expect(listar).toHaveBeenCalledTimes(1);
   });
 });

@@ -28,18 +28,21 @@ class TelaContada {
 }
 
 describe('Shell', () => {
-  it('mostra a navegacao inferior no celular', () => {
+  it('mostra a marca e o Nova ficha no topo', () => {
     const el = criarShell(false);
-    const nav = el.querySelector('nav.navegacao-inferior');
-    expect(nav).not.toBeNull();
-    expect(nav?.textContent).toContain('Fichas');
-    expect(nav?.textContent).toContain('Nova ficha');
-    expect(el.querySelector('.coluna-lateral')).toBeNull();
+    const marca = el.querySelector('header a.marca') as HTMLAnchorElement;
+    expect(marca.getAttribute('href')).toBe('/fichas');
+    expect(marca.textContent).toContain('✦ Grimório');
+    expect(marca.getAttribute('aria-label')).toBe('Grimório — Fichas RPG, ir para o painel');
+    const nova = el.querySelector('header a[href="/fichas/nova"]');
+    expect(nova?.textContent).toContain('+ Nova ficha');
   });
 
-  it('mostra o layout em duas colunas no computador', () => {
+  it('no computador e o mesmo topo, com um unico router-outlet e sem coluna lateral nem navegacao inferior', () => {
     const el = criarShell(true);
-    expect(el.querySelector('.coluna-lateral')).not.toBeNull();
+    expect(el.querySelector('header a.marca')).not.toBeNull();
+    expect(el.querySelectorAll('router-outlet').length).toBe(1);
+    expect(el.querySelector('.coluna-lateral')).toBeNull();
     expect(el.querySelector('nav.navegacao-inferior')).toBeNull();
   });
 

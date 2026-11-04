@@ -1,31 +1,12 @@
 <header class="barra-topo">
-  <a class="marca" routerLink="/fichas">🕯 Fichas RPG</a>
-  @if (desktop()) {
-    <nav class="navegacao-superior" aria-label="Navegação principal">
-      <a routerLink="/fichas" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">Fichas</a>
-      <a routerLink="/fichas/nova" routerLinkActive="ativo">Nova ficha</a>
-    </nav>
-  }
+  <div class="barra-interna">
+    <a class="marca" routerLink="/fichas" aria-label="Grimório — Fichas RPG, ir para o painel">
+      <span class="selo" aria-hidden="true">✦</span> Grimório
+    </a>
+    <a class="botao" routerLink="/fichas/nova">+ Nova ficha</a>
+  </div>
 </header>
 
-<div class="corpo" [class.duas-colunas]="desktop()">
-  @if (desktop()) {
-    <aside class="coluna-lateral" aria-label="Fichas">
-      <ng-content select="[lateral]" />
-    </aside>
-  }
-  <main class="conteudo" [class.conteudo-celular]="!desktop()">
-    <router-outlet />
-  </main>
-</div>
-
-@if (!desktop()) {
-  <nav class="navegacao-inferior" aria-label="Navegação principal">
-    <a routerLink="/fichas" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">
-      <span aria-hidden="true">📜</span> Fichas
-    </a>
-    <a routerLink="/fichas/nova" routerLinkActive="ativo">
-      <span aria-hidden="true">＋</span> Nova ficha
-    </a>
-  </nav>
-}
+<main class="conteudo">
+  <router-outlet />
+</main>

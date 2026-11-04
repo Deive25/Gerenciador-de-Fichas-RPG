@@ -13,8 +13,8 @@ export class FichaApi {
   private readonly versao = signal(0);
 
   /**
-   * Muda a cada criação, atualização ou exclusão bem-sucedida. A lista da coluna lateral
-   * (computador) observa este sinal para recarregar sem precisar trocar de tela.
+   * Muda a cada criação, atualização ou exclusão bem-sucedida. O painel observa este sinal
+   * para recarregar a lista sempre que alguma ficha muda.
    */
   readonly versaoFichas = this.versao.asReadonly();
 
