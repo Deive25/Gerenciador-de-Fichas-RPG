@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.linha {
+  display: flex;
+  justify-content: space-between;
+}
+
+.trilho {
+  height: 7px;
+  margin-top: 3px;
+  background: #232a37;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barra-preenchida {
+  height: 100%;
+  border-radius: 4px;
+
+  &.vida {
+    background: var(--cor-vida);
+  }
+
+  &.sanidade {
+    background: var(--cor-sanidade);
+  }
+}

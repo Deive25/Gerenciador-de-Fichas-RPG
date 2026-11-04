@@ -12,13 +12,24 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 
 | Incremento | Entrega | Situação |
 | --- | --- | --- |
-| 1.1 | Base segura e testável: credenciais fora do código, `docker compose` com o banco local, testes de caracterização das 5 rotas, CI | Concluído (PR #1 aberto) |
-| 1.2 | Upgrade para Java 21 e Spring Boot 4.1.2 em duas etapas, springdoc no lugar do Springfox, pacote `dev.spironello.fichasrpg` | Concluído nesta branch |
-| 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído nesta branch |
-| 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído nesta branch |
-| 1.4b | Perícias em tabela própria (migração V2), sem mudar o JSON da API | Concluído nesta branch |
-| 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Concluído nesta branch |
-| 1.6 | Contrato da API com nomes claros (`/fichas`, JSON em português), front-end Angular ajustado no mesmo incremento, job de CI do front-end e README final | Concluído nesta branch |
+| 1.1 | Base segura e testável: credenciais fora do código, `docker compose` com o banco local, testes de caracterização das 5 rotas, CI | Concluído (PR #1) |
+| 1.2 | Upgrade para Java 21 e Spring Boot 4.1.2 em duas etapas, springdoc no lugar do Springfox, pacote `dev.spironello.fichasrpg` | Concluído (PR #2) |
+| 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído (PR #3) |
+| 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído (PR #4) |
+| 1.4b | Perícias em tabela própria (migração V2), sem mudar o JSON da API | Concluído (PR #5) |
+| 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Concluído (PR #6) |
+| 1.6 | Contrato da API com nomes claros (`/fichas`, JSON em português), front-end Angular ajustado no mesmo incremento, job de CI do front-end e README final | Concluído (PR #7) |
+
+**Fase 2 — mesa ao vivo** (design em [`docs/superpowers/specs/2026-11-04-j1-fase-2-design.md`](docs/superpowers/specs/2026-11-04-j1-fase-2-design.md)): transformar o projeto numa ferramenta usada de verdade pelo grupo durante as sessões, com login, campanhas e rolagens ao vivo.
+
+| Incremento | Entrega | Situação |
+| --- | --- | --- |
+| 2.1 | Frontend refeito em Angular 22, visual "investigação sombria", pensado primeiro para o celular | Concluído nesta branch |
+| 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
+| 2.3 | Campanhas, convite por link, papéis Mestre/Jogador, nomes claros no banco | Planejado |
+| 2.4 | Rolagens gravadas e ao vivo (WebSocket STOMP) | Planejado |
+| 2.5 | Login com Google | Planejado |
+| 2.6 | Deploy gratuito (Cloudflare Pages + Render + Neon) | Planejado |
 
 ## Tecnologias
 
@@ -26,10 +37,10 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | --- | --- |
 | Back-end | Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA (Hibernate 7) |
 | Banco de dados | PostgreSQL 17 (Docker), migrações com Flyway 12 |
-| Front-end | Angular 13, TypeScript 4.4, Angular Material, Bootstrap |
+| Front-end | Angular 22 (standalone, signals, zoneless), Angular Material 22, TypeScript 6 |
 | Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
-| Testes | JUnit, MockMvc, Mockito, Testcontainers |
-| Build e CI | Maven e Angular CLI; GitHub Actions (job `backend` com `./mvnw -B verify` e job `frontend` com `ng build` em Node 16) |
+| Testes | Back-end: JUnit, MockMvc, Mockito, Testcontainers. Front-end: Vitest |
+| Build e CI | Maven e Angular CLI; GitHub Actions (job `backend` com `./mvnw -B verify` e job `frontend` com build e testes em Node 24) |
 
 ## Funcionalidades da API
 
@@ -139,7 +150,7 @@ Estado atual:
 
 ```mermaid
 flowchart LR
-    A["Angular (porta 4200)"] -->|HTTP/JSON| B[SheetPlayerController]
+    A["Angular 22 (porta 4200)"] -->|HTTP/JSON| B[SheetPlayerController]
     B -->|SheetPlayerRequest / Response| C[SheetPlayerService]
     A -->|HTTP/JSON| T[TestePericiaController]
     T -->|TestePericiaRequest / Response| S[TestePericiaService]
@@ -230,7 +241,7 @@ Estrutura de pastas:
 
 - JDK 21 (o `pom.xml` compila para Java 21).
 - Docker com Docker Compose (Docker Desktop no Windows). Ele é usado para o banco local **e** pelos testes.
-- Docker, que também roda o front-end (em um container `node:16`, porque o Angular 13 não compila no Node atual). Não é preciso instalar o Node.
+- Node.js 24 (ou 22.22+) com npm, só para rodar a interface.
 
 ### Banco de dados e API
 
@@ -270,24 +281,31 @@ Para parar o banco: `docker compose down` (acrescente `-v` para apagar também o
 
 ### Interface
 
-O Angular 13 só compila com Node 12, 14 ou 16; o Node mais novo da máquina não serve. Por isso a interface roda dentro de um container `node:16`, sem instalar nada no seu sistema. Com a API e o banco no ar (seção anterior), na raiz do repositório:
+A interface é um projeto Angular 22 em `frontend/`, no visual "investigação sombria" e pensado primeiro para o celular:
+
+- **Celular:** uma tela por vez, com a barra no topo e a navegação embaixo ("Fichas" e "Nova ficha").
+- **Computador (a partir de 900 px):** duas colunas, com a lista de fichas fixa à esquerda e a ficha aberta à direita.
+- **Telas:** lista com barras de vida e sanidade; ficha com abas "Atributos" e "Perícias" (🎲 em cada perícia, com o resultado e as faixas "extremo ≤ X · sucesso ≤ Y"); formulário de criar e editar, com as mesmas regras de validação da API e o erro do servidor mostrado no campo certo.
+- **API fora do ar ou "acordando":** a tela mostra "Servidor indisponível" com o botão "Tentar de novo", em vez de ficar em branco.
+- A ficha e o formulário carregam sob demanda, para a primeira tela abrir rápido no celular.
+
+Com a API e o banco no ar (seção anterior):
 
 ```sh
-# Git Bash (no Windows, o MSYS_NO_PATHCONV evita que o Git Bash reescreva os caminhos do -v)
-MSYS_NO_PATHCONV=1 docker run --rm -it -p 127.0.0.1:4200:4200 \
-  -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 \
-  sh -c "npm ci && npx ng serve --host 0.0.0.0 --port 4200 --disable-host-check"
+cd frontend
+npm ci
+npm start
 ```
 
-No Linux ou no macOS use `-v "$PWD/frontend:/app"`, e no PowerShell `-v "${PWD}\frontend:/app"`. A primeira execução instala as dependências e leva alguns minutos; depois acesse `http://localhost:4200`. A interface chama a API em `http://localhost:8080/fichas` (`baseUrl` em `frontend/src/app/components/template/SheetPlayer/sheet.services.ts`).
+Acesse `http://localhost:4200`. A interface chama a API em `http://localhost:8080` (`apiUrl` em `frontend/src/environments/`).
 
-Para só conferir que compila (é o que o CI faz com Node 16):
+Testes e build da interface (é o que o CI roda):
 
 ```sh
-MSYS_NO_PATHCONV=1 docker run --rm -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 sh -c "npm ci && npx ng build"
+cd frontend
+npx ng test --watch=false
+npx ng build
 ```
-
-O build avisa que alguns estilos e o bundle passam do orçamento de tamanho do Angular; são avisos antigos, não erros. Se você tiver o Node 16 instalado (por exemplo com nvm), `npm ci` e `npm start` dentro de `frontend/` também funcionam.
 
 ## Testes
 
@@ -296,9 +314,11 @@ cd "Gerenciador de fichas RPG"
 ./mvnw -B clean verify
 ```
 
-**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci` e `npx ng build` em Node 16; não há testes automatizados do front-end.
+**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-São 74 testes, em quinze grupos:
+**Front-end:** 43 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco: o shell nas duas larguras, o catálogo de perícias e as faixas da regra, o cliente da API (URLs, corpos e tradução de erros, inclusive a API fora do ar), a lista (vazia, com erro e "Tentar de novo"), a ficha (23 botões de rolar, toque duplo bloqueado, exclusão com confirmação, 404) e o formulário (obrigatórios, número inteiro, vazio como `null`, erro do servidor no campo, envio duplo bloqueado, edição).
+
+**Back-end:** são 74 testes, em quinze grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
@@ -343,6 +363,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0007 Erros padronizados e JSON estrito](docs/decisoes/0007-erros-padronizados-e-json-estrito.md): ProblemDetail, códigos HTTP e rejeição de chaves desconhecidas.
 - [0008 PUT como substituição completa](docs/decisoes/0008-put-como-substituicao-completa.md): sem PATCH e sem regras numéricas inventadas.
 - [0012 Contrato com nomes claros](docs/decisoes/0012-contrato-com-nomes-claros.md): rota `/fichas`, JSON em português com `pericias` como objeto, sem versionar a API; a entidade e o banco só mudam depois.
+- [0013 Frontend novo em Angular 22](docs/decisoes/0013-frontend-novo-em-angular-22.md): refazer as telas na versão atual em vez de atualizar o Angular 13 versão a versão.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -407,17 +428,19 @@ Versionar serve para quem tem clientes que eu não controlo e que não podem mud
 Porque o domínio é de RPG em português (perícia, sanidade, ficha) e a tela já mostra esses termos; `vidaAtual` e `forca` se explicam sozinhos, o que `lifeA` e `str` não faziam. Traduzir para o inglês criaria termos artificiais para o jogo. Aceito que fora do Brasil o padrão seria inglês; é uma escolha para este projeto de estudo, fácil de reverter porque o mapper concentra a tradução.
 
 **Como trocou o contrato sem quebrar a interface?**
-Escrevi primeiro os testes no contrato novo e os vi falhar (34 falhas), depois mudei DTOs, mapper e rotas até o `clean verify` ficar verde, e só então ajustei o Angular no mesmo incremento. A entidade e as migrações não mudaram; o mapper traduz. Como o Angular 13 não roda no Node da minha máquina, compilei e servi o front num container `node:16`, e o CI ganhou um job que roda `ng build`. O que não tenho é teste automatizado do frontend: a interface foi conferida à mão.
+Escrevi primeiro os testes no contrato novo e os vi falhar (34 falhas), depois mudei DTOs, mapper e rotas até o `clean verify` ficar verde, e só então ajustei o Angular no mesmo incremento. A entidade e as migrações não mudaram; o mapper traduz. Na época, como o Angular 13 não rodava no Node da minha máquina, compilei e servi o front num container `node:16`, e o CI ganhou um job que roda `ng build`. No 2.1 o frontend foi refeito em Angular 22, com testes automatizados.
+
+**Por que refazer o frontend em vez de atualizar o Angular 13?**
+O backend eu refatorei passo a passo porque tinha regra e contrato a preservar. O frontend antigo eram 3 formulários e um painel, e o design ia mudar inteiro de qualquer jeito. Atualizar 9 versões (13 → 22) para depois jogar as telas fora seria esforço sem retorno. Refiz as telas no Angular atual (standalone, signals, Vitest) contra a mesma API, com testes primeiro, e conferi o fluxo no navegador nas larguras de celular e de computador. O custo é que o frontend não tem a história de "upgrade seguro" que o backend tem ([ADR 0013](docs/decisoes/0013-frontend-novo-em-angular-22.md)).
 
 ## Próximos passos
 
-O incremento 1.6 fecha o plano de modernização do back-end. O que fica para depois:
+A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- **Renomear a entidade e as colunas** para os nomes claros (`SheetPlayer` para `Ficha`, `namej` para `jogador` etc.), com uma migração V3; hoje o `SheetPlayerMapper` traduz. Depois disso o `campoLegado` do enum `Pericia` e a tradução somem.
-- **Upgrade do Angular** (13 hoje, que só compila em Node 16): é uma decisão do dono do projeto, ainda não tomada. Seria um incremento próprio, com a interface validada no navegador.
-- **Autenticação**: hoje qualquer um que alcance a API lê e edita qualquer ficha.
-- **Deploy**: publicar a API, o banco e a interface.
-- **Revisar e abrir os PRs** dos incrementos 1.3 a 1.6, que ainda não foram enviados.
+- **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
+- **2.3 Campanhas** com convite e papéis Mestre/Jogador, junto com a renomeação da entidade e das colunas para os nomes claros (`SheetPlayer` para `Ficha`, `namej` para `jogador` etc.), que hoje o `SheetPlayerMapper` traduz.
+- **2.4 Rolagens ao vivo** para toda a mesa (WebSocket).
+- **2.5 Login com Google** e **2.6 deploy** gratuito, com link público.
 
 ## O que este projeto demonstra
 
@@ -431,6 +454,7 @@ O incremento 1.6 fecha o plano de modernização do back-end. O que fica para de
 - Regra de domínio testável: lógica pura separada da aleatoriedade, que entra por uma interface injetada.
 - Documentação de decisões (ADRs) com alternativas e consequências.
 - Evolução de contrato de API (renomear rotas e campos) com backend, frontend, testes e CI mudando juntos, sem deixar a aplicação quebrada no meio do caminho.
+- Frontend Angular atual (standalone, signals, carregamento sob demanda), pensado primeiro para o celular, com testes unitários (Vitest) e erros da API tratados na tela.
 
 ## Contexto do portfólio
 

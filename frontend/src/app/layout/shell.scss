@@ -1,0 +1,99 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.barra-topo {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--cor-fundo);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.marca {
+  font-family: var(--fonte-titulo);
+  color: var(--cor-titulo);
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+
+.navegacao-superior {
+  display: flex;
+  gap: 1.25rem;
+
+  a {
+    color: var(--cor-texto-suave);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid transparent;
+
+    &.ativo {
+      color: var(--cor-acao);
+      border-bottom-color: var(--cor-acao);
+    }
+  }
+}
+
+.conteudo {
+  flex: 1;
+  padding: 1rem;
+  min-width: 0;
+}
+
+// Espaço para a navegação fixa no rodapé não cobrir o conteúdo.
+.conteudo-celular {
+  padding-bottom: 5rem;
+}
+
+.navegacao-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--cor-fundo);
+  border-top: 1px solid var(--cor-borda);
+  padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+
+  a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 6rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--cor-texto-suave);
+    text-decoration: none;
+    font-size: 0.8rem;
+
+    &.ativo {
+      color: var(--cor-acao);
+    }
+  }
+}
+
+.corpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.duas-colunas {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+}
+
+.coluna-lateral {
+  border-right: 1px solid var(--cor-borda);
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 3.5rem);
+  position: sticky;
+  top: 3.5rem;
+}

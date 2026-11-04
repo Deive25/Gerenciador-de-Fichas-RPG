@@ -1,0 +1,100 @@
+// Tema "investigação sombria" (spec da fase 2, §7).
+// Angular Material entra como base acessível (M3, esquema escuro); as cores da marca
+// sobrescrevem os tokens de sistema. Nenhuma fonte externa: só fontes do sistema.
+@use '@angular/material' as mat;
+
+:root {
+  --cor-fundo: #12151c;
+  --cor-superficie: #1a1f2a;
+  --cor-borda: #2b3240;
+  --cor-texto: #d8dde6;
+  --cor-texto-suave: #8a93a3;
+  --cor-titulo: #e9dcc0;
+  --cor-acao: #c9a45c;
+  --cor-vida: #d0533f;
+  --cor-sanidade: #4fb38c;
+
+  --fonte-titulo: Georgia, 'Times New Roman', serif;
+  --fonte-texto: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --raio: 12px;
+}
+
+html {
+  height: 100%;
+  color-scheme: dark;
+  @include mat.theme(
+    (
+      color: (
+        theme-type: dark,
+        primary: mat.$orange-palette,
+        tertiary: mat.$green-palette,
+      ),
+      typography: (
+        plain-family: (system-ui, 'Segoe UI', Roboto, sans-serif),
+        brand-family: (Georgia, 'Times New Roman', serif),
+      ),
+      density: 0,
+    )
+  );
+  @include mat.theme-overrides(
+    (
+      primary: #c9a45c,
+      on-primary: #12151c,
+      surface: #12151c,
+      on-surface: #d8dde6,
+      surface-container: #1a1f2a,
+      outline: #2b3240,
+      error: #d0533f,
+    )
+  );
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--fonte-texto);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fonte-titulo);
+  color: var(--cor-titulo);
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+a {
+  color: var(--cor-acao);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cor-acao);
+  outline-offset: 2px;
+}
+
+// Botão "ⓘ" das dicas (atributos e perícias). A dica fica só neste botão pequeno: no toque,
+// o tooltip desligaria a rolagem nativa do elemento onde estivesse (ex.: o campo inteiro).
+.dica {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-size: 0.95rem;
+  cursor: help;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--cor-acao);
+  }
+}
