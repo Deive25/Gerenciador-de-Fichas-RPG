@@ -2,7 +2,7 @@ package dev.spironello.fichasrpg.model;
 
 /**
  * As 23 perícias da ficha. Cada constante guarda o nome de exibição e o nome da chave do JSON
- * de antes do 1.4b ("atribute1"...), que o Angular ainda usa. O vínculo é um campo explícito,
+ * de antes do 1.4b ("atribute1"...), hoje só histórico (V2 e testes). O vínculo é um campo explícito,
  * e não o ordinal(): reordenar o enum não pode mudar qual perícia é qual. No banco, a constante
  * é gravada pelo nome (ex.: ACROBACIA), então renomear uma constante exige uma migração.
  */
@@ -43,7 +43,7 @@ public enum Pericia {
 		return nome;
 	}
 
-	/** Nome da chave no JSON da API (contrato mantido até o incremento 1.6). */
+	/** Nome da chave antiga do JSON (atribute1...). Desde o 1.6 a API usa o código do enum; este campo só serve à migração V2 e aos testes de mapeamento. */
 	public String getCampoLegado() {
 		return campoLegado;
 	}

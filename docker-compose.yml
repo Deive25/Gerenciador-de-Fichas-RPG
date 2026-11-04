@@ -4,7 +4,6 @@
 services:
   postgres:
     image: postgres:17
-    container_name: fichas-rpg-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}

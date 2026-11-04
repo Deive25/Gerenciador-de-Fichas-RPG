@@ -29,7 +29,7 @@ import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
  * Entrada inválida e regras de entrada da API (incremento 1.3, ADR 0007 e 0008): JSON
  * estrito, limites de tamanho, tipos errados e o tratamento do id no corpo.
  */
-@DisplayName("API /sheetPlayer (validação de entrada e JSON estrito)")
+@DisplayName("API /fichas (validação de entrada e JSON estrito)")
 // O devtools (usado em spring-boot:run) liga este log por padrão e o Spring então registra, em WARN,
 // a exceção de validação com o valor rejeitado. Ligamos aqui para reproduzir esse cenário.
 @TestPropertySource(properties = "spring.mvc.log-resolved-exception=true")
@@ -51,49 +51,49 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	@DisplayName("POST com chave desconhecida (\"STR\") devolve 400 citando a chave")
 	void postComChaveDesconhecida() throws Exception {
 		String corpo = """
-				{"nameJ": "Arthur", "nameC": "Ana", "gender": "F", "STR": 50}""";
+				{"jogador": "Arthur", "personagem": "Ana", "genero": "F", "STR": 50}""";
 
-		problema400(enviar("POST", "/sheetPlayer", corpo))
+		problema400(enviar("POST", "/fichas", corpo))
 				.andExpect(jsonPath("$.detail", containsString("STR")));
 
 		assertThat(repository.count()).isZero();
 	}
 
 	@Test
-	@DisplayName("POST com nameJ de 256 caracteres devolve 400 e nada é salvo")
+	@DisplayName("POST com jogador de 256 caracteres devolve 400 e nada é salvo")
 	void postComNomeLongoDemais() throws Exception {
 		String corpo = """
-				{"nameJ": "%s", "nameC": "Ana", "gender": "F"}""".formatted("a".repeat(256));
+				{"jogador": "%s", "personagem": "Ana", "genero": "F"}""".formatted("a".repeat(256));
 
-		problema400(enviar("POST", "/sheetPlayer", corpo))
-				.andExpect(jsonPath("$.errors.nameJ").value("deve ter no máximo 255 caracteres"));
+		problema400(enviar("POST", "/fichas", corpo))
+				.andExpect(jsonPath("$.errors.jogador").value("deve ter no máximo 255 caracteres"));
 
 		assertThat(repository.count()).isZero();
 	}
 
 	@Test
-	@DisplayName("POST com nameJ de 255 caracteres é aceito (limite da coluna varchar(255))")
+	@DisplayName("POST com jogador de 255 caracteres é aceito (limite da coluna varchar(255))")
 	void postComNomeNoLimite() throws Exception {
 		String corpo = """
-				{"nameJ": "%s", "nameC": "Ana", "gender": "F"}""".formatted("a".repeat(255));
+				{"jogador": "%s", "personagem": "Ana", "genero": "F"}""".formatted("a".repeat(255));
 
-		enviar("POST", "/sheetPlayer", corpo).andExpect(status().isCreated());
+		enviar("POST", "/fichas", corpo).andExpect(status().isCreated());
 	}
 
 	@Test
-	@DisplayName("POST com tipo errado (\"age\": \"abc\") devolve 400 citando o campo")
+	@DisplayName("POST com tipo errado (\"idade\": \"abc\") devolve 400 citando o campo")
 	void postComTipoErrado() throws Exception {
 		String corpo = """
-				{"nameJ": "Arthur", "nameC": "Ana", "gender": "F", "age": "abc"}""";
+				{"jogador": "Arthur", "personagem": "Ana", "genero": "F", "idade": "abc"}""";
 
-		problema400(enviar("POST", "/sheetPlayer", corpo))
-				.andExpect(jsonPath("$.detail", containsString("age")));
+		problema400(enviar("POST", "/fichas", corpo))
+				.andExpect(jsonPath("$.detail", containsString("idade")));
 	}
 
 	@Test
 	@DisplayName("POST com JSON malformado devolve 400 ProblemDetail")
 	void postComJsonMalformado() throws Exception {
-		problema400(enviar("POST", "/sheetPlayer", "{nameJ: "));
+		problema400(enviar("POST", "/fichas", "{jogador: "));
 	}
 
 	@Test
@@ -101,9 +101,9 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	void putInvalido() throws Exception {
 		SheetPlayer ficha = salvar();
 
-		problema400(enviar("PUT", "/sheetPlayer/" + ficha.getId(), """
-				{"nameJ": "  ", "nameC": "Ana", "gender": "F"}"""))
-				.andExpect(jsonPath("$.errors.nameJ").value("é obrigatório"));
+		problema400(enviar("PUT", "/fichas/" + ficha.getId(), """
+				{"jogador": "  ", "personagem": "Ana", "genero": "F"}"""))
+				.andExpect(jsonPath("$.errors.jogador").value("é obrigatório"));
 
 		assertThat(repository.findById(ficha.getId()).orElseThrow().getNameJ()).isEqualTo("Arthur");
 	}
@@ -113,8 +113,8 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	void putComChaveDesconhecida() throws Exception {
 		SheetPlayer ficha = salvar();
 
-		problema400(enviar("PUT", "/sheetPlayer/" + ficha.getId(), """
-				{"nameJ": "Arthur", "nameC": "Ana", "gender": "F", "STR": 50}"""))
+		problema400(enviar("PUT", "/fichas/" + ficha.getId(), """
+				{"jogador": "Arthur", "personagem": "Ana", "genero": "F", "STR": 50}"""))
 				.andExpect(jsonPath("$.detail", containsString("STR")));
 	}
 
@@ -124,8 +124,8 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 		SheetPlayer alvo = salvar();
 		SheetPlayer outra = salvar();
 
-		enviar("PUT", "/sheetPlayer/" + alvo.getId(), """
-				{"id": %d, "nameJ": "Atualizado", "nameC": "Ana", "gender": "F"}""".formatted(outra.getId()))
+		enviar("PUT", "/fichas/" + alvo.getId(), """
+				{"id": %d, "jogador": "Atualizado", "personagem": "Ana", "genero": "F"}""".formatted(outra.getId()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(alvo.getId()));
 
@@ -137,8 +137,8 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("POST com id no corpo: o id é ignorado e o banco gera um novo")
 	void postComIdNoCorpo() throws Exception {
-		enviar("POST", "/sheetPlayer", """
-				{"id": 777777, "nameJ": "Arthur", "nameC": "Ana", "gender": "F"}""")
+		enviar("POST", "/fichas", """
+				{"id": 777777, "jogador": "Arthur", "personagem": "Ana", "genero": "F"}""")
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.id").isNumber());
 
@@ -149,8 +149,8 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("POST com id null no corpo (como o Angular envia) funciona")
 	void postComIdNulo() throws Exception {
-		enviar("POST", "/sheetPlayer", """
-				{"id": null, "nameJ": "Arthur", "nameC": "Ana", "gender": "F"}""")
+		enviar("POST", "/fichas", """
+				{"id": null, "jogador": "Arthur", "personagem": "Ana", "genero": "F"}""")
 				.andExpect(status().isCreated());
 	}
 
@@ -159,8 +159,8 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	void valorRejeitadoNaoVaiParaOLog(CapturedOutput saida) throws Exception {
 		String nomeLongo = "NomeSecretoDoJogador" + "x".repeat(250);
 
-		problema400(enviar("POST", "/sheetPlayer", """
-				{"nameJ": "%s", "nameC": "Ana", "gender": "F"}""".formatted(nomeLongo)));
+		problema400(enviar("POST", "/fichas", """
+				{"jogador": "%s", "personagem": "Ana", "genero": "F"}""".formatted(nomeLongo)));
 
 		assertThat(saida.getAll()).doesNotContain("NomeSecretoDoJogador");
 	}
@@ -168,9 +168,33 @@ class SheetPlayerValidacaoTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("GET com id não numérico devolve 400 em português")
 	void idNaoNumerico() throws Exception {
-		problema400(mockMvc.perform(get("/sheetPlayer/abc")))
+		problema400(mockMvc.perform(get("/fichas/abc")))
 				.andExpect(jsonPath("$.title").value("Parâmetro inválido"))
 				.andExpect(jsonPath("$.detail").value("O parâmetro 'id' deve ser um número inteiro."));
+	}
+
+	@Test
+	@DisplayName("POST com código de perícia inexistente em pericias (\"VOAR\") devolve 400 e nada é salvo")
+	void postComChaveDePericiaInvalida() throws Exception {
+		String corpo = """
+				{"jogador": "Arthur", "personagem": "Ana", "genero": "F", "pericias": {"VOAR": 10}}""";
+
+		problema400(enviar("POST", "/fichas", corpo))
+				.andExpect(jsonPath("$.detail", containsString("pericias")));
+
+		assertThat(repository.count()).isZero();
+	}
+
+	@Test
+	@DisplayName("PUT com código de perícia inexistente em pericias devolve 400 e não altera a ficha")
+	void putComChaveDePericiaInvalida() throws Exception {
+		SheetPlayer ficha = salvar();
+
+		problema400(enviar("PUT", "/fichas/" + ficha.getId(), """
+				{"jogador": "Outro", "personagem": "Ana", "genero": "F", "pericias": {"ACROBACIA": 10, "atribute1": 10}}"""))
+				.andExpect(jsonPath("$.detail", containsString("pericias")));
+
+		assertThat(repository.findById(ficha.getId()).orElseThrow().getNameJ()).isEqualTo("Arthur");
 	}
 
 	// ---------- apoio ----------

@@ -2,7 +2,8 @@ package dev.spironello.fichasrpg.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.lang.reflect.RecordComponent;
+import java.util.EnumMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,75 +14,55 @@ import dev.spironello.fichasrpg.model.Pericia;
 import dev.spironello.fichasrpg.model.SheetPlayer;
 
 /**
- * Garante que o mapper liga cada chave atributeN do JSON à perícia certa do enum
- * (Pericia.getCampoLegado), nos dois sentidos. Unitário: sem Spring e sem Docker.
+ * Garante que o mapper leva cada perícia do objeto "pericias" do JSON para a perícia certa da
+ * entidade, e de volta, nos dois sentidos. Unitário: sem Spring e sem Docker.
  */
-@DisplayName("SheetPlayerMapper (perícias <-> atributeN)")
+@DisplayName("SheetPlayerMapper (perícias <-> objeto pericias)")
 class SheetPlayerMapperPericiasTest {
 
 	private final SheetPlayerMapper mapper = new SheetPlayerMapper();
 
 	@Test
-	@DisplayName("atributeN do pedido vai para a perícia do enum e volta na mesma chave do JSON")
-	void cadaChaveVaiParaASuaPericia() throws Exception {
-		SheetPlayerRequest request = requestComPericiasDistintas();
-		SheetPlayer ficha = mapper.toEntity(request);
+	@DisplayName("cada perícia do pedido vai para a mesma perícia da entidade e volta com o mesmo código na resposta")
+	void cadaChaveVaiParaASuaPericia() {
+		Map<Pericia, Integer> doPedido = new EnumMap<>(Pericia.class);
+		for (Pericia p : Pericia.values()) {
+			doPedido.put(p, (p.ordinal() + 1) * 10);
+		}
+		SheetPlayer ficha = mapper.toEntity(requestComPericias(doPedido));
 		SheetPlayerResponse resposta = mapper.toResponse(ficha);
 
 		assertThat(ficha.getPericias()).hasSize(23);
 		for (Pericia p : Pericia.values()) {
-			Object doPedido = componente(SheetPlayerRequest.class, p.getCampoLegado()).getAccessor().invoke(request);
-			Object daResposta = componente(SheetPlayerResponse.class, p.getCampoLegado()).getAccessor().invoke(resposta);
-			assertThat(ficha.getPericias()).as("%s", p).containsEntry(p, (Integer) doPedido);
-			assertThat(daResposta).as("resposta %s", p.getCampoLegado()).isEqualTo(doPedido);
+			assertThat(ficha.getPericias()).as("%s", p).containsEntry(p, doPedido.get(p));
+			assertThat(resposta.pericias()).as("resposta %s", p).containsEntry(p, doPedido.get(p));
 		}
 	}
 
 	@Test
-	@DisplayName("perícia sem valor não gera entrada e sai como null; substituir remove a que veio null")
+	@DisplayName("perícia sem valor não gera entrada e não sai na resposta; substituir remove a que veio null")
 	void nuloNaoGeraEntradaERemoveAAnterior() {
-		SheetPlayer ficha = mapper.toEntity(requestComPericiasDistintas());
-		SheetPlayerRequest semPericias = requestComPericias(false);
+		Map<Pericia, Integer> todas = new EnumMap<>(Pericia.class);
+		for (Pericia p : Pericia.values()) {
+			todas.put(p, 10);
+		}
+		SheetPlayer ficha = mapper.toEntity(requestComPericias(todas));
+		Map<Pericia, Integer> todasNulas = new EnumMap<>(Pericia.class);
+		for (Pericia p : Pericia.values()) {
+			todasNulas.put(p, null);
+		}
 
-		mapper.copyTo(semPericias, ficha);
+		mapper.copyTo(requestComPericias(todasNulas), ficha);
 
 		assertThat(ficha.getPericias()).isEmpty();
 		SheetPlayerResponse resposta = mapper.toResponse(ficha);
-		assertThat(resposta.atribute1()).isNull();
-		assertThat(resposta.atribute23()).isNull();
+		assertThat(resposta.pericias()).isEmpty();
 	}
 
-	private SheetPlayerRequest requestComPericiasDistintas() {
-		return requestComPericias(true);
-	}
-
-	/** Pedido com atributeN = N * 10 (ou todas null), montado por reflexão. */
-	private SheetPlayerRequest requestComPericias(boolean preenchidas) {
-		try {
-			RecordComponent[] campos = SheetPlayerRequest.class.getRecordComponents();
-			Class<?>[] tipos = new Class<?>[campos.length];
-			Object[] valores = new Object[campos.length];
-			for (int i = 0; i < campos.length; i++) {
-				tipos[i] = campos[i].getType();
-				String nome = campos[i].getName();
-				if (tipos[i] == String.class) {
-					valores[i] = "x";
-				} else if (nome.startsWith("atribute")) {
-					valores[i] = preenchidas ? Integer.valueOf(Integer.parseInt(nome.substring(8)) * 10) : null;
-				}
-			}
-			return SheetPlayerRequest.class.getDeclaredConstructor(tipos).newInstance(valores);
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException(e);
-		}
-	}
-
-	private RecordComponent componente(Class<?> tipo, String nome) {
-		for (RecordComponent c : tipo.getRecordComponents()) {
-			if (c.getName().equals(nome)) {
-				return c;
-			}
-		}
-		throw new IllegalStateException("sem componente " + nome);
+	private SheetPlayerRequest requestComPericias(Map<Pericia, Integer> pericias) {
+		return new SheetPlayerRequest("x", "x", "x",
+				null, null, null, null, null, // idade, vida e sanidade
+				null, null, null, null, null, null, null, null, null, // 9 atributos
+				pericias);
 	}
 }

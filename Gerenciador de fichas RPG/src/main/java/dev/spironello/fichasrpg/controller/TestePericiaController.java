@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 @CrossOrigin(origins="http://localhost:4200")
 @Tag(name = "Testes de perícia", description = "Rolagem de d100 contra o valor de uma perícia da ficha")
 @RestController
-@RequestMapping("/sheetPlayer/{id}/testes-de-pericia")
+@RequestMapping("/fichas/{id}/testes-de-pericia")
 public class TestePericiaController {
 
 	private final TestePericiaService service;
