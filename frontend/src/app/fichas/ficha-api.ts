@@ -38,6 +38,28 @@ export class FichaApi {
     return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}`)));
   }
 
+  /** O corpo é o próprio JPEG (já recortado e reduzido no navegador), sem JSON. */
+  enviarRetrato(id: number, jpeg: Blob): Observable<void> {
+    return this.alterou(
+      this.tratar(
+        this.http.put<void>(`${this.base}/${id}/retrato`, jpeg, { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    );
+  }
+
+  removerRetrato(id: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/retrato`)));
+  }
+
+  /**
+   * Baixa o retrato como blob (e não por <img src>): a partir do login (2.2) a rota exige token, e o
+   * <img> não envia o cabeçalho Authorization. O ?v= muda a cada envio, então o cache HTTP nunca
+   * devolve uma imagem velha.
+   */
+  baixarRetrato(id: number, versao: number): Observable<Blob> {
+    return this.tratar(this.http.get(`${this.base}/${id}/retrato`, { params: { v: versao }, responseType: 'blob' }));
+  }
+
   testarPericia(id: number, pericia: CodigoPericia): Observable<TestePericiaResultado> {
     return this.tratar(this.http.post<TestePericiaResultado>(`${this.base}/${id}/testes-de-pericia`, { pericia }));
   }

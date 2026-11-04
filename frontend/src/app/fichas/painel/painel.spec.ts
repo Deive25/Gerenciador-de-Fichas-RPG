@@ -12,7 +12,7 @@ function ficha(id: number, personagem: string, parcial: Partial<Ficha> = {}): Fi
     id, jogador: 'Arthur', personagem, genero: 'F', idade: null,
     vidaAtual: 9, vidaMaxima: 12, sanidadeAtual: 48, sanidadeMaxima: 60,
     forca: null, destreza: null, constituicao: null, inteligencia: null, carisma: null,
-    sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {},
+    sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {}, retratoVersao: null,
     ...parcial,
   };
 }
