@@ -87,6 +87,20 @@ describe('FichaDetalhe', () => {
     );
   });
 
+  // Revisão final do 2.1b: com opacity .5 o texto ficava em 4,29:1, abaixo do AA (4,5:1).
+  // "Esmaecida" passa a ser a cor de texto suave (5,13:1), sem opacidade.
+  it('pericia sem valor fica esmaecida sem perder o contraste AA (sem opacidade)', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    const item = el.querySelector('button[aria-label="Rolar Acrobacia, 0"]')?.closest('.pericia') as HTMLElement;
+    expect(getComputedStyle(item.querySelector('.nome') as HTMLElement).opacity).not.toBe('0.5');
+    expect(getComputedStyle(item.querySelector('.valor') as HTMLElement).opacity).not.toBe('0.5');
+  });
+
+  it('o link de voltar tem alvo de toque de 44 px', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    expect(getComputedStyle(el.querySelector('a.voltar') as HTMLElement).minHeight).toBe('44px');
+  });
+
   it('a barra da pericia vai ate o valor e marca o extremo', () => {
     const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
     const item = el.querySelector('button[aria-label="Rolar Investigação, 70"]')?.closest('.pericia') as HTMLElement;
