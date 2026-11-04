@@ -1,0 +1,22 @@
+@let f = ficha();
+<a class="cartao-ficha bloco bloco-dourado" [routerLink]="['/fichas', f.id]">
+  <span class="topo">
+    <app-medalhao [nome]="f.personagem" [semente]="f.id" />
+    <span class="identificacao">
+      <span class="nome nome-versalete">{{ f.personagem }}</span>
+      <span class="legenda">{{ legenda() }}</span>
+    </span>
+  </span>
+  <app-barra-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
+  <app-barra-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
+  @if (ferido() || sanidadeBaixa()) {
+    <span class="etiquetas">
+      @if (ferido()) {
+        <span class="etiqueta vida">Ferido</span>
+      }
+      @if (sanidadeBaixa()) {
+        <span class="etiqueta sanidade">Sanidade baixa</span>
+      }
+    </span>
+  }
+</a>
