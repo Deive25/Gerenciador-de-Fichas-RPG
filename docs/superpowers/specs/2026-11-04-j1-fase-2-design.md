@@ -18,7 +18,7 @@ Transformar o Gerenciador de Fichas numa ferramenta que o grupo de RPG do Arthur
 - atualização ao vivo da ficha (só as rolagens são ao vivo);
 - crítico e desastre (1 e 100 especiais);
 - chat;
-- upload de imagem;
+- ~~upload de imagem~~ (entrou no 2.1c; ver `2026-11-04-j1-redesign-design.md`);
 - exportar PDF;
 - várias instâncias da API;
 - domínio próprio;
@@ -136,6 +136,9 @@ O Angular muda junto em cada incremento.
 - os textos de ajuda de atributos e perícias da versão antiga viram dicas (tooltips).
 
 **Layout, pensado primeiro para o celular:**
+
+> **Substituído** pela spec do redesign (`2026-11-04-j1-redesign-design.md`, §3): agora há um painel de fichas e uma tela própria para cada ficha, sem colunas fixas nem abas embaixo. As rolagens ao vivo do 2.4 abrem num painel lateral, aberto por um botão. O texto original fica abaixo como histórico.
+
 - no celular, barra no topo e abas embaixo: **Mesa · Minha ficha · Rolagens**;
 - no computador, as mesmas telas em 2 colunas: fichas à esquerda e rolagens ao vivo à direita.
 
@@ -181,6 +184,8 @@ Cada incremento passa por: dev Sonnet → verificador Sonnet separado → docume
 | **2.4** | Rolagens persistidas e ao vivo: tabela `rolagem`, histórico paginado, STOMP autenticado, aba Rolagens e coluna ao vivo no computador. | Teste de WebSocket entre dois clientes; teste de ponta a ponta com duas sessões no navegador. |
 | **2.5** | Login com Google (depende do Arthur criar o projeto OAuth gratuito no Google Cloud). | Ligação por e-mail verificado testada; token inválido é recusado; o botão funciona no ambiente local. |
 | **2.6** | Deploy gratuito: Dockerfile, Render, Neon, Cloudflare Pages, CORS, CSP, perfil `demo` em produção, publicação automática a cada merge, link no README (depende do Arthur criar as contas). | O link público funciona do login à rolagem ao vivo; nenhum segredo no repositório; aviso de "acordando o servidor". |
+
+**Entre o 2.1 e o 2.2** entram o **2.1b** (novo visual), o **2.1c** (retrato) e o **2.1d** (dado 3D). Eles estão descritos em `2026-11-04-j1-redesign-design.md`.
 
 **Novos ADRs previstos:**
 - Angular novo em vez de upgrade;
