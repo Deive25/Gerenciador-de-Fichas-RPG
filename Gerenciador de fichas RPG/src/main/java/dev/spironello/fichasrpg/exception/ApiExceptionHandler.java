@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,6 +44,44 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	/** Bean Validation falhou: 400 com a propriedade extra "errors" (campo -> mensagem). */
+	@ExceptionHandler(RetratoNaoEncontradoException.class)
+	public ProblemDetail handleRetratoNaoEncontrado(RetratoNaoEncontradoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"A ficha " + ex.getFichaId() + " não tem retrato.");
+		problema.setTitle("Retrato não encontrado");
+		return problema;
+	}
+
+	@ExceptionHandler(RetratoGrandeDemaisException.class)
+	public ProblemDetail handleRetratoGrandeDemais(RetratoGrandeDemaisException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE,
+				"A imagem pode ter no máximo 200 KB.");
+		problema.setTitle("Imagem grande demais");
+		return problema;
+	}
+
+	@ExceptionHandler(RetratoInvalidoException.class)
+	public ProblemDetail handleRetratoInvalido(RetratoInvalidoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
+		problema.setTitle("Imagem inválida");
+		return problema;
+	}
+
+	/**
+	 * 415 em português e dizendo o que a rota aceita (ex.: o retrato só aceita image/jpeg; as fichas,
+	 * application/json). Vale para todas as rotas, por isso a mensagem não fala só de imagem.
+	 */
+	@Override
+	protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		String aceitos = ex.getSupportedMediaTypes().stream().map(MediaType::toString).distinct()
+				.reduce((a, b) -> a + ", " + b).orElse("o tipo documentado");
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+				"Esta rota aceita: " + aceitos + ".");
+		problema.setTitle("Tipo de conteúdo não aceito");
+		return handleExceptionInternal(ex, problema, headers, status, request);
+	}
+
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
