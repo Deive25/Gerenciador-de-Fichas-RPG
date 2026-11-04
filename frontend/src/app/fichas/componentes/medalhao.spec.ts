@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { RetratoCache } from '../retrato-cache';
 import { DEGRADES, Medalhao, degradeDe, iniciais } from './medalhao';
 
 describe('iniciais', () => {
@@ -32,6 +34,47 @@ describe('degradeDe', () => {
 });
 
 describe('Medalhao', () => {
+  let url: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    url = vi.fn(() => of('blob:x'));
+    TestBed.configureTestingModule({ providers: [{ provide: RetratoCache, useValue: { url } }] });
+  });
+
+  function criar(retratoVersao: number | null) {
+    const fixture = TestBed.createComponent(Medalhao);
+    fixture.componentRef.setInput('nome', 'Lia Fontaine');
+    fixture.componentRef.setInput('semente', 7);
+    fixture.componentRef.setInput('retratoVersao', retratoVersao);
+    fixture.detectChanges();
+    return { fixture, el: fixture.nativeElement as HTMLElement };
+  }
+
+  it('com retrato mostra a imagem com texto alternativo e entra na leitura de tela', () => {
+    const { el } = criar(100);
+    const img = el.querySelector('img') as HTMLImageElement;
+    expect(img.getAttribute('src')).toBe('blob:x');
+    expect(img.getAttribute('alt')).toBe('Retrato de Lia Fontaine');
+    expect(el.hasAttribute('aria-hidden')).toBe(false);
+    expect(url).toHaveBeenCalledWith(7, 100);
+  });
+
+  it('sem retrato mostra as iniciais e nao pede imagem', () => {
+    const { el } = criar(null);
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.textContent?.trim()).toBe('LF');
+    expect(el.getAttribute('aria-hidden')).toBe('true');
+    expect(url).not.toHaveBeenCalled();
+  });
+
+  it('se a imagem falhar ao carregar, volta para as iniciais', () => {
+    const { fixture, el } = criar(100);
+    (el.querySelector('img') as HTMLImageElement).dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.textContent?.trim()).toBe('LF');
+  });
+
   it('mostra as iniciais sobre o degrade da ficha e fica fora da leitura de tela', () => {
     const fixture = TestBed.createComponent(Medalhao);
     fixture.componentRef.setInput('nome', 'Lia Fontaine');
