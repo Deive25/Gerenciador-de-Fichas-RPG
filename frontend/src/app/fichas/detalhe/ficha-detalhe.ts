@@ -1,15 +1,18 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { ATRIBUTOS, PERICIAS, faixas } from '../catalogo';
-import { AnelStatus } from '../componentes/anel-status';
+import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
 import { CodigoPericia, Ficha, TestePericiaResultado } from '../ficha.model';
+import { RetratoCache } from '../retrato-cache';
+import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
 type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
 
@@ -25,13 +28,15 @@ export function larguraBarra(valor: number): number {
 
 @Component({
   selector: 'app-ficha-detalhe',
-  imports: [RouterLink, MatMenuModule, MatTooltipModule, AnelStatus, Medalhao, ResultadoRolagem],
+  imports: [RouterLink, MatMenuModule, MatTooltipModule, Medalhao, RecursosFicha, ResultadoRolagem],
   templateUrl: './ficha-detalhe.html',
   styleUrl: './ficha-detalhe.scss',
 })
 export class FichaDetalhe {
   private readonly api = inject(FichaApi);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly retratos = inject(RetratoCache);
 
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
@@ -48,6 +53,8 @@ export class FichaDetalhe {
   readonly rolando = signal<CodigoPericia | null>(null);
   readonly confirmandoExclusao = signal(false);
   readonly excluindo = signal(false);
+  readonly confirmandoRemocaoRetrato = signal(false);
+  readonly enviandoRetrato = signal(false);
 
   constructor() {
     // Recarrega quando o id muda (navegar de uma ficha para outra reaproveita o componente).
@@ -96,6 +103,56 @@ export class FichaDetalhe {
       .pipe(finalize(() => this.rolando.set(null)))
       .subscribe({
         next: (resultado) => this.ultimoResultado.set(resultado),
+        error: (erro: ApiError) => this.erro.set(erro),
+      });
+  }
+
+  /** Arquivo escolhido → diálogo de recorte → envia o JPEG 400×500 → recarrega a ficha (nova versão). */
+  aoEscolherArquivo(evento: Event): void {
+    const seletor = evento.target as HTMLInputElement;
+    const arquivo = seletor.files?.[0];
+    seletor.value = ''; // permite escolher o mesmo arquivo de novo
+    const ficha = this.ficha();
+    if (!arquivo || !ficha) {
+      return;
+    }
+    this.dialog
+      .open<RecorteRetrato, DadosRecorte, Blob | undefined>(RecorteRetrato, { data: { arquivo } })
+      .afterClosed()
+      .subscribe((jpeg) => {
+        if (jpeg) {
+          this.enviarRetrato(ficha.id, jpeg);
+        }
+      });
+  }
+
+  removerRetrato(): void {
+    const ficha = this.ficha();
+    if (!ficha || this.enviandoRetrato()) {
+      return;
+    }
+    this.enviandoRetrato.set(true);
+    this.api
+      .removerRetrato(ficha.id)
+      .pipe(finalize(() => this.enviandoRetrato.set(false)))
+      .subscribe({
+        next: () => {
+          this.retratos.esquecer(ficha.id);
+          this.confirmandoRemocaoRetrato.set(false);
+          this.carregar(ficha.id);
+        },
+        error: (erro: ApiError) => this.erro.set(erro),
+      });
+  }
+
+  private enviarRetrato(fichaId: number, jpeg: Blob): void {
+    this.enviandoRetrato.set(true);
+    this.erro.set(null);
+    this.api
+      .enviarRetrato(fichaId, jpeg)
+      .pipe(finalize(() => this.enviandoRetrato.set(false)))
+      .subscribe({
+        next: () => this.carregar(fichaId),
         error: (erro: ApiError) => this.erro.set(erro),
       });
   }

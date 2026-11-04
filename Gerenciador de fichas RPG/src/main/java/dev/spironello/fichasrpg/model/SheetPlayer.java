@@ -3,6 +3,8 @@ package dev.spironello.fichasrpg.model;
 import java.util.EnumMap;
 import java.util.Map;
 
+import org.hibernate.annotations.Formula;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -68,7 +70,18 @@ public class SheetPlayer {
 	@MapKeyColumn(name = "pericia")
 	@Column(name = "valor")
 	private Map<Pericia, Integer> pericias = new EnumMap<>(Pericia.class);
-	
+
+	/*
+	 * Versão do retrato (retrato_ficha.atualizado_em em milissegundos), ou null sem retrato (2.1c).
+	 * É uma subconsulta dentro do mesmo SELECT da ficha: a listagem continua com uma consulta só
+	 * (sem N+1) e nunca lê os bytes da imagem. Só leitura: quem grava é o RetratoService.
+	 */
+	// 'epoch' como texto: sem aspas, o Hibernate acharia que é uma coluna e poria o alias da tabela na frente.
+	// extract devolve numeric (exato) no PostgreSQL 14+, então a conta em ms não tem erro de arredondamento.
+	@Formula("(select cast(floor(extract('epoch' from r.atualizado_em) * 1000) as bigint) "
+			+ "from retrato_ficha r where r.ficha_id = id)")
+	private Long retratoVersao;
+
 	public Long getId() {
 		return id;
 	}
@@ -180,6 +193,9 @@ public class SheetPlayer {
 		POD = pOD;
 	}
 
+	public Long getRetratoVersao() {
+		return retratoVersao;
+	}
 	public Map<Pericia, Integer> getPericias() {
 		return pericias;
 	}
