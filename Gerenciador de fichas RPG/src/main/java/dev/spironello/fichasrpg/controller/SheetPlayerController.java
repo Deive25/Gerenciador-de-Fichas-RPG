@@ -27,7 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @CrossOrigin(origins="http://localhost:4200")
 @Tag(name = "Fichas", description = "CRUD de fichas de personagem")
 @RestController
-@RequestMapping("/sheetPlayer")
+@RequestMapping("/fichas")
 public class SheetPlayerController {
 
 	private final SheetPlayerService service;
@@ -52,7 +52,7 @@ public class SheetPlayerController {
 	@PostMapping
 	public ResponseEntity<SheetPlayerResponse> cadastrar(@Valid @RequestBody SheetPlayerRequest request) {
 		SheetPlayerResponse criada = service.criar(request);
-		return ResponseEntity.created(URI.create("/sheetPlayer/" + criada.id())).body(criada);
+		return ResponseEntity.created(URI.create("/fichas/" + criada.id())).body(criada);
 	}
 
 	@Operation(summary = "Substitui os dados de uma ficha existente")

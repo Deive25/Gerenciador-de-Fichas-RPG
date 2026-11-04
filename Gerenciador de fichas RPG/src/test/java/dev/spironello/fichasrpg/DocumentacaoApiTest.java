@@ -21,8 +21,8 @@ class DocumentacaoApiTest extends IntegrationTestBase {
 	void apiDocsListaOsCaminhos() throws Exception {
 		mockMvc.perform(get("/v3/api-docs"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.paths", hasKey("/sheetPlayer")))
-				.andExpect(jsonPath("$.paths", hasKey("/sheetPlayer/{id}")));
+				.andExpect(jsonPath("$.paths", hasKey("/fichas")))
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}")));
 	}
 
 	@Test

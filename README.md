@@ -18,7 +18,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído nesta branch |
 | 1.4b | Perícias em tabela própria (migração V2), sem mudar o JSON da API | Concluído nesta branch |
 | 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Concluído nesta branch |
-| 1.6 | Ajustes mínimos no front-end e README final | Planejado |
+| 1.6 | Contrato da API com nomes claros (`/fichas`, JSON em português), front-end Angular ajustado no mesmo incremento, job de CI do front-end e README final | Concluído nesta branch |
 
 ## Tecnologias
 
@@ -29,21 +29,78 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | Front-end | Angular 13, TypeScript 4.4, Angular Material, Bootstrap |
 | Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
 | Testes | JUnit, MockMvc, Mockito, Testcontainers |
-| Build e CI | Maven e Angular CLI; GitHub Actions (`./mvnw -B verify`) |
+| Build e CI | Maven e Angular CLI; GitHub Actions (job `backend` com `./mvnw -B verify` e job `frontend` com `ng build` em Node 16) |
 
 ## Funcionalidades da API
 
-O controlador `SheetPlayerController` expõe o recurso `/sheetPlayer`:
+O controlador `SheetPlayerController` expõe o recurso `/fichas`:
 
 | Método | Rota | Finalidade | Respostas |
 | --- | --- | --- | --- |
-| GET | `/sheetPlayer` | Listar fichas | 200 |
-| GET | `/sheetPlayer/{id}` | Consultar uma ficha | 200; 404 se não existe |
-| POST | `/sheetPlayer` | Cadastrar uma ficha | 201 com `Location: /sheetPlayer/{id}`; 400 se inválida |
-| PUT | `/sheetPlayer/{id}` | Substituir uma ficha | 200; 400 se inválida; 404 se não existe |
-| DELETE | `/sheetPlayer/{id}` | Excluir uma ficha | 204; 404 se não existe |
+| GET | `/fichas` | Listar fichas | 200 |
+| GET | `/fichas/{id}` | Consultar uma ficha | 200; 404 se não existe |
+| POST | `/fichas` | Cadastrar uma ficha | 201 com `Location: /fichas/{id}`; 400 se inválida |
+| PUT | `/fichas/{id}` | Substituir uma ficha | 200; 400 se inválida; 404 se não existe |
+| DELETE | `/fichas/{id}` | Excluir uma ficha | 204; 404 se não existe |
 
 Qualquer falha inesperada responde 500 com uma mensagem genérica; o detalhe fica só no log do servidor.
+
+### Formato da ficha
+
+Os campos escalares são planos e o objeto `pericias` usa como chaves os códigos do enum `Pericia`, só com as perícias preenchidas:
+
+```json
+{
+  "id": 1,
+  "jogador": "Arthur", "personagem": "Ana", "genero": "F", "idade": 30,
+  "vidaAtual": 10, "vidaMaxima": 12, "sanidadeAtual": 50, "sanidadeMaxima": 60,
+  "forca": 50, "destreza": 40, "constituicao": 45, "inteligencia": 60, "carisma": 55,
+  "sabedoria": 50, "tamanho": 65, "sorte": 40, "poder": 50,
+  "pericias": { "ACROBACIA": 40, "PERCEPCAO": 55 }
+}
+```
+
+**Entrada** (`POST` e `PUT`, sem o `id`, que vem da URL):
+- `jogador`, `personagem` e `genero` são obrigatórios e têm no máximo 255 caracteres. Os números não têm limite ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
+- O JSON é **estrito**: uma chave desconhecida (por exemplo `"STR"`) devolve 400 citando a chave, em vez de ser ignorada.
+- Em `pericias`, uma chave que não é código do enum (por exemplo `"VOAR"`) devolve 400. Valor `null` equivale a perícia ausente, porque o Angular envia as 23 com `null` nas vazias.
+- O `id` no corpo é aceito e **ignorado**, porque o Angular o envia sempre: no PUT vale o id da URL; no POST o id é gerado.
+- O PUT é substituição completa: campos omitidos viram `null` e perícia omitida é removida.
+
+**Erros** seguem o ProblemDetail (RFC 9457, `Content-Type: application/problem+json`). Exemplo de validação (`POST` sem `jogador`):
+
+```json
+{
+  "title": "Dados inválidos",
+  "status": 400,
+  "detail": "Há campos inválidos na requisição. Veja a propriedade errors.",
+  "instance": "/fichas",
+  "errors": { "jogador": "é obrigatório" }
+}
+```
+
+Decisões em [ADR 0007](docs/decisoes/0007-erros-padronizados-e-json-estrito.md) e, para o formato atual, [ADR 0012](docs/decisoes/0012-contrato-com-nomes-claros.md). A API permite chamadas da interface local em `http://localhost:4200`.
+
+Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
+
+### Do contrato antigo para o novo
+
+Até o incremento 1.5 a rota era `/sheetPlayer` e o JSON tinha 41 chaves. Não há rota antiga mantida nem versionamento: o Angular mudou junto.
+
+| Antes (até o 1.5) | Agora (1.6) |
+| --- | --- |
+| `/sheetPlayer`, `/sheetPlayer/{id}` | `/fichas`, `/fichas/{id}` |
+| `/sheetPlayer/{id}/testes-de-pericia` | `/fichas/{id}/testes-de-pericia` |
+| `nameJ` | `jogador` |
+| `nameC` | `personagem` |
+| `gender` | `genero` |
+| `age` | `idade` |
+| `lifeA` / `lifeM` | `vidaAtual` / `vidaMaxima` |
+| `sanA` / `sanM` | `sanidadeAtual` / `sanidadeMaxima` |
+| `str` / `dex` / `cons` | `forca` / `destreza` / `constituicao` |
+| `int` / `car` / `sab` | `inteligencia` / `carisma` / `sabedoria` |
+| `tam` / `sor` / `pod` | `tamanho` / `sorte` / `poder` |
+| `atribute1`..`atribute23` (chaves planas, `null` quando vazias) | `pericias[<código do enum>]` (objeto, só as preenchidas); a tabela de códigos está na seção Perícias |
 
 ### Teste de perícia
 
@@ -51,12 +108,12 @@ O `TestePericiaController` expõe uma rota à parte, e o CRUD acima não mudou:
 
 | Método | Rota | Finalidade | Respostas |
 | --- | --- | --- | --- |
-| POST | `/sheetPlayer/{id}/testes-de-pericia` | Rolar um d100 contra uma perícia da ficha | 200; 400 se `pericia` falta, não existe ou há chave desconhecida; 404 se a ficha não existe |
+| POST | `/fichas/{id}/testes-de-pericia` | Rolar um d100 contra uma perícia da ficha | 200; 400 se `pericia` falta, não existe ou há chave desconhecida; 404 se a ficha não existe |
 
-É POST porque o resultado é aleatório (não idempotente) e responde 200 porque nenhum recurso é criado: o teste **não é gravado**. O corpo leva o código do enum `Pericia` (tabela na seção Perícias). Exemplo, com `atribute1` (Acrobacia) igual a 40:
+É POST porque o resultado é aleatório (não idempotente) e responde 200 porque nenhum recurso é criado: o teste **não é gravado**. O corpo leva o código do enum `Pericia` (tabela na seção Perícias). Exemplo, com `ACROBACIA` igual a 40:
 
 ```http
-POST /sheetPlayer/1/testes-de-pericia
+POST /fichas/1/testes-de-pericia
 {"pericia": "ACROBACIA"}
 
 200 OK
@@ -73,29 +130,8 @@ Regras (`RegraTestePericia`, código puro, `rolagem` de 1 a 100):
 
 Perícia sem valor na ficha conta como 0 e sempre falha. Não há crítico nem desastre. Decisões no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md).
 
-**Entrada.** O JSON tem as 41 chaves de sempre (`nameJ`, `nameC`, `gender`, `age`, `lifeA`..., `str`..`pod`, `atribute1`..`atribute23`).
-- `nameJ`, `nameC` e `gender` são obrigatórios e têm no máximo 255 caracteres. Os números não têm limite ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
-- O JSON é **estrito**: uma chave desconhecida (por exemplo `"STR"` em vez de `"str"`) devolve 400 citando a chave, em vez de ser ignorada.
-- O `id` no corpo é aceito e **ignorado**, porque o Angular o envia sempre: no PUT vale o id da URL; no POST o id é gerado.
-- O PUT é substituição completa: campos omitidos viram `null`.
-
-**Erros** seguem o ProblemDetail (RFC 9457, `Content-Type: application/problem+json`). Exemplo de validação (`POST` sem `nameJ`):
-
-```json
-{
-  "title": "Dados inválidos",
-  "status": 400,
-  "detail": "Há campos inválidos na ficha. Veja a propriedade errors.",
-  "instance": "/sheetPlayer",
-  "errors": { "nameJ": "é obrigatório" }
-}
-```
-
-Decisões em [ADR 0007](docs/decisoes/0007-erros-padronizados-e-json-estrito.md). A API permite chamadas da interface local em `http://localhost:4200`.
-
-Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
-
 > Nota sobre rotas removidas: até o incremento 1.1, a dependência `spring-data-rest-hal-explorer`, adicionada junto com o Springfox, trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD não intencional e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. No incremento 1.2 a dependência foi removida e essas rotas passaram a responder 404. Veja o [ADR 0005](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md).
+
 
 ## Arquitetura
 
@@ -120,7 +156,7 @@ flowchart LR
     X -.-> T
 ```
 
-O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. As 23 perícias ficam na tabela `ficha_pericia` (um `Map<Pericia, Integer>` na entidade); o mapper as converte de e para `atribute1`..`atribute23`, então o JSON não mudou. Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
+O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão, e é onde mora a tradução entre os nomes claros do JSON (`jogador`, `vidaAtual`...) e os da entidade (`nameJ`, `lifeA`...). As 23 perícias ficam na tabela `ficha_pericia` (um `Map<Pericia, Integer>` na entidade, o mesmo tipo do objeto `pericias` do JSON). Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
 
 O teste de perícia tem camadas próprias, para o CRUD ficar intacto: o `TestePericiaService` busca a ficha (404 com a mesma `SheetPlayerNotFoundException`), lê o valor da perícia (0 se ausente), pede a rolagem ao `Dado` e aplica a `RegraTestePericia`. A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma rolagem fixa nos testes.
 
@@ -143,37 +179,37 @@ erDiagram
     }
 ```
 
-`sheet_player` tem 18 colunas. Perícia sem valor não tem linha em `ficha_pericia`; no JSON ela aparece como `null`.
+`sheet_player` tem 18 colunas, com os nomes antigos (`namej`, `lifea`...): o banco e a entidade não mudaram no 1.6, e o `SheetPlayerMapper` traduz para o JSON. Perícia sem valor não tem linha em `ficha_pericia`; no JSON ela não aparece em `pericias`.
 
 ### Perícias
 
-O JSON mantém os nomes `atribute1`..`atribute23` (os nomes públicos mudam só no 1.6). O vínculo está no enum `Pericia` e fixado em teste:
+Desde o 1.6 o JSON usa o próprio código do enum `Pericia` como chave do objeto `pericias`. A coluna "Chave antiga" é o `atributeN` que a API usava até o 1.5 (o enum ainda a guarda em `campoLegado`, que só serve à migração V2 e aos testes de mapeamento):
 
-| Campo do JSON | Constante | Nome |
+| Código em `pericias` | Nome | Chave antiga |
 | --- | --- | --- |
-| `atribute1` | `ACROBACIA` | Acrobacia |
-| `atribute2` | `ATLETISMO` | Atletismo |
-| `atribute3` | `ADESTRAR_ANIMAIS` | Adestrar animais |
-| `atribute4` | `ATUACAO_LABIA` | Atuação/Lábia |
-| `atribute5` | `CHARME` | Charme |
-| `atribute6` | `ESQUIVA` | Esquiva |
-| `atribute7` | `FURTIVIDADE` | Furtividade |
-| `atribute8` | `LUTA_CORPO_A_CORPO` | Luta corpo a corpo |
-| `atribute9` | `LUTA_ARMA_BRANCA` | Luta com arma branca |
-| `atribute10` | `INTIMIDACAO` | Intimidação |
-| `atribute11` | `INTUICAO` | Intuição |
-| `atribute12` | `INVESTIGACAO` | Investigação |
-| `atribute13` | `ARMAS_DE_FOGO_LEVES` | Armas de fogo leves |
-| `atribute14` | `ARMAS_DE_FOGO_MEDIAS` | Armas de fogo médias |
-| `atribute15` | `ARMAS_DE_FOGO_PESADAS` | Armas de fogo pesadas |
-| `atribute16` | `PERCEPCAO` | Percepção |
-| `atribute17` | `USAR_BIBLIOTECAS` | Usar bibliotecas |
-| `atribute18` | `HISTORIA` | História |
-| `atribute19` | `CURA` | Cura |
-| `atribute20` | `MALANDRAGEM` | Malandragem |
-| `atribute21` | `OCULTISMO` | Ocultismo |
-| `atribute22` | `PSICOLOGIA` | Psicologia |
-| `atribute23` | `ARREMESSAR` | Arremessar |
+| `ACROBACIA` | Acrobacia | `atribute1` |
+| `ATLETISMO` | Atletismo | `atribute2` |
+| `ADESTRAR_ANIMAIS` | Adestrar animais | `atribute3` |
+| `ATUACAO_LABIA` | Atuação/Lábia | `atribute4` |
+| `CHARME` | Charme | `atribute5` |
+| `ESQUIVA` | Esquiva | `atribute6` |
+| `FURTIVIDADE` | Furtividade | `atribute7` |
+| `LUTA_CORPO_A_CORPO` | Luta corpo a corpo | `atribute8` |
+| `LUTA_ARMA_BRANCA` | Luta com arma branca | `atribute9` |
+| `INTIMIDACAO` | Intimidação | `atribute10` |
+| `INTUICAO` | Intuição | `atribute11` |
+| `INVESTIGACAO` | Investigação | `atribute12` |
+| `ARMAS_DE_FOGO_LEVES` | Armas de fogo leves | `atribute13` |
+| `ARMAS_DE_FOGO_MEDIAS` | Armas de fogo médias | `atribute14` |
+| `ARMAS_DE_FOGO_PESADAS` | Armas de fogo pesadas | `atribute15` |
+| `PERCEPCAO` | Percepção | `atribute16` |
+| `USAR_BIBLIOTECAS` | Usar bibliotecas | `atribute17` |
+| `HISTORIA` | História | `atribute18` |
+| `CURA` | Cura | `atribute19` |
+| `MALANDRAGEM` | Malandragem | `atribute20` |
+| `OCULTISMO` | Ocultismo | `atribute21` |
+| `PSICOLOGIA` | Psicologia | `atribute22` |
+| `ARREMESSAR` | Arremessar | `atribute23` |
 
 Estrutura de pastas:
 
@@ -194,7 +230,7 @@ Estrutura de pastas:
 
 - JDK 21 (o `pom.xml` compila para Java 21).
 - Docker com Docker Compose (Docker Desktop no Windows). Ele é usado para o banco local **e** pelos testes.
-- Node.js compatível com Angular 13, apenas se for rodar a interface.
+- Docker, que também roda o front-end (em um container `node:16`, porque o Angular 13 não compila no Node atual). Não é preciso instalar o Node.
 
 ### Banco de dados e API
 
@@ -221,7 +257,7 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    ./mvnw spring-boot:run
    ```
 
-   No PowerShell, use `.\mvnw.cmd spring-boot:run` (no cmd: `mvnw.cmd spring-boot:run`). A API fica em `http://localhost:8080/sheetPlayer`.
+   No PowerShell, use `.\mvnw.cmd spring-boot:run` (no cmd: `mvnw.cmd spring-boot:run`). A API fica em `http://localhost:8080/fichas`.
 
    Observações:
    - O PostgreSQL leva alguns segundos para aceitar conexões depois do `docker compose up -d`; se o back-end falhar na primeira tentativa, rode de novo.
@@ -230,56 +266,65 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    - O esquema é criado pelo Flyway na primeira subida da API (`src/main/resources/db/migration`); o Hibernate só confere (`ddl-auto=validate`).
    - **Migração aplicada não se edita**: o Flyway guarda o checksum de cada arquivo em `flyway_schema_history` e recusa subir se um arquivo já aplicado mudar. Para corrigir, crie uma nova versão (V3, V4...). Se o seu banco **local** de desenvolvimento ficar com checksum divergente, `docker compose down -v` recria o volume, mas **apaga os dados locais**.
 
-Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados).
+Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados). Para um ambiente isolado, use um nome de projeto: `docker compose -p meu-teste up -d` (o `docker-compose.yml` não fixa o nome do container, então o projeto isola de verdade).
 
 ### Interface
 
-A interface não foi validada neste incremento. Em outro terminal:
+O Angular 13 só compila com Node 12, 14 ou 16; o Node mais novo da máquina não serve. Por isso a interface roda dentro de um container `node:16`, sem instalar nada no seu sistema. Com a API e o banco no ar (seção anterior), na raiz do repositório:
 
 ```sh
-cd frontend
-npm install
-npm start
+# Git Bash (no Windows, o MSYS_NO_PATHCONV evita que o Git Bash reescreva os caminhos do -v)
+MSYS_NO_PATHCONV=1 docker run --rm -it -p 127.0.0.1:4200:4200 \
+  -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 \
+  sh -c "npm ci && npx ng serve --host 0.0.0.0 --port 4200 --disable-host-check"
 ```
 
-Use uma versão do Node.js compatível com Angular 13. Acesse a interface em `http://localhost:4200` e confira a URL da API nas chamadas do front-end.
+No Linux ou no macOS use `-v "$PWD/frontend:/app"`, e no PowerShell `-v "${PWD}\frontend:/app"`. A primeira execução instala as dependências e leva alguns minutos; depois acesse `http://localhost:4200`. A interface chama a API em `http://localhost:8080/fichas` (`baseUrl` em `frontend/src/app/components/template/SheetPlayer/sheet.services.ts`).
+
+Para só conferir que compila (é o que o CI faz com Node 16):
+
+```sh
+MSYS_NO_PATHCONV=1 docker run --rm -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 sh -c "npm ci && npx ng build"
+```
+
+O build avisa que alguns estilos e o bundle passam do orçamento de tamanho do Angular; são avisos antigos, não erros. Se você tiver o Node 16 instalado (por exemplo com nvm), `npm ci` e `npm start` dentro de `frontend/` também funcionam.
 
 ## Testes
 
 ```sh
 cd "Gerenciador de fichas RPG"
-./mvnw -B verify
+./mvnw -B clean verify
 ```
 
-**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
+**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci` e `npx ng build` em Node 16; não há testes automatizados do front-end.
 
-São 69 testes, em quinze grupos:
+São 74 testes, em quinze grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
-| `SheetPlayerControllerTest` | 11 | As 5 rotas: listar, buscar, criar (201 + `Location`), atualizar e excluir (204), com ids existentes e inexistentes (404 ProblemDetail) |
-| `SheetPlayerValidacaoTest` | 12 | 400 com `errors` por campo, limite de 255, chave desconhecida, tipo errado, JSON malformado, tratamento do `id` no corpo, id da rota não numérico (400 em português) e valor rejeitado fora do log |
+| `SheetPlayerControllerTest` | 14 | As 5 rotas de `/fichas`: listar, buscar, criar (201 + `Location`), atualizar e excluir (204), com ids existentes e inexistentes (404 ProblemDetail); mais `pericias`: criar com perícias, valores `null` ignorados e PUT que omite uma perícia a remove |
+| `SheetPlayerValidacaoTest` | 14 | 400 com `errors` por campo, limite de 255, chave desconhecida, código de perícia inexistente em `pericias`, tipo errado, JSON malformado, tratamento do `id` no corpo, id da rota não numérico (400 em português) e valor rejeitado fora do log |
 | `SheetPlayerServiceTest` | 6 | Unitários do serviço com Mockito, sem Spring e sem Docker |
 | `ApiExceptionHandlerTest` | 1 | Unitário: o 500 genérico não vaza o texto interno da exceção |
 | `FichasRpgApplicationTests` | 1 | O contexto da aplicação sobe |
-| `ContratoJsonTest` | 1 | As 41 chaves do JSON que o Angular consome |
+| `ContratoJsonTest` | 1 | O retrato do contrato: as 18 chaves escalares (com `id`) mais `pericias` como objeto |
 | `EsquemaBancoTest` | 3 | Tabelas `sheet_player` (18 colunas) e `ficha_pericia` (nomes, tipos e nulabilidade) e prova de que o Flyway aplicou a V1 e a V2 |
 | `MigracaoPericiasTest` | 1 | Migra um schema separado até a V1, insere fichas no formato antigo e confere, após a V2, as linhas de `ficha_pericia`, a ausência das colunas `atributeN` e os demais dados intactos |
 | `PericiaTest` | 2 | Unitário: as 23 constantes, o nome e o campo legado de cada uma, e que os campos vão de `atribute1` a `atribute23` sem repetir |
-| `SheetPlayerMapperPericiasTest` | 2 | Unitário: cada `atributeN` vai para a perícia certa e volta na mesma chave; `null` não gera entrada e remove a anterior |
+| `SheetPlayerMapperPericiasTest` | 2 | Unitário: cada perícia do objeto `pericias` vai para a perícia certa da entidade e volta; `null` não gera entrada e remove a anterior |
 | `ListagemSemNMaisUmTest` | 1 | Listar 3 fichas com perícias executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + 3 |
 | `DocumentacaoApiTest` | 2 | Swagger UI e OpenAPI respondem |
 | `RegraTestePericiaTest` | 17 | Unitário parametrizado: fronteiras da regra (extremo, sucesso, falha, divisão inteira, valor 0 e acima de 100) e rolagem fora de 1..100 |
 | `TestePericiaServiceTest` | 3 | Unitário com Mockito e `Dado` fixo: ficha com a perícia, ficha sem ela (valor 0) e ficha inexistente |
 | `TestePericiaControllerTest` | 6 | O endpoint de ponta a ponta com `Dado` fixo (`@MockitoBean`): 200 (com valor e sem), 404, e 400 sem `pericia`, com `"VOAR"` e com chave desconhecida |
 
-Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. Comportamento atual da API:
+Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. No 1.6 foram renomeados de propósito para as rotas e chaves novas, mantendo cada expectativa. Comportamento atual da API:
 
 - `GET`, `PUT` e `DELETE` de id inexistente respondem 404 com ProblemDetail.
 - `POST` e `PUT` sem os campos obrigatórios (ou com texto acima de 255 caracteres) respondem 400 com `errors` por campo.
 - `POST` responde 201 com o header `Location`; `DELETE` responde 204.
-- Chave desconhecida (`"STR"`), tipo errado (`"age": "abc"`) e JSON malformado respondem 400.
-- `PUT` substitui a ficha inteira, de propósito: campos omitidos viram `null`.
+- Chave desconhecida (`"STR"`), código de perícia inexistente, tipo errado (`"idade": "abc"`) e JSON malformado respondem 400.
+- `PUT` substitui a ficha inteira, de propósito: campos omitidos viram `null` e perícias omitidas são removidas.
 - O `id` enviado no corpo é ignorado.
 
 ## Decisões e trade-offs
@@ -297,6 +342,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0006 Compatibilidade de nomes no Boot 4](docs/decisoes/0006-compatibilidade-de-nomes-no-boot-4.md): como preservei o JSON e o esquema do banco, e por que troquei a primeira solução.
 - [0007 Erros padronizados e JSON estrito](docs/decisoes/0007-erros-padronizados-e-json-estrito.md): ProblemDetail, códigos HTTP e rejeição de chaves desconhecidas.
 - [0008 PUT como substituição completa](docs/decisoes/0008-put-como-substituicao-completa.md): sem PATCH e sem regras numéricas inventadas.
+- [0012 Contrato com nomes claros](docs/decisoes/0012-contrato-com-nomes-claros.md): rota `/fichas`, JSON em português com `pericias` como objeto, sem versionar a API; a entidade e o banco só mudam depois.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -310,7 +356,7 @@ Tirei do código e passei a lê-la de variáveis de ambiente ou de um `.env` ign
 Porque quero testar no banco que uso de verdade. O H2 tem diferenças de SQL e de tipos, e o próprio problema da coluna `int` (palavra reservada no SQL) é o tipo de coisa que um banco diferente esconderia. O custo é exigir Docker e ser um pouco mais lento.
 
 **Como você garantiu que o upgrade não quebrou nada?**
-Antes de mexer nas versões, escrevi testes de caracterização das 5 rotas e dois testes extras: um com as 41 chaves do JSON que o Angular consome e outro com o esquema da tabela. Depois atualizei e só aceitei as etapas com `clean verify` verde. Os dois testes extras pegaram justamente as duas mudanças silenciosas mais perigosas.
+Antes de mexer nas versões, escrevi testes de caracterização das 5 rotas e dois testes extras: um com as 41 chaves do JSON que o Angular consumia na época e outro com o esquema da tabela. Depois atualizei e só aceitei as etapas com `clean verify` verde. Os dois testes extras pegaram justamente as duas mudanças silenciosas mais perigosas.
 
 **Qual foi o problema mais difícil do upgrade?**
 Os nomes mudando sozinhos. No Jackson 3, `getSTR()` passou a sair como `"STR"`, o que quebraria o Angular; resolvi com `@JsonProperty` explícito. No Hibernate 7, a tabela viraria `SheetPlayer` e os dados existentes sumiriam. Minha primeira solução foi uma estratégia de nomes própria de 63 linhas, que funcionava mas tratava o sintoma. A causa-raiz eram as aspas globais, usadas só por causa da coluna `int`; removi-as e deixei aspas apenas nessa coluna. O mesmo teste de esquema validou as duas soluções.
@@ -354,13 +400,24 @@ Não testo a sorte, testo a regra. Separei a regra (`avaliar(valor, rolagem)`, u
 **Por que perícia sem valor conta como 0?**
 Porque uma perícia sem valor na ficha é uma perícia que o personagem não treinou, e isso é uma situação normal do jogo, não um erro do cliente. Contar como 0 evita um erro novo e a regra continua uma só: com valor 0, qualquer rolagem de 1 a 100 falha. O custo é que uma perícia esquecida na ficha falha em silêncio; está no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md).
 
+**Por que não versionar a API (`/v2`)?**
+Versionar serve para quem tem clientes que eu não controlo e que não podem mudar na mesma hora. Aqui o único cliente é o Angular, que está no mesmo repositório e mudou no mesmo incremento, com o CI compilando os dois lados. Manter uma `/v1` seria código morto e duas APIs para testar. O custo é a quebra de contrato: se existisse um cliente de fora, ele pararia de funcionar; nesse caso eu versionaria ([ADR 0012](docs/decisoes/0012-contrato-com-nomes-claros.md)).
+
+**Por que nomes em português no JSON?**
+Porque o domínio é de RPG em português (perícia, sanidade, ficha) e a tela já mostra esses termos; `vidaAtual` e `forca` se explicam sozinhos, o que `lifeA` e `str` não faziam. Traduzir para o inglês criaria termos artificiais para o jogo. Aceito que fora do Brasil o padrão seria inglês; é uma escolha para este projeto de estudo, fácil de reverter porque o mapper concentra a tradução.
+
+**Como trocou o contrato sem quebrar a interface?**
+Escrevi primeiro os testes no contrato novo e os vi falhar (34 falhas), depois mudei DTOs, mapper e rotas até o `clean verify` ficar verde, e só então ajustei o Angular no mesmo incremento. A entidade e as migrações não mudaram; o mapper traduz. Como o Angular 13 não roda no Node da minha máquina, compilei e servi o front num container `node:16`, e o CI ganhou um job que roda `ng build`. O que não tenho é teste automatizado do frontend: a interface foi conferida à mão.
+
 ## Próximos passos
 
-- **1.3** (concluído nesta branch): serviço, DTOs, validação, ProblemDetail e logs. Falta revisar e abrir o PR.
-- **1.4a** (concluído nesta branch): migrações Flyway e troca do MySQL por PostgreSQL 17. Falta revisar e abrir o PR.
-- **1.4b** (concluído nesta branch): perícias em tabela própria, com a migração V2. Falta revisar e abrir o PR.
-- **1.5** (concluído nesta branch): teste de perícia com aleatoriedade injetável. Falta revisar e abrir o PR.
-- **1.6**: ajustes mínimos no front-end e README final.
+O incremento 1.6 fecha o plano de modernização do back-end. O que fica para depois:
+
+- **Renomear a entidade e as colunas** para os nomes claros (`SheetPlayer` para `Ficha`, `namej` para `jogador` etc.), com uma migração V3; hoje o `SheetPlayerMapper` traduz. Depois disso o `campoLegado` do enum `Pericia` e a tradução somem.
+- **Upgrade do Angular** (13 hoje, que só compila em Node 16): é uma decisão do dono do projeto, ainda não tomada. Seria um incremento próprio, com a interface validada no navegador.
+- **Autenticação**: hoje qualquer um que alcance a API lê e edita qualquer ficha.
+- **Deploy**: publicar a API, o banco e a interface.
+- **Revisar e abrir os PRs** dos incrementos 1.3 a 1.6, que ainda não foram enviados.
 
 ## O que este projeto demonstra
 
@@ -373,6 +430,7 @@ Porque uma perícia sem valor na ficha é uma perícia que o personagem não tre
 - Documentação de endpoints com OpenAPI e Swagger UI (springdoc).
 - Regra de domínio testável: lógica pura separada da aleatoriedade, que entra por uma interface injetada.
 - Documentação de decisões (ADRs) com alternativas e consequências.
+- Evolução de contrato de API (renomear rotas e campos) com backend, frontend, testes e CI mudando juntos, sem deixar a aplicação quebrada no meio do caminho.
 
 ## Contexto do portfólio
 

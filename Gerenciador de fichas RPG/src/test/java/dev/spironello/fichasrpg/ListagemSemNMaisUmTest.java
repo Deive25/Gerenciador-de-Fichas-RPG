@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import dev.spironello.fichasrpg.dto.SheetPlayerRequest;
+import dev.spironello.fichasrpg.model.Pericia;
 import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 import dev.spironello.fichasrpg.service.SheetPlayerService;
 import jakarta.persistence.EntityManagerFactory;
@@ -51,7 +53,7 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 		var fichas = service.listar();
 
 		assertThat(fichas).hasSizeGreaterThanOrEqualTo(3);
-		assertThat(fichas).filteredOn(f -> criadas.contains(f.id())).extracting(f -> f.atribute1()).containsExactlyInAnyOrder(10, 20, 30);
+		assertThat(fichas).filteredOn(f -> criadas.contains(f.id())).extracting(f -> f.pericias().get(Pericia.ACROBACIA)).containsExactlyInAnyOrder(10, 20, 30);
 		assertThat(estatisticas.getPrepareStatementCount()).as("consultas SQL preparadas").isEqualTo(1);
 	}
 
@@ -59,7 +61,6 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 		return new SheetPlayerRequest(nome, nome, "F",
 				null, null, null, null, null, // idade, vida e sanidade
 				null, null, null, null, null, null, null, null, null, // 9 atributos
-				acrobacia, null, null, null, null, null, null, null, null, null, null, null,
-				null, null, null, null, null, null, null, null, null, null, null); // atribute1..23
+				Map.of(Pericia.ACROBACIA, acrobacia));
 	}
 }
