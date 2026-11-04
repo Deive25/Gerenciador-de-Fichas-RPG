@@ -8,7 +8,7 @@ import { Sheet } from './Sheet.model';
 })
 export class SheetService {
   constructor(private snackBar: MatSnackBar, private http: HttpClient) { }
-  baseUrl: string ="http://localhost:8080/sheetPlayer"
+  baseUrl: string ="http://localhost:8080/fichas"
   showMenssage(msg: string): void{
     this.snackBar.open(msg, 'X', {
       duration:3000,

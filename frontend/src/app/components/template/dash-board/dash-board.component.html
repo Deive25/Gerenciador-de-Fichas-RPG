@@ -7,9 +7,9 @@
 
         <div class="sheet" *ngFor='let sheet of sheets'>
             <img src="../../../../assets/user-icon-2098873_960_720.png" value="CharIcon">
-            <p id="names">{{sheet.nameC}}
+            <p id="names">{{sheet.personagem}}
                 <p>
-                    <p id="vida"><img src="../../../../assets/Screenshot_5.png" id="heart"> {{sheet.lifeA}}/{{sheet.lifeM}}</p>
+                    <p id="vida"><img src="../../../../assets/Screenshot_5.png" id="heart"> {{sheet.vidaAtual}}/{{sheet.vidaMaxima}}</p>
 
                     <a routerLink="/sheet-player-get/{{sheet.id}}"><img src="../../../../assets/Screenshot_1.png" class="icons" id="url"></a>
                     <a routerLink="/sheet-player-update/{{sheet.id}}"><img src=" ../../../../assets/Screenshot_2.png " class="icons" id="editar"></a>
