@@ -1,0 +1,21 @@
+<div class="linha">
+  <span>{{ rotulo() }}</span>
+  <span>{{ texto() }}</span>
+</div>
+@if (temMaximo()) {
+  <div
+    class="trilho"
+    role="progressbar"
+    [attr.aria-label]="rotulo()"
+    [attr.aria-valuenow]="atual()"
+    aria-valuemin="0"
+    [attr.aria-valuemax]="maximo()"
+  >
+    <div
+      class="barra-preenchida"
+      [class.vida]="tipo() === 'vida'"
+      [class.sanidade]="tipo() === 'sanidade'"
+      [style.width.%]="percentual()"
+    ></div>
+  </div>
+}
