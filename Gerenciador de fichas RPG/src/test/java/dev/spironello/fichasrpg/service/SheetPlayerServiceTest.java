@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import dev.spironello.fichasrpg.dto.SheetPlayerRequest;
 import dev.spironello.fichasrpg.dto.SheetPlayerResponse;
 import dev.spironello.fichasrpg.exception.SheetPlayerNotFoundException;
+import dev.spironello.fichasrpg.model.Pericia;
 import dev.spironello.fichasrpg.model.SheetPlayer;
 import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
@@ -93,7 +94,7 @@ class SheetPlayerServiceTest {
 		SheetPlayer existente = new SheetPlayer();
 		existente.setId(ID);
 		new SheetPlayerMapper().copyTo(montarRequest(0), existente);
-		existente.setAtribute3(999); // valor que o pedido (null) precisa apagar
+		existente.getPericias().put(Pericia.ADESTRAR_ANIMAIS, 999); // valor que o pedido (null) precisa apagar
 		SheetPlayerRequest novo = montarRequest(100); // valores diferentes dos da ficha existente
 		when(repository.findById(ID)).thenReturn(Optional.of(existente));
 		when(repository.save(existente)).thenReturn(existente);
@@ -107,7 +108,7 @@ class SheetPlayerServiceTest {
 			assertThat(obtido).as("campo %s", campo.getName()).isEqualTo(esperado);
 		}
 		assertThat(novo.atribute3()).isNull(); // o teste cobre também campos nulos
-		assertThat(existente.getAtribute3()).isNull(); // e o nulo foi copiado para a ficha
+		assertThat(existente.getPericias()).doesNotContainKey(Pericia.ADESTRAR_ANIMAIS); // e o nulo removeu a entrada da ficha
 	}
 
 	@Test
