@@ -10,6 +10,9 @@
 }
 
 .voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--cor-texto-suave);
   text-decoration: none;
 
@@ -162,9 +165,11 @@ ul {
     grid-area: nome;
   }
 
+  // Esmaecida pela cor (texto suave, 5,13:1), e não por opacidade, que derrubava o contraste
+  // abaixo do AA: o botão de rolar continua ativo, então o texto não é "desabilitado".
   &.sem-valor .nome,
   &.sem-valor .valor {
-    opacity: 0.5;
+    color: var(--cor-texto-suave);
   }
 }
 
