@@ -104,6 +104,33 @@ describe('FichaApi', () => {
     expect(api.versaoFichas()).toBe(3);
   });
 
+  it('enviarRetrato faz PUT /fichas/7/retrato com o JPEG cru e avisa que as fichas mudaram', () => {
+    const jpeg = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    api.enviarRetrato(7, jpeg).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/retrato`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.headers.get('Content-Type')).toBe('image/jpeg');
+    expect(req.request.body).toBe(jpeg);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(api.versaoFichas()).toBe(1);
+  });
+
+  it('removerRetrato faz DELETE /fichas/7/retrato e avisa que as fichas mudaram', () => {
+    api.removerRetrato(7).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/retrato`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(api.versaoFichas()).toBe(1);
+  });
+
+  it('baixarRetrato faz GET /fichas/7/retrato?v=123 pedindo um blob', () => {
+    api.baixarRetrato(7, 123).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/retrato?v=123`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob(['x']));
+  });
+
   it('erros chegam como ApiError', () => {
     let recebido: ApiError | undefined;
     api.buscar(9).subscribe({ error: (e: ApiError) => (recebido = e) });

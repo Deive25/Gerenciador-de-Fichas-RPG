@@ -14,6 +14,7 @@ const FICHA: Ficha = {
   forca: 45, destreza: 60, constituicao: null, inteligencia: 75, carisma: null,
   sabedoria: null, tamanho: null, sorte: null, poder: null,
   pericias: { INVESTIGACAO: 70 },
+  retratoVersao: null,
 };
 
 const RESULTADO: TestePericiaResultado = {
