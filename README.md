@@ -230,7 +230,7 @@ Estrutura de pastas:
 
 - JDK 21 (o `pom.xml` compila para Java 21).
 - Docker com Docker Compose (Docker Desktop no Windows). Ele é usado para o banco local **e** pelos testes.
-- Docker, que também roda o front-end (em um container `node:16`, porque o Angular 13 não compila no Node atual). Não é preciso instalar o Node.
+- Node.js 24 (ou 22.22+) com npm, só para rodar a interface.
 
 ### Banco de dados e API
 
@@ -270,24 +270,23 @@ Para parar o banco: `docker compose down` (acrescente `-v` para apagar também o
 
 ### Interface
 
-O Angular 13 só compila com Node 12, 14 ou 16; o Node mais novo da máquina não serve. Por isso a interface roda dentro de um container `node:16`, sem instalar nada no seu sistema. Com a API e o banco no ar (seção anterior), na raiz do repositório:
+A interface é um projeto Angular 22 em `frontend/`. Com a API e o banco no ar (seção anterior):
 
 ```sh
-# Git Bash (no Windows, o MSYS_NO_PATHCONV evita que o Git Bash reescreva os caminhos do -v)
-MSYS_NO_PATHCONV=1 docker run --rm -it -p 127.0.0.1:4200:4200 \
-  -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 \
-  sh -c "npm ci && npx ng serve --host 0.0.0.0 --port 4200 --disable-host-check"
+cd frontend
+npm ci
+npm start
 ```
 
-No Linux ou no macOS use `-v "$PWD/frontend:/app"`, e no PowerShell `-v "${PWD}\frontend:/app"`. A primeira execução instala as dependências e leva alguns minutos; depois acesse `http://localhost:4200`. A interface chama a API em `http://localhost:8080/fichas` (`baseUrl` em `frontend/src/app/components/template/SheetPlayer/sheet.services.ts`).
+Acesse `http://localhost:4200`. A interface chama a API em `http://localhost:8080` (`apiUrl` em `frontend/src/environments/`).
 
-Para só conferir que compila (é o que o CI faz com Node 16):
+Testes e build da interface (é o que o CI roda):
 
 ```sh
-MSYS_NO_PATHCONV=1 docker run --rm -v "C:/caminho/do/repositorio/frontend:/app" -w /app node:16 sh -c "npm ci && npx ng build"
+cd frontend
+npx ng test --watch=false
+npx ng build
 ```
-
-O build avisa que alguns estilos e o bundle passam do orçamento de tamanho do Angular; são avisos antigos, não erros. Se você tiver o Node 16 instalado (por exemplo com nvm), `npm ci` e `npm start` dentro de `frontend/` também funcionam.
 
 ## Testes
 
