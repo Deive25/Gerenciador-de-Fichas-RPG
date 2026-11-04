@@ -119,6 +119,53 @@ describe('FichaFormulario', () => {
     expect(criar).toHaveBeenCalledTimes(1);
   });
 
+  it('na edicao nao mostra o formulario enquanto a ficha carrega', () => {
+    const { el } = montar({ buscar: vi.fn(() => new Subject<Ficha>()) }, '7');
+    expect(el.textContent).toContain('Carregando ficha…');
+    expect(el.querySelector('form')).toBeNull();
+    expect(el.querySelector('button[type="submit"]')).toBeNull();
+  });
+
+  it('na edicao com 404 mostra ficha nao encontrada e nao deixa salvar', () => {
+    const erro: ApiError = { status: 404, titulo: 'Ficha não encontrada', detalhe: 'Não existe ficha com o id 7.', campos: {} };
+    const atualizar = vi.fn();
+    const { el } = montar({ buscar: vi.fn(() => throwError(() => erro)), atualizar }, '7');
+    expect(el.textContent).toContain('Ficha não encontrada');
+    expect(el.querySelector('a[href="/fichas"]')?.textContent).toContain('Voltar para as fichas');
+    expect(el.querySelector('button[type="submit"]')).toBeNull();
+    expect(atualizar).not.toHaveBeenCalled();
+  });
+
+  it('na edicao com servidor indisponivel permite tentar de novo', () => {
+    const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
+    const buscar = vi
+      .fn()
+      .mockReturnValueOnce(throwError(() => erro))
+      .mockReturnValueOnce(of(FICHA));
+    const { fixture, el, componente } = montar({ buscar }, '7');
+    expect(el.querySelector('form')).toBeNull();
+
+    (Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Tentar de novo')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.querySelector('form')).not.toBeNull();
+    expect(componente.form.controls.personagem.value).toBe('Detetive Lia');
+  });
+
+  it('foca o primeiro campo invalido ao salvar', () => {
+    const { el, salvar } = montar({ criar: vi.fn() });
+    salvar();
+    expect(document.activeElement).toBe(el.querySelector('[data-campo="jogador"] input'));
+  });
+
+  it('erro ao salvar aparece junto dos botoes, onde o usuario esta olhando', () => {
+    const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
+    const { el, salvar, componente } = montar({ criar: vi.fn(() => throwError(() => erro)) });
+    preencherObrigatorios(componente);
+    salvar();
+    expect(el.querySelector('.acoes [role="alert"]')?.textContent).toContain('Servidor indisponível');
+  });
+
   it('salvar continua bloqueado depois da resposta ate a navegacao terminar', () => {
     const criar = vi.fn(() => of({ ...FICHA, id: 9 }));
     const { el, navegar, salvar, componente } = montar({ criar });
