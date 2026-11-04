@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { proporcao } from './proporcao';
 
 /** Barra de vida ou sanidade: "atual/máximo" e uma barra proporcional (0–100%). */
 @Component({
@@ -12,18 +13,11 @@ export class BarraStatus {
   readonly atual = input<number | null>(null);
   readonly maximo = input<number | null>(null);
 
-  readonly temMaximo = computed(() => {
-    const maximo = this.maximo();
-    return maximo !== null && maximo > 0;
-  });
+  private readonly proporcao = computed(() => proporcao(this.atual(), this.maximo()));
+
+  readonly temMaximo = computed(() => this.proporcao() !== null);
 
   readonly texto = computed(() => (this.temMaximo() ? `${this.atual() ?? 0}/${this.maximo()}` : '—'));
 
-  readonly percentual = computed(() => {
-    if (!this.temMaximo()) {
-      return 0;
-    }
-    const proporcao = ((this.atual() ?? 0) / (this.maximo() as number)) * 100;
-    return Math.min(100, Math.max(0, Math.round(proporcao)));
-  });
+  readonly percentual = computed(() => this.proporcao() ?? 0);
 }

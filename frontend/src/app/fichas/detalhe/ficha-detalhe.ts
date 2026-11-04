@@ -1,20 +1,31 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
-import { MatTabsModule } from '@angular/material/tabs';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
-import { ATRIBUTOS, PERICIAS } from '../catalogo';
-import { BarraStatus } from '../componentes/barra-status';
+import { ATRIBUTOS, PERICIAS, faixas } from '../catalogo';
+import { AnelStatus } from '../componentes/anel-status';
+import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
 import { CodigoPericia, Ficha, TestePericiaResultado } from '../ficha.model';
 
 type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
 
+/** Onde fica a marca do sucesso extremo na barra da perícia (⌊valor/5⌋, em %). */
+export function marcaExtremo(valor: number): number {
+  return Math.min(faixas(Math.max(valor, 0)).extremo, 100);
+}
+
+/** Largura da barra da perícia: o próprio valor, limitado a 0–100 %. */
+export function larguraBarra(valor: number): number {
+  return Math.min(Math.max(valor, 0), 100);
+}
+
 @Component({
   selector: 'app-ficha-detalhe',
-  imports: [RouterLink, MatTabsModule, MatTooltipModule, BarraStatus, ResultadoRolagem],
+  imports: [RouterLink, MatMenuModule, MatTooltipModule, AnelStatus, Medalhao, ResultadoRolagem],
   templateUrl: './ficha-detalhe.html',
   styleUrl: './ficha-detalhe.scss',
 })
@@ -27,6 +38,8 @@ export class FichaDetalhe {
 
   readonly atributos = ATRIBUTOS;
   readonly pericias = PERICIAS;
+  readonly marcaExtremo = marcaExtremo;
+  readonly larguraBarra = larguraBarra;
 
   readonly estado = signal<Estado>('carregando');
   readonly ficha = signal<Ficha | null>(null);
@@ -37,7 +50,7 @@ export class FichaDetalhe {
   readonly excluindo = signal(false);
 
   constructor() {
-    // Recarrega quando o id muda (no computador, trocar de ficha reaproveita o componente).
+    // Recarrega quando o id muda (navegar de uma ficha para outra reaproveita o componente).
     effect(() => {
       const id = Number(this.id());
       untracked(() => this.carregar(id));
@@ -61,8 +74,14 @@ export class FichaDetalhe {
     });
   }
 
-  valorPericia(codigo: CodigoPericia): number | null {
-    return this.ficha()?.pericias[codigo] ?? null;
+  /** "Arthur · 34 anos · F": jogador, idade (se houver) e gênero. */
+  legenda(f: Ficha): string {
+    return [f.jogador, f.idade === null ? null : `${f.idade} anos`, f.genero].filter((p) => p !== null).join(' · ');
+  }
+
+  /** Perícia sem valor conta como 0, como na regra do servidor. */
+  valorPericia(codigo: CodigoPericia): number {
+    return this.ficha()?.pericias[codigo] ?? 0;
   }
 
   rolar(codigo: CodigoPericia): void {

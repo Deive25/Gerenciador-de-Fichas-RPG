@@ -3,69 +3,54 @@
   max-width: 860px;
 }
 
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--cor-texto-suave);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cor-acao);
+  }
+}
+
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
 }
 
+// Cada seção é um bloco (classe global .bloco); o fieldset só ganha o espaçamento.
 fieldset {
-  margin: 0 0 1rem;
-  padding: 0.75rem 1rem 0.25rem;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  background: var(--cor-superficie);
+  margin: 0 0 0.9rem;
+  padding: 0.85rem 1rem 0.25rem;
+  min-width: 0;
 }
 
+// legend flutuante: o título fica dentro do bloco (e não cortando a borda, como o padrão).
 legend {
-  padding: 0 0.4rem;
-  font-family: var(--fonte-titulo);
-  color: var(--cor-titulo);
+  float: left;
+  width: 100%;
+  padding: 0;
 }
 
 .grade {
+  clear: both;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   column-gap: 0.75rem;
 }
 
+// Barra de ações presa ao rodapé da tela enquanto o formulário rola.
 .acoes {
   position: sticky;
-  bottom: 4.5rem;
+  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 0;
+  padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom));
   background: linear-gradient(transparent, var(--cor-fundo) 35%);
-}
-
-.botao,
-.botao-neutro {
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.botao {
-  border: none;
-  background: var(--cor-acao);
-  color: var(--cor-fundo);
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: wait;
-  }
-}
-
-.botao-neutro {
-  border: 1px solid var(--cor-borda);
-  color: var(--cor-texto);
-}
-
-.aviso {
-  color: var(--cor-texto-suave);
 }
 
 // Erro ao salvar fica junto dos botões (barra fixa embaixo), onde quem tocou em Salvar está olhando.
@@ -75,18 +60,6 @@ legend {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--cor-vida);
   border-radius: 8px;
-  background: #2a1a18;
+  background: var(--cor-fundo-erro);
   color: #f0b3a9;
-}
-
-.aviso-erro {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--cor-vida);
-  border-radius: var(--raio);
-  background: #2a1a18;
-
-  p {
-    margin: 0.25rem 0 0;
-  }
 }

@@ -1,137 +1,224 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 720px;
+  display: block;
 }
 
-.cabecalho {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-
-  h1 {
-    font-size: 1.5rem;
-    margin: 0;
-  }
-}
-
-.jogador {
-  margin: 0;
-  color: var(--cor-texto-suave);
-  font-size: 0.9rem;
-}
-
-.editar {
-  padding: 0.35rem 0.85rem;
-  border: 1px solid var(--cor-acao);
-  border-radius: 8px;
-  text-decoration: none;
-}
-
-.status {
-  display: grid;
-  gap: 0.5rem;
-}
-
-// O resultado fica preso logo abaixo da barra do topo: no celular, quem rola uma perícia
-// do fim da lista continua vendo o resultado sem precisar subir a tela.
-.resultado {
-  position: sticky;
-  top: 3.6rem;
-  z-index: 5;
-  background: var(--cor-fundo);
-  border-radius: 10px;
-}
-
-.itens {
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem 0;
-}
-
-.item {
+.barra-acoes {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--cor-texto-suave);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cor-acao);
+  }
+}
+
+.mais {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.confirmacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  border-color: var(--cor-vida);
+}
+
+.resultado {
+  display: block;
+  position: sticky;
+  top: 4rem;
+  z-index: 5;
+  margin-bottom: 0.75rem;
+}
+
+.erro-acao {
+  margin: 0 0 0.75rem;
+  color: #f0a597;
+}
+
+// Celular: blocos empilhados. Computador: retrato à esquerda (duas linhas), status e
+// atributos à direita, perícias embaixo em largura total.
+// minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo (ex.: "Constituição ⓘ")
+// e a ficha passa da largura do celular.
+.bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
-  padding: 0.55rem 0.25rem;
-  border-bottom: 1px solid #1f2430;
+
+  @media (min-width: 900px) {
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+
+    .retrato {
+      grid-row: span 2;
+    }
+
+    .pericias {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.retrato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+
+  h1 {
+    margin: 0.75rem 0 0.1rem;
+    font-size: 1.7rem;
+    line-height: 1.1;
+  }
+}
+
+.legenda {
+  margin: 0;
+  font-family: var(--fonte-titulo);
+  font-style: italic;
+  color: var(--cor-texto-suave);
+}
+
+.status {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nome {
+  display: inline-flex;
+  align-items: center;
+}
+
+// 3×3 a partir de 600 px; no celular os nomes completos só cabem em 2 colunas.
+.grade-atributos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem 1rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--cor-texto-suave);
+  }
 
   strong {
+    font-family: var(--fonte-titulo);
+    font-size: 1.1rem;
     color: var(--cor-titulo);
   }
 }
 
+.lista-pericias {
+  display: grid;
+  gap: 0.15rem 1.5rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Nome e valor em cima, barra embaixo, botão de rolar à direita das duas linhas.
+.pericia {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'nome valor rolar'
+    'barra barra rolar';
+  align-items: center;
+  column-gap: 0.6rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  .nome {
+    grid-area: nome;
+  }
+
+  // Esmaecida pela cor (texto suave, 5,13:1), e não por opacidade, que derrubava o contraste
+  // abaixo do AA: o botão de rolar continua ativo, então o texto não é "desabilitado".
+  &.sem-valor .nome,
+  &.sem-valor .valor {
+    color: var(--cor-texto-suave);
+  }
+}
+
+.barra {
+  grid-area: barra;
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--cor-trilho);
+
+  i {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #7d6336, #d8b46c);
+  }
+
+  // Marca do sucesso extremo (⌊valor/5⌋).
+  em {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--cor-sanidade);
+  }
+}
+
+.valor {
+  grid-area: valor;
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  color: var(--cor-titulo);
+}
+
 .rolar {
-  min-width: 44px;
-  min-height: 36px;
-  border: none;
-  border-radius: 8px;
-  background: var(--cor-acao);
-  color: var(--cor-fundo);
-  font-size: 1.05rem;
+  grid-area: rolar;
+  min-height: 44px;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: #e9d9b4;
+  font: inherit;
+  font-size: 0.85rem;
   cursor: pointer;
 
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.5;
     cursor: wait;
   }
-}
-
-.perigo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  padding-top: 1rem;
-  border-top: 1px solid var(--cor-borda);
-}
-
-.botao-neutro,
-.botao-perigo,
-.botao {
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.botao-neutro {
-  background: transparent;
-  color: var(--cor-texto);
-  border: 1px solid var(--cor-borda);
-}
-
-.botao-perigo {
-  background: var(--cor-vida);
-  color: #fff;
-  border: none;
-}
-
-.botao {
-  background: var(--cor-acao);
-  color: var(--cor-fundo);
-  border: none;
-}
-
-.aviso {
-  color: var(--cor-texto-suave);
-}
-
-.aviso-erro {
-  padding: 1rem;
-  border: 1px solid var(--cor-vida);
-  border-radius: var(--raio);
-  background: #2a1a18;
-
-  p {
-    margin: 0.25rem 0 0.75rem;
-  }
-}
-
-.erro-acao {
-  color: #e48a7c;
-  margin: 0;
 }
