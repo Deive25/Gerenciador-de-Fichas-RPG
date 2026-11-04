@@ -17,7 +17,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 1.3 | Camada de serviço, DTOs, validação, erros padronizados (ProblemDetail), logs e correção dos comportamentos errados da API | Concluído nesta branch |
 | 1.4a | Migrações Flyway (`ddl-auto=validate`) e troca do MySQL por PostgreSQL 17, sem mudar a API | Concluído nesta branch |
 | 1.4b | Perícias em tabela própria (migração V2), sem mudar o JSON da API | Concluído nesta branch |
-| 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Planejado |
+| 1.5 | Teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável | Concluído nesta branch |
 | 1.6 | Ajustes mínimos no front-end e README final | Planejado |
 
 ## Tecnologias
@@ -44,6 +44,34 @@ O controlador `SheetPlayerController` expõe o recurso `/sheetPlayer`:
 | DELETE | `/sheetPlayer/{id}` | Excluir uma ficha | 204; 404 se não existe |
 
 Qualquer falha inesperada responde 500 com uma mensagem genérica; o detalhe fica só no log do servidor.
+
+### Teste de perícia
+
+O `TestePericiaController` expõe uma rota à parte, e o CRUD acima não mudou:
+
+| Método | Rota | Finalidade | Respostas |
+| --- | --- | --- | --- |
+| POST | `/sheetPlayer/{id}/testes-de-pericia` | Rolar um d100 contra uma perícia da ficha | 200; 400 se `pericia` falta, não existe ou há chave desconhecida; 404 se a ficha não existe |
+
+É POST porque o resultado é aleatório (não idempotente) e responde 200 porque nenhum recurso é criado: o teste **não é gravado**. O corpo leva o código do enum `Pericia` (tabela na seção Perícias). Exemplo, com `atribute1` (Acrobacia) igual a 40:
+
+```http
+POST /sheetPlayer/1/testes-de-pericia
+{"pericia": "ACROBACIA"}
+
+200 OK
+{"pericia": "ACROBACIA", "nome": "Acrobacia", "valor": 40, "rolagem": 7, "resultado": "SUCESSO_EXTREMO"}
+```
+
+Regras (`RegraTestePericia`, código puro, `rolagem` de 1 a 100):
+
+| Condição | Resultado | Com valor 40 |
+| --- | --- | --- |
+| `rolagem <= valor / 5` (divisão inteira) | `SUCESSO_EXTREMO` | 1 a 8 |
+| `rolagem <= valor` | `SUCESSO` | 9 a 40 |
+| acima do valor | `FALHA` | 41 a 100 |
+
+Perícia sem valor na ficha conta como 0 e sempre falha. Não há crítico nem desastre. Decisões no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md).
 
 **Entrada.** O JSON tem as 41 chaves de sempre (`nameJ`, `nameC`, `gender`, `age`, `lifeA`..., `str`..`pod`, `atribute1`..`atribute23`).
 - `nameJ`, `nameC` e `gender` são obrigatórios e têm no máximo 255 caracteres. Os números não têm limite ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)).
@@ -77,15 +105,24 @@ Estado atual:
 flowchart LR
     A["Angular (porta 4200)"] -->|HTTP/JSON| B[SheetPlayerController]
     B -->|SheetPlayerRequest / Response| C[SheetPlayerService]
+    A -->|HTTP/JSON| T[TestePericiaController]
+    T -->|TestePericiaRequest / Response| S[TestePericiaService]
+    S --> G["RegraTestePericia (regra pura)"]
+    S --> Q["Dado (interface) ← DadoAleatorio"]
+    S --> R
     C --> M[SheetPlayerMapper]
     C --> R["SheetPlayerRepository (Spring Data JPA / Hibernate 7)"]
     R --> D[("PostgreSQL 17 (Docker)")]
     F["Flyway: migrações em db/migration"] -.->|cria o esquema| D
     X["ApiExceptionHandler (ProblemDetail)"] -.->|traduz exceções em erros HTTP| B
     B -.-> O["springdoc: /v3/api-docs"]
+    T -.-> O
+    X -.-> T
 ```
 
-O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. As 23 perícias ficam na tabela `ficha_pericia` (um `Map<Pericia, Integer>` na entidade); o mapper as converte de e para `atribute1`..`atribute23`, então o JSON não mudou. Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê o controller e gera a especificação OpenAPI.
+O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O `SheetPlayerService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `SheetPlayerNotFoundException` quando a ficha não existe. O `SheetPlayerMapper` converte DTO e entidade campo a campo, à mão. As 23 perícias ficam na tabela `ficha_pericia` (um `Map<Pericia, Integer>` na entidade); o mapper as converte de e para `atribute1`..`atribute23`, então o JSON não mudou. Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
+
+O teste de perícia tem camadas próprias, para o CRUD ficar intacto: o `TestePericiaService` busca a ficha (404 com a mesma `SheetPlayerNotFoundException`), lê o valor da perícia (0 se ausente), pede a rolagem ao `Dado` e aplica a `RegraTestePericia`. A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma rolagem fixa nos testes.
 
 Modelo de dados (esquema criado pelas migrações V1 e V2):
 
@@ -143,7 +180,7 @@ Estrutura de pastas:
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs e mapper.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, mapper, o teste de perícia e o `Dado`.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidade JPA e o enum `Pericia`.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
@@ -216,7 +253,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`), em push na `main` e em pull requests.
 
-São 43 testes, em doze grupos:
+São 69 testes, em quinze grupos:
 
 | Grupo | Testes | O que cobre |
 | --- | --- | --- |
@@ -232,6 +269,9 @@ São 43 testes, em doze grupos:
 | `SheetPlayerMapperPericiasTest` | 2 | Unitário: cada `atributeN` vai para a perícia certa e volta na mesma chave; `null` não gera entrada e remove a anterior |
 | `ListagemSemNMaisUmTest` | 1 | Listar 3 fichas com perícias executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + 3 |
 | `DocumentacaoApiTest` | 2 | Swagger UI e OpenAPI respondem |
+| `RegraTestePericiaTest` | 17 | Unitário parametrizado: fronteiras da regra (extremo, sucesso, falha, divisão inteira, valor 0 e acima de 100) e rolagem fora de 1..100 |
+| `TestePericiaServiceTest` | 3 | Unitário com Mockito e `Dado` fixo: ficha com a perícia, ficha sem ela (valor 0) e ficha inexistente |
+| `TestePericiaControllerTest` | 6 | O endpoint de ponta a ponta com `Dado` fixo (`@MockitoBean`): 200 (com valor e sem), 404, e 400 sem `pericia`, com `"VOAR"` e com chave desconhecida |
 
 Os testes de `SheetPlayerControllerTest` nasceram no 1.1 como testes de caracterização, que registravam o comportamento de então, com bugs. No 1.3 os bugs foram corrigidos e esses testes foram reescritos de propósito para especificar o comportamento correto, antes do código. Comportamento atual da API:
 
@@ -251,6 +291,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0003 Manter o MySQL até o Flyway](docs/decisoes/0003-manter-mysql-ate-o-flyway.md): a troca de banco só acontece junto com as migrações (feita no 1.4a, ADR 0009).
 - [0009 Flyway e PostgreSQL](docs/decisoes/0009-flyway-e-postgresql.md): esquema versionado em SQL, `ddl-auto=validate` e troca de banco.
 - [0010 Perícias em tabela própria](docs/decisoes/0010-pericias-em-tabela-propria.md): `ficha_pericia` no lugar de 23 colunas, enum `Pericia`, migração V2 e `@EntityGraph`; JSON inalterado.
+- [0011 Teste de perícia e aleatoriedade injetável](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md): regra pura, interface `Dado`, perícia sem valor como 0 e o que ficou de fora (histórico, crítico).
 - [0004 Upgrade em duas etapas](docs/decisoes/0004-upgrade-em-duas-etapas.md): Boot 2.5 → 3.5 → 4.1, com testes de contrato e de esquema escritos antes.
 - [0005 springdoc e remoção do Spring Data REST](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md): documentação nova e fim de uma API paralela acidental.
 - [0006 Compatibilidade de nomes no Boot 4](docs/decisoes/0006-compatibilidade-de-nomes-no-boot-4.md): como preservei o JSON e o esquema do banco, e por que troquei a primeira solução.
@@ -307,12 +348,18 @@ Escrevi o teste antes da V2: ele migra um schema separado só até a V1, insere 
 **Como evitou N+1?**
 Ler as fichas e depois o mapa de perícias de cada uma geraria 1 consulta para a lista e mais 1 por ficha. Coloquei `@EntityGraph(attributePaths = "pericias")` no `findAll` e no `findById`, que faz o Hibernate trazer tudo num SELECT com join. Provei com as estatísticas do Hibernate num teste: com 3 fichas a listagem executa 1 consulta; sem o grafo, o mesmo teste contou 4. O custo é lembrar de repetir o grafo em qualquer método de leitura novo.
 
+**Como você testa algo aleatório?**
+Não testo a sorte, testo a regra. Separei a regra (`avaliar(valor, rolagem)`, uma função pura) da fonte de sorte (a interface `Dado`). A regra é testada com rolagens escolhidas por mim, nas fronteiras; o serviço e o endpoint recebem um `Dado` fixo. Não usei mock de `Random`: a interface pequena diz o que o teste espera. O custo é uma interface a mais, e a `DadoAleatorio` real só é exercitada de verdade em execução.
+
+**Por que perícia sem valor conta como 0?**
+Porque uma perícia sem valor na ficha é uma perícia que o personagem não treinou, e isso é uma situação normal do jogo, não um erro do cliente. Contar como 0 evita um erro novo e a regra continua uma só: com valor 0, qualquer rolagem de 1 a 100 falha. O custo é que uma perícia esquecida na ficha falha em silêncio; está no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md).
+
 ## Próximos passos
 
 - **1.3** (concluído nesta branch): serviço, DTOs, validação, ProblemDetail e logs. Falta revisar e abrir o PR.
 - **1.4a** (concluído nesta branch): migrações Flyway e troca do MySQL por PostgreSQL 17. Falta revisar e abrir o PR.
 - **1.4b** (concluído nesta branch): perícias em tabela própria, com a migração V2. Falta revisar e abrir o PR.
-- **1.5**: teste de perícia (rolagem com sucesso, sucesso extremo e falha) com aleatoriedade injetável.
+- **1.5** (concluído nesta branch): teste de perícia com aleatoriedade injetável. Falta revisar e abrir o PR.
 - **1.6**: ajustes mínimos no front-end e README final.
 
 ## O que este projeto demonstra
@@ -324,6 +371,7 @@ Ler as fichas e depois o mapa de perícias de cada uma geraria 1 consulta para a
 - Upgrade seguro de framework (Spring Boot 2.5 → 4.1, Java 11 → 21) com testes de contrato e de esquema.
 - Integração contínua com GitHub Actions e banco local reproduzível com Docker.
 - Documentação de endpoints com OpenAPI e Swagger UI (springdoc).
+- Regra de domínio testável: lógica pura separada da aleatoriedade, que entra por uma interface injetada.
 - Documentação de decisões (ADRs) com alternativas e consequências.
 
 ## Contexto do portfólio
