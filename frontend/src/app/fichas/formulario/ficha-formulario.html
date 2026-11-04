@@ -1,0 +1,86 @@
+<h1>{{ editando() ? 'Editar ficha' : 'Nova ficha' }}</h1>
+
+@if (carregando()) {
+  <p class="aviso" role="status">Carregando ficha…</p>
+}
+
+@if (erroGeral(); as erro) {
+  <div class="aviso-erro" role="alert">
+    <strong>{{ erro.titulo }}</strong>
+    <p>{{ erro.detalhe }}</p>
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+  <fieldset>
+    <legend>Identificação</legend>
+    <div class="grade">
+      @for (campo of identificacao; track campo.chave) {
+        <mat-form-field appearance="outline" [attr.data-campo]="campo.chave">
+          <mat-label>{{ campo.nome }}</mat-label>
+          <input matInput [formControlName]="campo.chave" maxlength="300" />
+          @if (mensagem(controle(campo.chave)); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline" data-campo="idade">
+        <mat-label>Idade</mat-label>
+        <input matInput formControlName="idade" inputmode="numeric" />
+        @if (mensagem(form.controls.idade); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Vida e sanidade</legend>
+    <div class="grade">
+      @for (campo of vidaESanidade; track campo.chave) {
+        <mat-form-field appearance="outline" [attr.data-campo]="campo.chave">
+          <mat-label>{{ campo.nome }}</mat-label>
+          <input matInput [formControlName]="campo.chave" inputmode="numeric" />
+          @if (mensagem(controle(campo.chave)); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Atributos</legend>
+    <div class="grade">
+      @for (atributo of atributos; track atributo.chave) {
+        <mat-form-field appearance="outline" [attr.data-campo]="atributo.chave" [matTooltip]="atributo.descricao">
+          <mat-label>{{ atributo.nome }}</mat-label>
+          <input matInput [formControlName]="atributo.chave" inputmode="numeric" />
+          @if (mensagem(controle(atributo.chave)); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset formGroupName="pericias">
+    <legend>Perícias</legend>
+    <div class="grade">
+      @for (pericia of pericias; track pericia.chave) {
+        <mat-form-field appearance="outline" [attr.data-campo]="pericia.chave" [matTooltip]="pericia.descricao">
+          <mat-label>{{ pericia.nome }}</mat-label>
+          <input matInput [formControlName]="pericia.chave" inputmode="numeric" />
+          @if (mensagem(form.controls.pericias.controls[pericia.chave]); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+  </fieldset>
+
+  <div class="acoes">
+    <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', id()] : ['/fichas']">Cancelar</a>
+    <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
+  </div>
+</form>
