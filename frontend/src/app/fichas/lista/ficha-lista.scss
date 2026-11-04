@@ -36,21 +36,6 @@
   color: var(--cor-texto-suave);
 }
 
-.aviso {
-  color: var(--cor-texto-suave);
-}
-
-.aviso-erro {
-  padding: 1rem;
-  border: 1px solid var(--cor-vida);
-  border-radius: var(--raio);
-  background: #2a1a18;
-
-  p {
-    margin: 0.25rem 0 0.75rem;
-  }
-}
-
 .vazio {
   padding: 1.5rem 1rem;
   text-align: center;
@@ -59,14 +44,3 @@
   border-radius: var(--raio);
 }
 
-.botao {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--cor-acao);
-  color: var(--cor-fundo);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-}
