@@ -1,0 +1,115 @@
+@switch (estado()) {
+  @case ('carregando') {
+    <p class="aviso" role="status">Carregando ficha…</p>
+  }
+  @case ('nao-encontrada') {
+    <div class="aviso-erro" role="alert">
+      <strong>Ficha não encontrada</strong>
+      <p>Ela pode ter sido excluída.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erro()?.titulo }}</strong>
+      <p>{{ erro()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar(+id())">Tentar de novo</button>
+    </div>
+  }
+  @default {
+    @if (ficha(); as f) {
+      <header class="cabecalho">
+        <div class="identificacao">
+          <h1>{{ f.personagem }}</h1>
+          <p class="jogador">
+            {{ f.jogador }}@if (f.idade !== null) {
+              · {{ f.idade }} anos
+            }
+          </p>
+        </div>
+        <a class="editar" [routerLink]="['/fichas', f.id, 'editar']">Editar</a>
+      </header>
+
+      <div class="status">
+        <app-barra-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
+        <app-barra-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
+      </div>
+
+      @if (ultimoResultado(); as resultado) {
+        <app-resultado-rolagem class="resultado" [resultado]="resultado" />
+      }
+
+      @if (erro() && estado() === 'pronto') {
+        <p class="erro-acao" role="alert">{{ erro()?.titulo }}: {{ erro()?.detalhe }}</p>
+      }
+
+      <mat-tab-group [selectedIndex]="1" animationDuration="0ms" mat-stretch-tabs="true">
+        <mat-tab label="Atributos">
+          <ul class="itens">
+            @for (atributo of atributos; track atributo.chave) {
+              <li class="item">
+                <span class="nome">
+                  {{ atributo.nome }}
+                  <button
+                    type="button"
+                    class="dica"
+                    [matTooltip]="atributo.descricao"
+                    matTooltipTouchGestures="off"
+                    #dicaAtributo="matTooltip"
+                    (click)="dicaAtributo.toggle()"
+                    [attr.aria-label]="'Sobre ' + atributo.nome"
+                  >
+                    ⓘ
+                  </button>
+                </span>
+                <strong>{{ f[atributo.chave] ?? '—' }}</strong>
+              </li>
+            }
+          </ul>
+        </mat-tab>
+        <mat-tab label="Perícias">
+          <ul class="itens">
+            @for (pericia of pericias; track pericia.chave) {
+              <li class="item">
+                <span class="nome">
+                  {{ pericia.nome }}
+                  <button
+                    type="button"
+                    class="dica"
+                    [matTooltip]="pericia.descricao"
+                    matTooltipTouchGestures="off"
+                    #dicaPericia="matTooltip"
+                    (click)="dicaPericia.toggle()"
+                    [attr.aria-label]="'Sobre ' + pericia.nome"
+                  >
+                    ⓘ
+                  </button>
+                  <strong>{{ valorPericia(pericia.chave) ?? '—' }}</strong>
+                </span>
+                <button
+                  type="button"
+                  class="rolar"
+                  [attr.aria-label]="'Rolar ' + pericia.nome"
+                  [disabled]="rolando() !== null"
+                  (click)="rolar(pericia.chave)"
+                >
+                  🎲
+                </button>
+              </li>
+            }
+          </ul>
+        </mat-tab>
+      </mat-tab-group>
+
+      <section class="perigo">
+        @if (confirmandoExclusao()) {
+          <span>Excluir de vez?</span>
+          <button type="button" class="botao-perigo" [disabled]="excluindo()" (click)="excluir()">Sim, excluir</button>
+          <button type="button" class="botao-neutro" (click)="confirmandoExclusao.set(false)">Cancelar</button>
+        } @else {
+          <button type="button" class="botao-neutro" (click)="confirmandoExclusao.set(true)">Excluir ficha</button>
+        }
+      </section>
+    }
+  }
+}

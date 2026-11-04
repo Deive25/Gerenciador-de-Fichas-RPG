@@ -31,9 +31,9 @@ jobs:
       - name: Build e testes
         run: ./mvnw -B verify
 
-  # Roda em paralelo com o backend. So garante que o Angular compila (nao ha testes de frontend).
+  # Roda em paralelo com o backend: compila o Angular e roda os testes unitarios (Vitest).
   frontend:
-    name: Frontend (ng build)
+    name: Frontend (build + testes)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -42,10 +42,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Angular 13 pede Node 12, 14 ou 16.
+      # Angular 22 pede Node ^22.22.3 ou ^24.15.0.
       - uses: actions/setup-node@v4
         with:
-          node-version: "16"
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -54,3 +54,6 @@ jobs:
 
       - name: Build
         run: npx ng build
+
+      - name: Testes unitarios
+        run: npx ng test --watch=false
