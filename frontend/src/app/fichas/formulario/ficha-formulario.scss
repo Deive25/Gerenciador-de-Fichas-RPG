@@ -1,0 +1,92 @@
+:host {
+  display: block;
+  max-width: 860px;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+fieldset {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 0.25rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+}
+
+legend {
+  padding: 0 0.4rem;
+  font-family: var(--fonte-titulo);
+  color: var(--cor-titulo);
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  column-gap: 0.75rem;
+}
+
+.acoes {
+  position: sticky;
+  bottom: 4.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  background: linear-gradient(transparent, var(--cor-fundo) 35%);
+}
+
+.botao,
+.botao-neutro {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.botao {
+  border: none;
+  background: var(--cor-acao);
+  color: var(--cor-fundo);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.botao-neutro {
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto);
+}
+
+.aviso {
+  color: var(--cor-texto-suave);
+}
+
+// Erro ao salvar fica junto dos botões (barra fixa embaixo), onde quem tocou em Salvar está olhando.
+.erro-salvar {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: 8px;
+  background: #2a1a18;
+  color: #f0b3a9;
+}
+
+.aviso-erro {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: var(--raio);
+  background: #2a1a18;
+
+  p {
+    margin: 0.25rem 0 0;
+  }
+}
