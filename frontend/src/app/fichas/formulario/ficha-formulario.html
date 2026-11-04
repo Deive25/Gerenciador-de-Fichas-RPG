@@ -1,4 +1,7 @@
-<h1>{{ editando() ? 'Editar ficha' : 'Nova ficha' }}</h1>
+@if (estado() !== 'nao-encontrada') {
+  <a class="voltar" routerLink="/fichas">← Investigadores</a>
+}
+<h1 class="nome-versalete">{{ editando() ? 'Editar ficha' : 'Nova ficha' }}</h1>
 
 @switch (estado()) {
   @case ('carregando') {
@@ -20,8 +23,8 @@
   }
   @default {
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
-  <fieldset>
-    <legend>Identificação</legend>
+  <fieldset class="bloco">
+    <legend class="titulo-secao">Identificação</legend>
     <div class="grade">
       @for (campo of identificacao; track campo.chave) {
         <mat-form-field appearance="outline" [attr.data-campo]="campo.chave">
@@ -42,8 +45,8 @@
     </div>
   </fieldset>
 
-  <fieldset>
-    <legend>Vida e sanidade</legend>
+  <fieldset class="bloco">
+    <legend class="titulo-secao">Vida e sanidade</legend>
     <div class="grade">
       @for (campo of vidaESanidade; track campo.chave) {
         <mat-form-field appearance="outline" [attr.data-campo]="campo.chave">
@@ -57,8 +60,8 @@
     </div>
   </fieldset>
 
-  <fieldset>
-    <legend>Atributos</legend>
+  <fieldset class="bloco">
+    <legend class="titulo-secao">Atributos</legend>
     <div class="grade">
       @for (atributo of atributos; track atributo.chave) {
         <mat-form-field appearance="outline" [attr.data-campo]="atributo.chave">
@@ -84,8 +87,8 @@
     </div>
   </fieldset>
 
-  <fieldset formGroupName="pericias">
-    <legend>Perícias</legend>
+  <fieldset class="bloco" formGroupName="pericias">
+    <legend class="titulo-secao">Perícias</legend>
     <div class="grade">
       @for (pericia of pericias; track pericia.chave) {
         <mat-form-field appearance="outline" [attr.data-campo]="pericia.chave">

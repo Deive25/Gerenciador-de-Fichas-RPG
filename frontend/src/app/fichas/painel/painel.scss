@@ -1,0 +1,132 @@
+:host {
+  display: block;
+}
+
+.titulo {
+  font-size: 1.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.contadores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.contador {
+  display: flex;
+  flex-direction: column;
+
+  .rotulo {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--cor-texto-suave);
+  }
+
+  strong {
+    font-family: var(--fonte-titulo);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--cor-titulo);
+
+    &.vida {
+      color: var(--cor-vida);
+    }
+
+    &.sanidade {
+      color: var(--cor-sanidade);
+    }
+  }
+}
+
+.ferramentas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.busca {
+  flex: 1 1 240px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 0.85rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: #13111a;
+  color: var(--cor-texto);
+  font: inherit;
+
+  &::placeholder {
+    color: var(--cor-texto-suave);
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filtro {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    background: #1d1828;
+    border-color: var(--cor-borda-dourada);
+    color: var(--cor-titulo);
+  }
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.esqueleto {
+  height: 128px;
+  opacity: 0.55;
+  animation: pulsar 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes pulsar {
+  to {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto {
+    animation: none;
+  }
+}
+
+.vazio {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--cor-texto-suave);
+
+  p {
+    margin: 0 0 0.75rem;
+  }
+}

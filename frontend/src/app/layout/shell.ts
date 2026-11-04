@@ -1,21 +1,17 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Layout } from '../core/layout';
+import { Component } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
 
 /**
- * Esqueleto da aplicação, pensado primeiro para o celular: barra no topo e navegação
- * embaixo, uma tela por vez. A partir de 900 px, a navegação sobe para o topo e aparece
- * a coluna lateral (slot [lateral]), que o App preenche com a lista de fichas.
+ * Esqueleto da aplicação: topo fixo (marca + "Nova ficha") e uma tela por vez, igual no
+ * celular e no computador (spec do redesign, §3.1). Sai o layout em dois painéis do 2.1.
  *
- * Há um único <router-outlet>, fora de qualquer @if: cruzar 900 px (girar o aparelho,
- * redimensionar a janela) troca só o layout e não recria a tela aberta.
+ * O <router-outlet> é único e não fica dentro de nenhum @if de largura: girar o aparelho
+ * ou redimensionar a janela nunca recria a tela aberta (nem perde o que foi digitado).
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
-export class Shell {
-  readonly desktop = inject(Layout).desktop;
-}
+export class Shell {}

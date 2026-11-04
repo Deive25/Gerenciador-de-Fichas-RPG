@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.cartao-ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  box-sizing: border-box;
+  color: var(--cor-texto);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+
+  &:hover {
+    border-color: rgba(201, 164, 92, 0.75);
+    transform: translateY(-1px);
+  }
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.identificacao {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nome {
+  font-size: 1.15rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.legenda {
+  font-family: var(--fonte-titulo);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
+}
+
+.etiqueta {
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+
+  &.vida {
+    background: rgba(224, 96, 75, 0.12);
+    color: var(--cor-vida);
+  }
+
+  &.sanidade {
+    background: rgba(87, 196, 154, 0.12);
+    color: var(--cor-sanidade);
+  }
+}

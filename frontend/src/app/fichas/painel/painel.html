@@ -1,0 +1,78 @@
+<h1 class="titulo nome-versalete">Investigadores</h1>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <div class="grade" role="status">
+      <span class="so-leitor">Carregando fichas…</span>
+      @for (i of [1, 2, 3]; track i) {
+        <div class="esqueleto bloco" aria-hidden="true"></div>
+      }
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erro()?.titulo }}</strong>
+      <p>{{ erro()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+  @default {
+    @if (fichas().length === 0) {
+      <div class="vazio bloco">
+        <p>Nenhuma ficha ainda.</p>
+        <a class="botao" routerLink="/fichas/nova">Criar a primeira ficha</a>
+      </div>
+    } @else {
+      <div class="contadores">
+        <div class="contador bloco">
+          <span class="rotulo">Investigadores</span>
+          <strong>{{ contagem().total }}</strong>
+        </div>
+        <div class="contador bloco">
+          <span class="rotulo">Feridos</span>
+          <strong class="vida">{{ contagem().feridos }}</strong>
+        </div>
+        <div class="contador bloco">
+          <span class="rotulo">Sanidade baixa</span>
+          <strong class="sanidade">{{ contagem().sanidadeBaixa }}</strong>
+        </div>
+      </div>
+
+      <div class="ferramentas">
+        <input
+          type="search"
+          class="busca"
+          placeholder="Buscar investigador…"
+          aria-label="Buscar investigador"
+          [value]="busca()"
+          (input)="aoBuscar($event)"
+        />
+        <div class="filtros" role="group" aria-label="Filtrar fichas">
+          @for (opcao of filtros; track opcao.valor) {
+            <button
+              type="button"
+              class="filtro"
+              [attr.aria-pressed]="filtro() === opcao.valor"
+              (click)="filtro.set(opcao.valor)"
+            >
+              {{ opcao.rotulo }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (visiveis().length > 0) {
+        <div class="grade">
+          @for (ficha of visiveis(); track ficha.id) {
+            <app-cartao-ficha [ficha]="ficha" />
+          }
+        </div>
+      } @else {
+        <div class="vazio bloco" role="status">
+          <p>Nenhuma ficha encontrada.</p>
+          <button type="button" class="botao-neutro" (click)="limparFiltros()">Limpar filtros</button>
+        </div>
+      }
+    }
+  }
+}
