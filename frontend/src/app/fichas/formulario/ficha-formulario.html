@@ -1,16 +1,24 @@
 <h1>{{ editando() ? 'Editar ficha' : 'Nova ficha' }}</h1>
 
-@if (carregando()) {
-  <p class="aviso" role="status">Carregando ficha…</p>
-}
-
-@if (erroGeral(); as erro) {
-  <div class="aviso-erro" role="alert">
-    <strong>{{ erro.titulo }}</strong>
-    <p>{{ erro.detalhe }}</p>
-  </div>
-}
-
+@switch (estado()) {
+  @case ('carregando') {
+    <p class="aviso" role="status">Carregando ficha…</p>
+  }
+  @case ('nao-encontrada') {
+    <div class="aviso-erro" role="alert">
+      <strong>Ficha não encontrada</strong>
+      <p>Ela pode ter sido excluída.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erroCarga()?.titulo }}</strong>
+      <p>{{ erroCarga()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar(+id()!)">Tentar de novo</button>
+    </div>
+  }
+  @default {
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
   <fieldset>
     <legend>Identificação</legend>
@@ -104,7 +112,12 @@
   </fieldset>
 
   <div class="acoes">
+    @if (erroGeral(); as erro) {
+      <p class="erro-salvar" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+    }
     <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', id()] : ['/fichas']">Cancelar</a>
     <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
   </div>
 </form>
+  }
+}
