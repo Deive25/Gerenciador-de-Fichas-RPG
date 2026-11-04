@@ -1,0 +1,32 @@
+<header class="barra-topo">
+  <a class="marca" routerLink="/fichas">🕯 Fichas RPG</a>
+  @if (desktop()) {
+    <nav class="navegacao-superior" aria-label="Navegação principal">
+      <a routerLink="/fichas" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">Fichas</a>
+      <a routerLink="/fichas/nova" routerLinkActive="ativo">Nova ficha</a>
+    </nav>
+  }
+</header>
+
+@if (desktop()) {
+  <div class="duas-colunas">
+    <aside class="coluna-lateral" aria-label="Fichas">
+      <ng-content select="[lateral]" />
+    </aside>
+    <main class="conteudo">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <main class="conteudo conteudo-celular">
+    <router-outlet />
+  </main>
+  <nav class="navegacao-inferior" aria-label="Navegação principal">
+    <a routerLink="/fichas" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">
+      <span aria-hidden="true">📜</span> Fichas
+    </a>
+    <a routerLink="/fichas/nova" routerLinkActive="ativo">
+      <span aria-hidden="true">＋</span> Nova ficha
+    </a>
+  </nav>
+}
