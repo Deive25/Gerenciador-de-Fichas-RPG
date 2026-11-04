@@ -80,8 +80,7 @@
         </section>
 
         <section class="status bloco" aria-label="Vida e sanidade">
-          <app-anel-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
-          <app-anel-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
+          <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" />
         </section>
 
         <section class="atributos bloco">

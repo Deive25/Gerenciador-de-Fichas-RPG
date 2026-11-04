@@ -56,3 +56,46 @@ text {
   font-size: 1.1rem;
   color: var(--cor-titulo);
 }
+
+// Edição rápida (2.1c): − e + com alvo de 44 px, e o valor como botão que abre o campo.
+.ajuste {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cor-titulo);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.editar {
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-bottom: 1px dashed var(--cor-borda-dourada);
+  background: transparent;
+  text-align: left;
+  cursor: text;
+}
+
+.campo {
+  width: 4.5rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 0.4rem;
+  border: 1px solid var(--cor-acao);
+  border-radius: 8px;
+  background: #13111a;
+  color: var(--cor-titulo);
+  font: inherit;
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+}

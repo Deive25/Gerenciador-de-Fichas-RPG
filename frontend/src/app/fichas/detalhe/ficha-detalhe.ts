@@ -6,7 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { ATRIBUTOS, PERICIAS, faixas } from '../catalogo';
-import { AnelStatus } from '../componentes/anel-status';
+import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
@@ -28,7 +28,7 @@ export function larguraBarra(valor: number): number {
 
 @Component({
   selector: 'app-ficha-detalhe',
-  imports: [RouterLink, MatMenuModule, MatTooltipModule, AnelStatus, Medalhao, ResultadoRolagem],
+  imports: [RouterLink, MatMenuModule, MatTooltipModule, Medalhao, RecursosFicha, ResultadoRolagem],
   templateUrl: './ficha-detalhe.html',
   styleUrl: './ficha-detalhe.scss',
 })
