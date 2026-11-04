@@ -1,11 +1,12 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
 import { Ficha, TestePericiaResultado } from '../ficha.model';
-import { FichaDetalhe } from './ficha-detalhe';
+import { FichaDetalhe, larguraBarra, marcaExtremo } from './ficha-detalhe';
 
 const FICHA: Ficha = {
   id: 7, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
@@ -36,7 +37,70 @@ function botao(el: HTMLElement, texto: string): HTMLButtonElement {
   return Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes(texto)) as HTMLButtonElement;
 }
 
+/** O menu ⋮ abre num overlay do CDK, fora do elemento do componente. */
+function itensDoMenu(): HTMLElement[] {
+  return Array.from(TestBed.inject(OverlayContainer).getContainerElement().querySelectorAll('[mat-menu-item]'));
+}
+
+function abrirMenu(fixture: ComponentFixture<FichaDetalhe>): void {
+  (fixture.nativeElement.querySelector('button[aria-label="Mais ações"]') as HTMLButtonElement).click();
+  fixture.detectChanges();
+}
+
+function pedirExclusao(fixture: ComponentFixture<FichaDetalhe>): void {
+  abrirMenu(fixture);
+  itensDoMenu()
+    .find((item) => item.textContent?.includes('Excluir'))!
+    .click();
+  fixture.detectChanges();
+}
+
+describe('marcaExtremo e larguraBarra', () => {
+  it('a marca do extremo fica em valor/5, sem passar de 100', () => {
+    expect(marcaExtremo(70)).toBe(14);
+    expect(marcaExtremo(0)).toBe(0);
+    expect(marcaExtremo(600)).toBe(100);
+  });
+
+  it('a barra vai ate o valor, entre 0 e 100', () => {
+    expect(larguraBarra(70)).toBe(70);
+    expect(larguraBarra(130)).toBe(100);
+    expect(larguraBarra(-5)).toBe(0);
+  });
+});
+
 describe('FichaDetalhe', () => {
+  it('mostra jogador, idade e genero', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    expect(el.textContent).toContain('Arthur · 34 anos · F');
+  });
+
+  it('pericia sem valor fica esmaecida e continua rolavel', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    const rolar = el.querySelector('button[aria-label="Rolar Acrobacia, 0"]') as HTMLButtonElement;
+    expect(rolar.disabled).toBe(false);
+    expect(rolar.closest('.pericia')?.classList).toContain('sem-valor');
+    expect(el.querySelector('button[aria-label="Rolar Investigação, 70"]')?.closest('.pericia')?.classList).not.toContain(
+      'sem-valor',
+    );
+  });
+
+  it('a barra da pericia vai ate o valor e marca o extremo', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    const item = el.querySelector('button[aria-label="Rolar Investigação, 70"]')?.closest('.pericia') as HTMLElement;
+    expect((item.querySelector('.barra i') as HTMLElement).style.width).toBe('70%');
+    expect((item.querySelector('.barra em') as HTMLElement).style.left).toBe('14%');
+  });
+
+  it('o menu de acoes tem Editar (link) e Excluir', () => {
+    const { fixture } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    abrirMenu(fixture);
+    const [editar, excluir] = itensDoMenu();
+    expect(editar.textContent).toContain('Editar');
+    expect(editar.getAttribute('href')).toBe('/fichas/7/editar');
+    expect(excluir.textContent).toContain('Excluir');
+  });
+
   it('mostra os dados e as 23 pericias com botao de rolar', () => {
     const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
     expect(el.textContent).toContain('Detetive Lia');
@@ -47,7 +111,8 @@ describe('FichaDetalhe', () => {
   it('as dicas ficam em botoes pequenos, nunca no nome da pericia', () => {
     const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
     const gatilhos = Array.from(el.querySelectorAll('.mat-mdc-tooltip-trigger'));
-    expect(gatilhos.length).toBe(23);
+    // 9 atributos + 23 perícias: os atributos não ficam mais numa aba escondida (plano 2.1b).
+    expect(gatilhos.length).toBe(32);
     for (const gatilho of gatilhos) {
       expect(gatilho.tagName).toBe('BUTTON');
       expect(gatilho.getAttribute('aria-label')).toMatch(/^Sobre /);
@@ -58,7 +123,7 @@ describe('FichaDetalhe', () => {
     const testarPericia = vi.fn(() => of(RESULTADO));
     const { fixture, el } = montar({ buscar: vi.fn(() => of(FICHA)), testarPericia });
 
-    (el.querySelector('button[aria-label="Rolar Investigação"]') as HTMLButtonElement).click();
+    (el.querySelector('button[aria-label="Rolar Investigação, 70"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(testarPericia).toHaveBeenCalledWith(7, 'INVESTIGACAO');
@@ -69,7 +134,7 @@ describe('FichaDetalhe', () => {
     const resposta = new Subject<TestePericiaResultado>();
     const testarPericia = vi.fn(() => resposta);
     const { fixture, el } = montar({ buscar: vi.fn(() => of(FICHA)), testarPericia });
-    const rolar = el.querySelector('button[aria-label="Rolar Investigação"]') as HTMLButtonElement;
+    const rolar = el.querySelector('button[aria-label="Rolar Investigação, 70"]') as HTMLButtonElement;
 
     rolar.click();
     fixture.detectChanges();
@@ -89,13 +154,13 @@ describe('FichaDetalhe', () => {
     const excluir = vi.fn(() => of(undefined));
     const { fixture, el, navegar } = montar({ buscar: vi.fn(() => of(FICHA)), excluir });
 
-    botao(el, 'Excluir ficha').click();
+    pedirExclusao(fixture);
     fixture.detectChanges();
     botao(el, 'Cancelar').click();
     fixture.detectChanges();
     expect(excluir).not.toHaveBeenCalled();
 
-    botao(el, 'Excluir ficha').click();
+    pedirExclusao(fixture);
     fixture.detectChanges();
     botao(el, 'Sim, excluir').click();
     fixture.detectChanges();
@@ -128,7 +193,7 @@ describe('FichaDetalhe', () => {
       .mockReturnValueOnce(of(RESULTADO));
     const { fixture, el } = montar({ buscar: vi.fn(() => of(FICHA)), testarPericia });
     const rolar = () => {
-      (el.querySelector('button[aria-label="Rolar Investigação"]') as HTMLButtonElement).click();
+      (el.querySelector('button[aria-label="Rolar Investigação, 70"]') as HTMLButtonElement).click();
       fixture.detectChanges();
     };
 
@@ -145,7 +210,7 @@ describe('FichaDetalhe', () => {
     const { fixture, el, navegar } = montar({ buscar: vi.fn(() => of(FICHA)), excluir });
     navegar.mockReturnValue(new Promise<boolean>(() => undefined));
 
-    botao(el, 'Excluir ficha').click();
+    pedirExclusao(fixture);
     fixture.detectChanges();
     const confirmar = botao(el, 'Sim, excluir');
     confirmar.click();
