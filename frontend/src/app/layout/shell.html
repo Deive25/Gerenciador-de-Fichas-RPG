@@ -8,19 +8,18 @@
   }
 </header>
 
-@if (desktop()) {
-  <div class="duas-colunas">
+<div class="corpo" [class.duas-colunas]="desktop()">
+  @if (desktop()) {
     <aside class="coluna-lateral" aria-label="Fichas">
       <ng-content select="[lateral]" />
     </aside>
-    <main class="conteudo">
-      <router-outlet />
-    </main>
-  </div>
-} @else {
-  <main class="conteudo conteudo-celular">
+  }
+  <main class="conteudo" [class.conteudo-celular]="!desktop()">
     <router-outlet />
   </main>
+</div>
+
+@if (!desktop()) {
   <nav class="navegacao-inferior" aria-label="Navegação principal">
     <a routerLink="/fichas" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">
       <span aria-hidden="true">📜</span> Fichas

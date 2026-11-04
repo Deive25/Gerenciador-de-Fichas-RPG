@@ -1,3 +1,5 @@
 <app-shell>
-  <app-ficha-lista lateral />
+  @if (desktop()) {
+    <app-ficha-lista lateral />
+  }
 </app-shell>

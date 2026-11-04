@@ -1,8 +1,5 @@
-import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
-import { LARGURA_COMPUTADOR } from '../../layout/shell';
+import { Layout } from '../../core/layout';
 import { FichaLista } from '../lista/ficha-lista';
 
 /**
@@ -15,10 +12,5 @@ import { FichaLista } from '../lista/ficha-lista';
   templateUrl: './ficha-inicio.html',
 })
 export class FichaInicio {
-  readonly desktop = toSignal(
-    inject(BreakpointObserver)
-      .observe(LARGURA_COMPUTADOR)
-      .pipe(map((estado) => estado.matches)),
-    { initialValue: false },
-  );
+  readonly desktop = inject(Layout).desktop;
 }
