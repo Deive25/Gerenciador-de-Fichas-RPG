@@ -23,11 +23,11 @@ import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 import dev.spironello.fichasrpg.service.Dado;
 
 /**
- * POST /sheetPlayer/{id}/testes-de-pericia de ponta a ponta (HTTP, serviço e PostgreSQL real).
+ * POST /fichas/{id}/testes-de-pericia de ponta a ponta (HTTP, serviço e PostgreSQL real).
  * O {@link Dado} é trocado por um mock do @MockitoBean: é a forma mais simples de fixar a
  * rolagem sem criar uma classe de configuração só para o teste.
  */
-@DisplayName("API /sheetPlayer/{id}/testes-de-pericia")
+@DisplayName("API /fichas/{id}/testes-de-pericia")
 class TestePericiaControllerTest extends IntegrationTestBase {
 
 	@Autowired
@@ -54,7 +54,7 @@ class TestePericiaControllerTest extends IntegrationTestBase {
 	}
 
 	private ResultActions testar(Object id, String corpo) throws Exception {
-		return mockMvc.perform(post("/sheetPlayer/" + id + "/testes-de-pericia")
+		return mockMvc.perform(post("/fichas/" + id + "/testes-de-pericia")
 				.contentType(MediaType.APPLICATION_JSON).content(corpo));
 	}
 
@@ -102,6 +102,7 @@ class TestePericiaControllerTest extends IntegrationTestBase {
 		testar(id, "{}")
 				.andExpect(status().isBadRequest())
 				.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+				.andExpect(jsonPath("$.detail").value("Há campos inválidos na requisição. Veja a propriedade errors."))
 				.andExpect(jsonPath("$.errors.pericia").exists());
 	}
 

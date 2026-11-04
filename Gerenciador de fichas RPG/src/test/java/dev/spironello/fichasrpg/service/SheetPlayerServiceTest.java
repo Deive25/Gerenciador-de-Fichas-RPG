@@ -8,7 +8,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.RecordComponent;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +29,7 @@ import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /**
  * Testes unitários do serviço: só Mockito, sem Spring e sem Docker. O repository é um mock;
- * o mapper é o de verdade, porque converter os 41 campos faz parte do que se quer provar.
+ * o mapper é o de verdade, porque converter todos os campos faz parte do que se quer provar.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SheetPlayerService (unitário)")
@@ -105,9 +108,12 @@ class SheetPlayerServiceTest {
 		for (RecordComponent campo : SheetPlayerRequest.class.getRecordComponents()) {
 			Object esperado = campo.getAccessor().invoke(novo);
 			Object obtido = SheetPlayerResponse.class.getMethod(campo.getName()).invoke(resposta);
+			if (esperado instanceof Map<?, ?> mapa) { // perícia null no pedido = ausente na resposta
+				esperado = mapa.entrySet().stream().filter(e -> e.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+			}
 			assertThat(obtido).as("campo %s", campo.getName()).isEqualTo(esperado);
 		}
-		assertThat(novo.atribute3()).isNull(); // o teste cobre também campos nulos
+		assertThat(novo.pericias()).containsEntry(Pericia.ADESTRAR_ANIMAIS, null); // o teste cobre também campos nulos
 		assertThat(existente.getPericias()).doesNotContainKey(Pericia.ADESTRAR_ANIMAIS); // e o nulo removeu a entrada da ficha
 	}
 
@@ -125,7 +131,7 @@ class SheetPlayerServiceTest {
 
 		verify(repository).save(any(SheetPlayer.class));
 		assertThat(resposta.id()).isEqualTo(55L);
-		assertThat(resposta.nameJ()).isEqualTo("nome-nameJ");
+		assertThat(resposta.jogador()).isEqualTo("nome-jogador");
 	}
 
 	// ---------- apoio ----------
@@ -136,8 +142,8 @@ class SheetPlayerServiceTest {
 
 	/**
 	 * Monta um pedido com todos os componentes preenchidos por reflexão (String "nome-campo",
-	 * Integer = base + posição), assim o teste cobre os 40 campos sem listá-los um a um.
-	 * Os campos atribute3 e atribute4 ficam null de propósito.
+	 * Integer = base + posição), assim o teste cobre os campos sem listá-los um a um.
+	 * As perícias ADESTRAR_ANIMAIS e ATUACAO_LABIA vão com valor null de propósito.
 	 */
 	private SheetPlayerRequest montarRequest(int base) {
 		try {
@@ -148,7 +154,14 @@ class SheetPlayerServiceTest {
 				tipos[i] = campos[i].getType();
 				if (campos[i].getType() == String.class) {
 					valores[i] = "nome-" + campos[i].getName();
-				} else if (!campos[i].getName().equals("atribute3") && !campos[i].getName().equals("atribute4")) {
+				} else if (campos[i].getType() == Map.class) {
+					Map<Pericia, Integer> pericias = new EnumMap<>(Pericia.class);
+					for (Pericia p : Pericia.values()) {
+						boolean nula = p == Pericia.ADESTRAR_ANIMAIS || p == Pericia.ATUACAO_LABIA;
+						pericias.put(p, nula ? null : base + p.ordinal());
+					}
+					valores[i] = pericias;
+				} else {
 					valores[i] = Integer.valueOf(base + i);
 				}
 			}
