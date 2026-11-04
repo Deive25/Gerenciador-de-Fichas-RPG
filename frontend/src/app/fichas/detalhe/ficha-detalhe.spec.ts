@@ -44,6 +44,16 @@ describe('FichaDetalhe', () => {
     expect(el.querySelectorAll('button[aria-label^="Rolar "]').length).toBe(23);
   });
 
+  it('as dicas ficam em botoes pequenos, nunca no nome da pericia', () => {
+    const { el } = montar({ buscar: vi.fn(() => of(FICHA)) });
+    const gatilhos = Array.from(el.querySelectorAll('.mat-mdc-tooltip-trigger'));
+    expect(gatilhos.length).toBe(23);
+    for (const gatilho of gatilhos) {
+      expect(gatilho.tagName).toBe('BUTTON');
+      expect(gatilho.getAttribute('aria-label')).toMatch(/^Sobre /);
+    }
+  });
+
   it('rola a pericia e mostra o resultado', () => {
     const testarPericia = vi.fn(() => of(RESULTADO));
     const { fixture, el } = montar({ buscar: vi.fn(() => of(FICHA)), testarPericia });

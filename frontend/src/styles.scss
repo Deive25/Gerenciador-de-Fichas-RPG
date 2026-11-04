@@ -76,3 +76,25 @@ a {
   outline: 2px solid var(--cor-acao);
   outline-offset: 2px;
 }
+
+// Botão "ⓘ" das dicas (atributos e perícias). A dica fica só neste botão pequeno: no toque,
+// o tooltip desligaria a rolagem nativa do elemento onde estivesse (ex.: o campo inteiro).
+.dica {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-size: 0.95rem;
+  cursor: help;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--cor-acao);
+  }
+}
