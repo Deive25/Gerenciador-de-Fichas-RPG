@@ -27,6 +27,6 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Os testes sobem um MySQL em container (Testcontainers); o ubuntu-latest ja tem Docker.
+      # Os testes sobem um PostgreSQL em container (Testcontainers); o ubuntu-latest ja tem Docker.
       - name: Build e testes
         run: ./mvnw -B verify
