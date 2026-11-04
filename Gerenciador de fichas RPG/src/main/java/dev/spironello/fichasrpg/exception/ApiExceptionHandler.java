@@ -51,13 +51,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		// Só os NOMES dos campos: o valor rejeitado pode ser dado pessoal e não vai para o log.
 		log.warn("Validação falhou nos campos {}", erros.keySet());
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-				"Há campos inválidos na ficha. Veja a propriedade errors.");
+				"Há campos inválidos na requisição. Veja a propriedade errors.");
 		problema.setTitle("Dados inválidos");
 		problema.setProperty("errors", erros);
 		return handleExceptionInternal(ex, problema, headers, status, request);
 	}
 
-	/** Parâmetro de rota com tipo errado (ex.: GET /sheetPlayer/abc): mensagem em português. */
+	/** Parâmetro de rota com tipo errado (ex.: GET /fichas/abc): mensagem em português. */
 	@Override
 	protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex, HttpHeaders headers,
 			HttpStatusCode status, WebRequest request) {

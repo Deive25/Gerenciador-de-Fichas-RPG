@@ -55,24 +55,24 @@ input[type=number] {
     border-color: #2B2B2B;
 }
 
-input[name="nameJ"] {
+input[name="jogador"] {
     margin-top: 30px;
     margin-left: 8px;
     padding: 15px;
 }
 
-input[name="nameC"] {
+input[name="personagem"] {
     margin-left: 8px;
     padding: 15px;
 }
 
-input[name="age"] {
+input[name="idade"] {
     margin-right: 70px;
     margin-left: 10px;
     padding: 15px;
 }
 
-input[name="gender"] {
+input[name="genero"] {
     padding: 15px;
 }
 
