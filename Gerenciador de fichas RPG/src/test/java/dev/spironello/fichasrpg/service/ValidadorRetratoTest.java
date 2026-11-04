@@ -1,5 +1,6 @@
 package dev.spironello.fichasrpg.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -37,6 +38,18 @@ class ValidadorRetratoTest {
 				.isInstanceOf(RetratoInvalidoException.class)
 				.hasMessage("A imagem passa de 1000 px de largura ou altura.");
 		assertThatThrownBy(() -> validador.validar(ImagensDeTeste.jpeg(10, 1001)))
+				.isInstanceOf(RetratoInvalidoException.class)
+				.hasMessage("A imagem passa de 1000 px de largura ou altura.");
+	}
+
+	@Test
+	@DisplayName("recusa pelo cabeçalho, sem decodificar, um JPEG minúsculo que diz ter 50000×50000 (bomba de decodificação)")
+	void recusaBombaDeDecodificacao() {
+		byte[] bomba = ImagensDeTeste.jpegComDimensoesFalsas(50_000, 50_000);
+		assertThat(bomba.length).isLessThan(2_000);
+
+		// Decodificar pediria 50000 × 50000 × 3 bytes ≈ 7,5 GB: o teste só passa se a conferência vier antes.
+		assertThatThrownBy(() -> validador.validar(bomba))
 				.isInstanceOf(RetratoInvalidoException.class)
 				.hasMessage("A imagem passa de 1000 px de largura ou altura.");
 	}

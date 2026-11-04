@@ -134,6 +134,16 @@ class RetratoControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisplayName("JPEG minúsculo com cabeçalho de 50000×50000 dá 422, sem derrubar a API por falta de memória")
+	void bombaDeDecodificacaoDa422() throws Exception {
+		mockMvc.perform(put("/fichas/{id}/retrato", fichaId).contentType(MediaType.IMAGE_JPEG)
+				.content(ImagensDeTeste.jpegComDimensoesFalsas(50_000, 50_000)))
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.detail").value("A imagem passa de 1000 px de largura ou altura."));
+		assertThat(retratos.existsById(fichaId)).isFalse();
+	}
+
+	@Test
 	@DisplayName("ficha inexistente dá 404 nas três rotas")
 	void fichaInexistente() throws Exception {
 		mockMvc.perform(put("/fichas/{id}/retrato", ID_INEXISTENTE).contentType(MediaType.IMAGE_JPEG)

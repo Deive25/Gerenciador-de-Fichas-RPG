@@ -43,7 +43,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problema;
 	}
 
-	/** Bean Validation falhou: 400 com a propriedade extra "errors" (campo -> mensagem). */
 	@ExceptionHandler(RetratoNaoEncontradoException.class)
 	public ProblemDetail handleRetratoNaoEncontrado(RetratoNaoEncontradoException ex) {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
@@ -82,6 +81,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return handleExceptionInternal(ex, problema, headers, status, request);
 	}
 
+	/** Bean Validation falhou: 400 com a propriedade extra "errors" (campo -> mensagem). */
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
