@@ -1,0 +1,30 @@
+name: CI
+
+# Roda em todo push e em todo pull request.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (build + testes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: "Gerenciador de fichas RPG"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Os testes sobem um MySQL em container (Testcontainers); o ubuntu-latest ja tem Docker.
+      - name: Build e testes
+        run: ./mvnw -B verify
