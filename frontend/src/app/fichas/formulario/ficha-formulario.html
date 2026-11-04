@@ -53,9 +53,21 @@
     <legend>Atributos</legend>
     <div class="grade">
       @for (atributo of atributos; track atributo.chave) {
-        <mat-form-field appearance="outline" [attr.data-campo]="atributo.chave" [matTooltip]="atributo.descricao">
+        <mat-form-field appearance="outline" [attr.data-campo]="atributo.chave">
           <mat-label>{{ atributo.nome }}</mat-label>
           <input matInput [formControlName]="atributo.chave" inputmode="numeric" />
+          <button
+            matSuffix
+            type="button"
+            class="dica"
+            [matTooltip]="atributo.descricao"
+            matTooltipTouchGestures="off"
+            #dicaAtributo="matTooltip"
+            (click)="dicaAtributo.toggle()"
+            [attr.aria-label]="'Sobre ' + atributo.nome"
+          >
+            ⓘ
+          </button>
           @if (mensagem(controle(atributo.chave)); as texto) {
             <mat-error>{{ texto }}</mat-error>
           }
@@ -68,9 +80,21 @@
     <legend>Perícias</legend>
     <div class="grade">
       @for (pericia of pericias; track pericia.chave) {
-        <mat-form-field appearance="outline" [attr.data-campo]="pericia.chave" [matTooltip]="pericia.descricao">
+        <mat-form-field appearance="outline" [attr.data-campo]="pericia.chave">
           <mat-label>{{ pericia.nome }}</mat-label>
           <input matInput [formControlName]="pericia.chave" inputmode="numeric" />
+          <button
+            matSuffix
+            type="button"
+            class="dica"
+            [matTooltip]="pericia.descricao"
+            matTooltipTouchGestures="off"
+            #dicaPericia="matTooltip"
+            (click)="dicaPericia.toggle()"
+            [attr.aria-label]="'Sobre ' + pericia.nome"
+          >
+            ⓘ
+          </button>
           @if (mensagem(form.controls.pericias.controls[pericia.chave]); as texto) {
             <mat-error>{{ texto }}</mat-error>
           }

@@ -48,7 +48,20 @@
           <ul class="itens">
             @for (atributo of atributos; track atributo.chave) {
               <li class="item">
-                <span [matTooltip]="atributo.descricao" tabindex="0">{{ atributo.nome }}</span>
+                <span class="nome">
+                  {{ atributo.nome }}
+                  <button
+                    type="button"
+                    class="dica"
+                    [matTooltip]="atributo.descricao"
+                    matTooltipTouchGestures="off"
+                    #dicaAtributo="matTooltip"
+                    (click)="dicaAtributo.toggle()"
+                    [attr.aria-label]="'Sobre ' + atributo.nome"
+                  >
+                    ⓘ
+                  </button>
+                </span>
                 <strong>{{ f[atributo.chave] ?? '—' }}</strong>
               </li>
             }
@@ -58,8 +71,20 @@
           <ul class="itens">
             @for (pericia of pericias; track pericia.chave) {
               <li class="item">
-                <span [matTooltip]="pericia.descricao" tabindex="0">
-                  {{ pericia.nome }} <strong>{{ valorPericia(pericia.chave) ?? '—' }}</strong>
+                <span class="nome">
+                  {{ pericia.nome }}
+                  <button
+                    type="button"
+                    class="dica"
+                    [matTooltip]="pericia.descricao"
+                    matTooltipTouchGestures="off"
+                    #dicaPericia="matTooltip"
+                    (click)="dicaPericia.toggle()"
+                    [attr.aria-label]="'Sobre ' + pericia.nome"
+                  >
+                    ⓘ
+                  </button>
+                  <strong>{{ valorPericia(pericia.chave) ?? '—' }}</strong>
                 </span>
                 <button
                   type="button"

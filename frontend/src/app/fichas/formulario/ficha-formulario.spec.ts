@@ -119,6 +119,18 @@ describe('FichaFormulario', () => {
     expect(criar).toHaveBeenCalledTimes(1);
   });
 
+  it('as dicas ficam em botoes pequenos, nunca no campo inteiro', () => {
+    // No celular o tooltip desliga os gestos nativos do elemento onde está; num campo
+    // inteiro isso impede rolar a tela com o dedo. Só os botões "ⓘ" podem ter dica.
+    const { el } = montar({});
+    const gatilhos = Array.from(el.querySelectorAll('.mat-mdc-tooltip-trigger'));
+    expect(gatilhos.length).toBe(9 + 23);
+    for (const gatilho of gatilhos) {
+      expect(gatilho.tagName).toBe('BUTTON');
+      expect(gatilho.getAttribute('aria-label')).toMatch(/^Sobre /);
+    }
+  });
+
   it('edita com a ficha carregada', () => {
     const atualizar = vi.fn(() => of(FICHA));
     const { salvar, componente, navegar } = montar({ buscar: vi.fn(() => of(FICHA)), atualizar }, '7');
