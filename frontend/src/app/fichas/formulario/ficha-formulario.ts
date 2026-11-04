@@ -1,10 +1,10 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
-import { Observable, finalize } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { ATRIBUTOS, PERICIAS } from '../catalogo';
 import { FichaApi } from '../ficha-api';
@@ -17,6 +17,9 @@ const CAMPOS_NUMERICOS = [
 
 type CampoNumerico = (typeof CAMPOS_NUMERICOS)[number];
 type CampoTexto = 'jogador' | 'personagem' | 'genero';
+
+/** Na edição, o formulário só aparece com a ficha carregada (PUT é substituição completa). */
+type EstadoCarga = 'pronto' | 'carregando' | 'nao-encontrada' | 'erro';
 
 /** Valor bruto do formulário: tudo texto, como vem dos campos. */
 export type ValorFormulario = { jogador: string; personagem: string; genero: string } & Record<CampoNumerico, string> & {
@@ -91,6 +94,7 @@ export class FichaFormulario {
   private readonly api = inject(FichaApi);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** Presente no modo editar (rota /fichas/:id/editar). */
   readonly id = input<string>();
@@ -113,7 +117,10 @@ export class FichaFormulario {
   readonly form: FormularioFicha = this.criarFormulario();
 
   readonly salvando = signal(false);
-  readonly carregando = signal(false);
+  readonly estado = signal<EstadoCarga>('pronto');
+  /** Erro ao carregar a ficha (modo editar). */
+  readonly erroCarga = signal<ApiError | null>(null);
+  /** Erro ao salvar que não é de um campo específico (ex.: servidor indisponível). */
   readonly erroGeral = signal<ApiError | null>(null);
 
   constructor() {
@@ -142,15 +149,19 @@ export class FichaFormulario {
     }) as FormularioFicha;
   }
 
-  private carregar(id: number): void {
-    this.carregando.set(true);
-    this.api
-      .buscar(id)
-      .pipe(finalize(() => this.carregando.set(false)))
-      .subscribe({
-        next: (ficha) => this.form.setValue(paraValor(ficha)),
-        error: (erro: ApiError) => this.erroGeral.set(erro),
-      });
+  carregar(id: number): void {
+    this.estado.set('carregando');
+    this.erroCarga.set(null);
+    this.api.buscar(id).subscribe({
+      next: (ficha) => {
+        this.form.setValue(paraValor(ficha));
+        this.estado.set('pronto');
+      },
+      error: (erro: ApiError) => {
+        this.erroCarga.set(erro);
+        this.estado.set(erro.status === 404 ? 'nao-encontrada' : 'erro');
+      },
+    });
   }
 
   /** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro. */
@@ -184,6 +195,8 @@ export class FichaFormulario {
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // No celular o formulário é longo: leva o usuário até o primeiro campo com problema.
+      this.host.nativeElement.querySelector<HTMLElement>('input.ng-invalid')?.focus();
       return;
     }
     this.erroGeral.set(null);

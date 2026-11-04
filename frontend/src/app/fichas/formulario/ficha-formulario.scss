@@ -31,7 +31,9 @@ legend {
   position: sticky;
   bottom: 4.5rem;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 0;
   background: linear-gradient(transparent, var(--cor-fundo) 35%);
@@ -64,6 +66,17 @@ legend {
 
 .aviso {
   color: var(--cor-texto-suave);
+}
+
+// Erro ao salvar fica junto dos botões (barra fixa embaixo), onde quem tocou em Salvar está olhando.
+.erro-salvar {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: 8px;
+  background: #2a1a18;
+  color: #f0b3a9;
 }
 
 .aviso-erro {
