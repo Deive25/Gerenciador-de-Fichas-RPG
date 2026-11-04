@@ -54,9 +54,9 @@ class ContratoJsonTest extends IntegrationTestBase {
 				"id", "jogador", "personagem", "genero", "idade",
 				"vidaAtual", "vidaMaxima", "sanidadeAtual", "sanidadeMaxima",
 				"forca", "destreza", "constituicao", "inteligencia", "carisma",
-				"sabedoria", "tamanho", "sorte", "poder", "pericias");
+				"sabedoria", "tamanho", "sorte", "poder", "pericias", "retratoVersao");
 
-		assertThat(esperadas).hasSize(19); // as 18 chaves escalares (com id) + o objeto pericias
+		assertThat(esperadas).hasSize(20); // as 18 chaves escalares (com id) + o objeto pericias + retratoVersao (2.1c)
 		assertThat(json.keySet()).containsExactlyInAnyOrderElementsOf(esperadas);
 		assertThat(json.get("vidaAtual")).isEqualTo(10);
 		// pericias é um objeto com só as preenchidas, chaveado pelo código do enum

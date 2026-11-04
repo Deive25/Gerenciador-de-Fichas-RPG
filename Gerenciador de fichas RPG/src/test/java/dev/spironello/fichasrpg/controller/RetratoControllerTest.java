@@ -172,6 +172,40 @@ class RetratoControllerTest extends IntegrationTestBase {
 		mockMvc.perform(delete("/fichas/{id}/retrato", fichaId)).andExpect(status().isNoContent());
 	}
 
+	@Test
+	@DisplayName("a ficha informa retratoVersao (instante em ms) na busca e na listagem, e null sem retrato")
+	void retratoVersaoNoJson() throws Exception {
+		SheetPlayer outra = new SheetPlayer();
+		outra.setNameJ("Bia");
+		outra.setNameC("Hale");
+		outra.setGender("M");
+		Long semRetrato = fichas.save(outra).getId();
+
+		enviar(ImagensDeTeste.jpeg(10, 10));
+
+		mockMvc.perform(get("/fichas/{id}", fichaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").value(INSTANTE.toEpochMilli()));
+		mockMvc.perform(get("/fichas/{id}", semRetrato))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").isEmpty());
+		mockMvc.perform(get("/fichas"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[?(@.id == " + fichaId + ")].retratoVersao").value(INSTANTE.toEpochMilli()))
+				.andExpect(jsonPath("$[?(@.id == " + semRetrato + ")].retratoVersao").value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())));
+	}
+
+	@Test
+	@DisplayName("depois de remover o retrato, a ficha volta a retratoVersao null")
+	void retratoVersaoVoltaANull() throws Exception {
+		enviar(ImagensDeTeste.jpeg(10, 10));
+		mockMvc.perform(delete("/fichas/{id}/retrato", fichaId)).andExpect(status().isNoContent());
+
+		mockMvc.perform(get("/fichas/{id}", fichaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").isEmpty());
+	}
+
 	private void enviar(byte[] jpeg) throws Exception {
 		mockMvc.perform(put("/fichas/{id}/retrato", fichaId).contentType(MediaType.IMAGE_JPEG).content(jpeg))
 				.andExpect(status().isNoContent());
