@@ -38,8 +38,19 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>com.mysql</groupId>
-			<artifactId>mysql-connector-j</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- Migracoes do esquema (db/migration). No Boot 4 o Flyway tem starter proprio -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<!-- Desde o Flyway 10 o suporte a cada banco e um modulo separado -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
@@ -53,10 +64,10 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- Testes de integracao com MySQL real em container (versao do Testcontainers gerenciada pelo Boot) -->
+		<!-- Testes de integracao com PostgreSQL real em container (versao do Testcontainers gerenciada pelo Boot) -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-mysql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- Documentacao da API: OpenAPI em /v3/api-docs e Swagger UI em /swagger-ui.html -->
