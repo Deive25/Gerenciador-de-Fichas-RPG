@@ -35,8 +35,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
-	@ExceptionHandler(SheetPlayerNotFoundException.class)
-	public ProblemDetail handleNotFound(SheetPlayerNotFoundException ex) {
+	@ExceptionHandler(FichaNaoEncontradaException.class)
+	public ProblemDetail handleNotFound(FichaNaoEncontradaException ex) {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
 				"Não existe ficha com o id " + ex.getId() + ".");
 		problema.setTitle("Ficha não encontrada");

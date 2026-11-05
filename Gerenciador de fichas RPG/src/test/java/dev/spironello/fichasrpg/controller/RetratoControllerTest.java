@@ -1,6 +1,7 @@
 package dev.spironello.fichasrpg.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,12 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import dev.spironello.fichasrpg.FichasDeTeste;
 import dev.spironello.fichasrpg.ImagensDeTeste;
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.RelogioDeTesteConfig.RelogioAjustavel;
-import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.model.Ficha;
+import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.RetratoFichaRepository;
-import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /** Rotas do retrato (spec do redesign §4.2 e §4.5). */
 @DisplayName("API /fichas/{id}/retrato")
@@ -38,7 +40,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 	private MockMvc mockMvc;
 
 	@Autowired
-	private SheetPlayerRepository fichas;
+	private FichaRepository fichas;
 
 	@Autowired
 	private RetratoFichaRepository retratos;
@@ -52,11 +54,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 	void prepararFicha() {
 		fichas.deleteAll();
 		relogio.definir(INSTANTE);
-		SheetPlayer ficha = new SheetPlayer();
-		ficha.setNameJ("Ana");
-		ficha.setNameC("Lia");
-		ficha.setGender("F");
-		fichaId = fichas.save(ficha).getId();
+		fichaId = fichas.save(FichasDeTeste.ordem("Lia")).getId();
 	}
 
 	@Test
@@ -183,26 +181,17 @@ class RetratoControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("a ficha informa retratoVersao (instante em ms) na busca e na listagem, e null sem retrato")
-	void retratoVersaoNoJson() throws Exception {
-		SheetPlayer outra = new SheetPlayer();
-		outra.setNameJ("Bia");
-		outra.setNameC("Hale");
-		outra.setGender("M");
-		Long semRetrato = fichas.save(outra).getId();
+	@DisplayName("a ficha informa retratoVersao (instante em ms) com retrato, e null sem retrato")
+	void retratoVersaoNaEntidade() throws Exception {
+		// As rotas GET /fichas e /fichas/{id} voltam na Tarefa 3; até lá a versão é lida da entidade (o @Formula).
+		Long semRetrato = fichas.save(FichasDeTeste.ordem("Hale")).getId();
 
 		enviar(ImagensDeTeste.jpeg(10, 10));
 
-		mockMvc.perform(get("/fichas/{id}", fichaId))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.retratoVersao").value(INSTANTE.toEpochMilli()));
-		mockMvc.perform(get("/fichas/{id}", semRetrato))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.retratoVersao").isEmpty());
-		mockMvc.perform(get("/fichas"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[?(@.id == " + fichaId + ")].retratoVersao").value(INSTANTE.toEpochMilli()))
-				.andExpect(jsonPath("$[?(@.id == " + semRetrato + ")].retratoVersao").value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())));
+		assertThat(fichas.findById(fichaId).orElseThrow().getRetratoVersao()).isEqualTo(INSTANTE.toEpochMilli());
+		assertThat(fichas.findById(semRetrato).orElseThrow().getRetratoVersao()).isNull();
+		assertThat(fichas.findAll()).extracting(Ficha::getId, Ficha::getRetratoVersao)
+				.containsExactlyInAnyOrder(tuple(fichaId, INSTANTE.toEpochMilli()), tuple(semRetrato, null));
 	}
 
 	@Test
@@ -211,9 +200,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 		enviar(ImagensDeTeste.jpeg(10, 10));
 		mockMvc.perform(delete("/fichas/{id}/retrato", fichaId)).andExpect(status().isNoContent());
 
-		mockMvc.perform(get("/fichas/{id}", fichaId))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.retratoVersao").isEmpty());
+		assertThat(fichas.findById(fichaId).orElseThrow().getRetratoVersao()).isNull();
 	}
 
 	private void enviar(byte[] jpeg) throws Exception {
