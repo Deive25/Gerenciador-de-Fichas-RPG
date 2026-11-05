@@ -1,10 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-/**
- * Primeiro passo de "nova ficha": escolher o sistema. Só Ordem tem formulário; os de D&D
- * aparecem desabilitados ("Em breve") para a escolha já ter o desenho final (2.1e).
- */
+/** Primeiro passo de "nova ficha": escolher o sistema; cada cartão leva ao formulário do seu sistema. */
 @Component({
   selector: 'app-escolha-sistema',
   imports: [RouterLink],

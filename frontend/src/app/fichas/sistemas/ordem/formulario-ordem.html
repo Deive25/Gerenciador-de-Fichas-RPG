@@ -1,34 +1,6 @@
-@if (estado() !== 'nao-encontrada') {
-  <a class="voltar" routerLink="/fichas">← Investigadores</a>
-}
+<a class="voltar" routerLink="/fichas">← Investigadores</a>
 <h1 class="nome-versalete">{{ editando() ? 'Editar ficha' : 'Nova ficha de Ordem Paranormal' }}</h1>
 
-@switch (estado()) {
-  @case ('carregando') {
-    <p class="aviso" role="status">Carregando ficha…</p>
-  }
-  @case ('nao-encontrada') {
-    <div class="aviso-erro" role="alert">
-      <strong>Ficha não encontrada</strong>
-      <p>Ela pode ter sido excluída.</p>
-      <a routerLink="/fichas">Voltar para as fichas</a>
-    </div>
-  }
-  @case ('outro-sistema') {
-    <div class="aviso-erro" role="alert">
-      <strong>Este sistema ainda não tem formulário</strong>
-      <p>Por enquanto só as fichas de Ordem Paranormal podem ser editadas.</p>
-      <a routerLink="/fichas">Voltar para as fichas</a>
-    </div>
-  }
-  @case ('erro') {
-    <div class="aviso-erro" role="alert">
-      <strong>{{ erroCarga()?.titulo }}</strong>
-      <p>{{ erroCarga()?.detalhe }}</p>
-      <button type="button" class="botao" (click)="carregar(+id()!)">Tentar de novo</button>
-    </div>
-  }
-  @default {
 <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
   <fieldset class="bloco">
     <legend class="titulo-secao">Identificação</legend>
@@ -172,9 +144,7 @@
     @if (erroGeral(); as erro) {
       <p class="erro-salvar" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
     }
-    <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', id()] : ['/fichas']">Cancelar</a>
+    <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', ficha()?.id] : ['/fichas']">Cancelar</a>
     <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
   </div>
 </form>
-  }
-}
