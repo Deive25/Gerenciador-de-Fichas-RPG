@@ -3,15 +3,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
-import { Ficha } from '../ficha.model';
+import { FichaOrdem } from '../ficha.model';
 import { RecursosFicha, aplicarAjuste, limitarDigitado } from './recursos-ficha';
 
-const FICHA: Ficha = {
-  id: 7, jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: 34,
-  vidaAtual: 9, vidaMaxima: 12, sanidadeAtual: 48, sanidadeMaxima: 60,
-  forca: null, destreza: null, constituicao: null, inteligencia: null, carisma: null,
-  sabedoria: null, tamanho: null, sorte: null, poder: null,
-  pericias: { INVESTIGACAO: 70 }, retratoVersao: 123,
+const FICHA: FichaOrdem = {
+  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: 34, retratoVersao: 123,
+  classe: 'OCULTISTA', origem: 'Acadêmica', nex: 45,
+  atributos: { AGI: 2, FOR: 1, INT: 4, PRE: 3, VIG: 1 },
+  recursos: {
+    PV: { atual: 6, maximo: 12 },
+    SAN: { atual: 48, maximo: 60 },
+    PE: { atual: 5, maximo: 10 },
+  },
+  pericias: { INVESTIGACAO: 'TREINADO' },
 };
 
 describe('aplicarAjuste', () => {
@@ -45,19 +49,29 @@ describe('limitarDigitado', () => {
 });
 
 describe('RecursosFicha', () => {
-  let atualizar: ReturnType<typeof vi.fn>;
+  let atualizarRecursos: ReturnType<typeof vi.fn>;
 
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  function montar(respostas: ReturnType<typeof vi.fn>) {
-    atualizar = respostas;
+  /** Resposta do servidor depois de um PATCH: a ficha com os atuais trocados. */
+  function responder(atuais: Record<string, number>): FichaOrdem {
+    const recursos = { ...FICHA.recursos };
+    for (const [codigo, atual] of Object.entries(atuais)) {
+      const chave = codigo as keyof typeof recursos;
+      recursos[chave] = { ...recursos[chave], atual };
+    }
+    return { ...FICHA, recursos };
+  }
+
+  function montar(respostas: ReturnType<typeof vi.fn>, ficha: FichaOrdem = FICHA) {
+    atualizarRecursos = respostas;
     TestBed.configureTestingModule({
       imports: [RecursosFicha],
-      providers: [{ provide: FichaApi, useValue: { atualizar, versaoFichas: signal(0) } }],
+      providers: [{ provide: FichaApi, useValue: { atualizarRecursos, versaoFichas: signal(0) } }],
     });
     const fixture = TestBed.createComponent(RecursosFicha);
-    fixture.componentRef.setInput('ficha', FICHA);
+    fixture.componentRef.setInput('ficha', ficha);
     fixture.detectChanges();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
@@ -69,29 +83,59 @@ describe('RecursosFicha', () => {
     }
   }
 
-  it('tem os quatro botoes com nomes acessiveis', () => {
+  it('tem os tres aneis, cada um com - e + de nome acessivel', () => {
     const { el } = montar(vi.fn());
-    for (const nome of ['Diminuir vida', 'Aumentar vida', 'Diminuir sanidade', 'Aumentar sanidade']) {
-      expect(el.querySelector(`button[aria-label="${nome}"]`)).not.toBeNull();
+    for (const nome of ['vida', 'sanidade', 'esforço']) {
+      expect(el.querySelector(`button[aria-label="Diminuir ${nome}"]`)).not.toBeNull();
+      expect(el.querySelector(`button[aria-label="Aumentar ${nome}"]`)).not.toBeNull();
     }
+    expect(el.querySelectorAll('app-anel-status').length).toBe(3);
   });
 
-  it('varios toques viram um PUT so, 800 ms depois do ultimo, sem id nem retratoVersao no corpo', () => {
-    const { fixture, el } = montar(vi.fn((_id: number, entrada: object) => of({ ...FICHA, ...entrada })));
+  it('tres toques em Aumentar vida viram um PATCH so, 800 ms depois, so com o codigo PV', () => {
+    const { fixture, el } = montar(vi.fn(() => of(responder({ PV: 9 }))));
 
     clicar(fixture, 'Aumentar vida', 3);
-    expect(el.textContent).toContain('12/12');
+    expect(el.textContent).toContain('9/12');
     vi.advanceTimersByTime(799);
-    expect(atualizar).not.toHaveBeenCalled();
+    expect(atualizarRecursos).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
 
-    expect(atualizar).toHaveBeenCalledTimes(1);
-    const [id, corpo] = atualizar.mock.calls[0];
-    expect(id).toBe(7);
-    expect(corpo.vidaAtual).toBe(12);
-    expect(corpo.sanidadeAtual).toBe(48);
-    expect('id' in corpo).toBe(false);
-    expect('retratoVersao' in corpo).toBe(false);
+    expect(atualizarRecursos).toHaveBeenCalledTimes(1);
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { PV: 9 });
+  });
+
+  it('o PATCH leva todos os codigos mudados dentro da janela, e so eles', () => {
+    const { fixture } = montar(vi.fn(() => of(responder({ PV: 5, PE: 6 }))));
+
+    clicar(fixture, 'Diminuir vida');
+    clicar(fixture, 'Aumentar esforço');
+    vi.advanceTimersByTime(800);
+
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { PV: 5, PE: 6 });
+  });
+
+  it('esforco sem maximo: o + continua habilitado e o PATCH leva so o PE', () => {
+    const semMaximo: FichaOrdem = { ...FICHA, recursos: { ...FICHA.recursos, PE: { atual: 5, maximo: null } } };
+    const { fixture } = montar(vi.fn(() => of(responder({ PE: 7 }))), semMaximo);
+    const mais = () => fixture.nativeElement.querySelector('button[aria-label="Aumentar esforço"]') as HTMLButtonElement;
+
+    expect(mais().disabled).toBe(false);
+    clicar(fixture, 'Aumentar esforço', 2);
+    expect(mais().disabled).toBe(false);
+    vi.advanceTimersByTime(800);
+
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { PE: 7 });
+  });
+
+  it('esforco vazio (atual e maximo nulos) tambem pode subir', () => {
+    const vazio: FichaOrdem = { ...FICHA, recursos: { ...FICHA.recursos, PE: { atual: null, maximo: null } } };
+    const { fixture } = montar(vi.fn(() => of(responder({ PE: 1 }))), vazio);
+
+    clicar(fixture, 'Aumentar esforço');
+    vi.advanceTimersByTime(800);
+
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { PE: 1 });
   });
 
   it('se o salvamento falhar, volta ao ultimo valor salvo e mostra o erro', () => {
@@ -102,45 +146,51 @@ describe('RecursosFicha', () => {
     vi.advanceTimersByTime(800);
     fixture.detectChanges();
 
-    expect(el.textContent).toContain('9/12');
+    expect(el.textContent).toContain('6/12');
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Servidor indisponível: Tente de novo.');
   });
 
   it('um toque durante o salvamento salva de novo depois, sem ser apagado pela resposta', () => {
-    const primeira = new Subject<Ficha>();
+    const primeira = new Subject<FichaOrdem>();
     const { fixture, el } = montar(
-      vi.fn().mockReturnValueOnce(primeira).mockReturnValueOnce(of({ ...FICHA, vidaAtual: 11 })),
+      vi.fn().mockReturnValueOnce(primeira).mockReturnValueOnce(of(responder({ PV: 8 }))),
     );
 
     clicar(fixture, 'Aumentar vida');
     vi.advanceTimersByTime(800);
     fixture.detectChanges();
-    expect(atualizar).toHaveBeenCalledTimes(1);
+    expect(atualizarRecursos).toHaveBeenCalledTimes(1);
     expect(el.querySelector('[role="status"]')?.textContent).toContain('salvando');
 
     clicar(fixture, 'Aumentar vida');
     vi.advanceTimersByTime(800);
-    primeira.next({ ...FICHA, vidaAtual: 10 });
+    primeira.next(responder({ PV: 7 }));
     primeira.complete();
     fixture.detectChanges();
 
-    expect(atualizar).toHaveBeenCalledTimes(2);
-    expect(atualizar.mock.calls[1][1].vidaAtual).toBe(11);
-    expect(el.textContent).toContain('11/12');
+    expect(atualizarRecursos).toHaveBeenCalledTimes(2);
+    expect(atualizarRecursos).toHaveBeenNthCalledWith(2, 7, { PV: 8 });
+    expect(el.textContent).toContain('8/12');
   });
 
   it('sair da ficha com um ajuste esperando salva na hora', () => {
-    const { fixture } = montar(vi.fn((_id: number, entrada: object) => of({ ...FICHA, ...entrada })));
+    const { fixture } = montar(vi.fn(() => of(responder({ SAN: 47 }))));
 
     clicar(fixture, 'Diminuir sanidade');
     fixture.destroy();
 
-    expect(atualizar).toHaveBeenCalledTimes(1);
-    expect(atualizar.mock.calls[0][1].sanidadeAtual).toBe(47);
+    expect(atualizarRecursos).toHaveBeenCalledTimes(1);
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { SAN: 47 });
+  });
+
+  it('sem ajuste nenhum, sair da ficha nao chama a API', () => {
+    const { fixture } = montar(vi.fn());
+    fixture.destroy();
+    expect(atualizarRecursos).not.toHaveBeenCalled();
   });
 
   it('digitar o valor e confirmar com Enter salva o numero, limitado ao maximo', () => {
-    const { fixture, el } = montar(vi.fn((_id: number, entrada: object) => of({ ...FICHA, ...entrada })));
+    const { fixture, el } = montar(vi.fn(() => of(responder({ SAN: 5 }))));
 
     (el.querySelector('button[aria-label^="Editar sanidade"]') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -150,7 +200,7 @@ describe('RecursosFicha', () => {
     fixture.detectChanges();
     vi.advanceTimersByTime(800);
 
-    expect(atualizar.mock.calls[0][1].sanidadeAtual).toBe(5);
+    expect(atualizarRecursos).toHaveBeenCalledWith(7, { SAN: 5 });
   });
 
   it('Esc cancela a digitacao sem salvar', () => {
@@ -165,18 +215,15 @@ describe('RecursosFicha', () => {
     vi.advanceTimersByTime(800);
 
     expect(el.querySelector('input[type="number"]')).toBeNull();
-    expect(atualizar).not.toHaveBeenCalled();
+    expect(atualizarRecursos).not.toHaveBeenCalled();
   });
 
   it('os botoes respeitam os limites: - desabilitado em 0 e + desabilitado no maximo', () => {
-    TestBed.configureTestingModule({
-      imports: [RecursosFicha],
-      providers: [{ provide: FichaApi, useValue: { atualizar: vi.fn(), versaoFichas: signal(0) } }],
-    });
-    const fixture = TestBed.createComponent(RecursosFicha);
-    fixture.componentRef.setInput('ficha', { ...FICHA, vidaAtual: 0, sanidadeAtual: 60 });
-    fixture.detectChanges();
-    const el = fixture.nativeElement as HTMLElement;
+    const limites: FichaOrdem = {
+      ...FICHA,
+      recursos: { ...FICHA.recursos, PV: { atual: 0, maximo: 12 }, SAN: { atual: 60, maximo: 60 } },
+    };
+    const { el } = montar(vi.fn(), limites);
 
     expect((el.querySelector('button[aria-label="Diminuir vida"]') as HTMLButtonElement).disabled).toBe(true);
     expect((el.querySelector('button[aria-label="Aumentar sanidade"]') as HTMLButtonElement).disabled).toBe(true);

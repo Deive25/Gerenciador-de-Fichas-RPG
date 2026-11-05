@@ -79,14 +79,36 @@
           </div>
         </section>
 
-        <section class="status bloco" aria-label="Vida e sanidade">
+        <section class="status bloco" aria-label="Vida, sanidade e esforço">
           <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" />
+        </section>
+
+        <section class="identidade bloco" aria-label="Classe, NEX, origem e defesa">
+          <dl>
+            <div>
+              <dt>Classe</dt>
+              <dd>{{ rotuloClasse(f.classe) }}</dd>
+            </div>
+            <div>
+              <dt>NEX</dt>
+              <dd>{{ f.nex }}%</dd>
+            </div>
+            <div>
+              <dt>Origem</dt>
+              <dd>{{ f.origem ?? '—' }}</dd>
+            </div>
+            <div>
+              <dt>Defesa</dt>
+              <dd>{{ defesa(f.atributos.AGI) }}</dd>
+            </div>
+          </dl>
         </section>
 
         <section class="atributos bloco">
           <h2 class="titulo-secao">Atributos</h2>
           <ul class="grade-atributos">
-            @for (atributo of atributos; track atributo.chave) {
+            @for (atributo of atributos; track atributo.codigo) {
+              @let valor = f.atributos[atributo.codigo];
               <li>
                 <span class="nome">
                   {{ atributo.nome }}
@@ -102,7 +124,16 @@
                     ⓘ
                   </button>
                 </span>
-                <strong>{{ f[atributo.chave] ?? '—' }}</strong>
+                <strong class="valor">{{ valor }}</strong>
+                <button
+                  type="button"
+                  class="rolar"
+                  [attr.aria-label]="'Rolar ' + atributo.nome + ', ' + valor"
+                  [disabled]="rolando() !== null"
+                  (click)="rolar('ATRIBUTO', atributo.codigo)"
+                >
+                  🎲 Rolar
+                </button>
               </li>
             }
           </ul>
@@ -111,9 +142,10 @@
         <section class="pericias bloco">
           <h2 class="titulo-secao">Perícias</h2>
           <ul class="lista-pericias">
-            @for (pericia of pericias; track pericia.chave) {
-              @let valor = valorPericia(pericia.chave);
-              <li class="pericia" [class.sem-valor]="valor <= 0">
+            @for (pericia of pericias; track pericia.codigo) {
+              @let grau = f.pericias[pericia.codigo];
+              @let bonus = bonusDoGrau(grau);
+              <li class="pericia" [class.sem-valor]="grau === undefined">
                 <span class="nome">
                   {{ pericia.nome }}
                   <button
@@ -128,19 +160,17 @@
                     ⓘ
                   </button>
                 </span>
-                <span class="barra" aria-hidden="true">
-                  <i [style.width.%]="larguraBarra(valor)"></i>
-                  @if (valor > 0) {
-                    <em [style.left.%]="marcaExtremo(valor)"></em>
-                  }
-                </span>
-                <strong class="valor">{{ valor }}</strong>
+                @if (grau) {
+                  <span class="selo" aria-hidden="true">{{ seloGrau[grau] }}</span>
+                  <span class="so-leitor">{{ nomeGrau[grau] }}</span>
+                }
+                <strong class="valor">+{{ bonus }}</strong>
                 <button
                   type="button"
                   class="rolar"
-                  [attr.aria-label]="'Rolar ' + pericia.nome + ', ' + valor"
+                  [attr.aria-label]="'Rolar ' + pericia.nome + ', +' + bonus"
                   [disabled]="rolando() !== null"
-                  (click)="rolar(pericia.chave)"
+                  (click)="rolar('PERICIA', pericia.codigo)"
                 >
                   🎲 Rolar
                 </button>

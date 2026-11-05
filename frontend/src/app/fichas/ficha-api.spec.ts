@@ -91,14 +91,41 @@ describe('FichaApi', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
   });
-
-  it('testarPericia faz POST /fichas/7/testes-de-pericia com a pericia', () => {
-    api.testarPericia(7, 'CURA').subscribe();
-    const req = http.expectOne(`${API}/fichas/7/testes-de-pericia`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ pericia: 'CURA' });
-    req.flush({ pericia: 'CURA', nome: 'Cura', valor: 0, rolagem: 50, resultado: 'FALHA' });
+  it('buscarFicha faz GET /fichas/7', () => {
+    api.buscarFicha(7).subscribe();
+    const req = http.expectOne(`${API}/fichas/7`);
+    expect(req.request.method).toBe('GET');
+    req.flush({});
   });
+
+  it('atualizarRecursos faz PATCH /fichas/7/recursos so com o que foi passado e avisa que mudou', () => {
+    const antes = api.versaoFichas();
+    api.atualizarRecursos(7, { PV: 10 }).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/recursos`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ PV: 10 });
+    req.flush({});
+    expect(api.versaoFichas()).toBe(antes + 1);
+  });
+
+  it('testar faz POST /fichas/7/testes com alvo e codigo', () => {
+    let resultado: unknown;
+    api.testar(7, { alvo: 'PERICIA', codigo: 'INVESTIGACAO' }).subscribe((r) => (resultado = r));
+    const req = http.expectOne(`${API}/fichas/7/testes`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ alvo: 'PERICIA', codigo: 'INVESTIGACAO' });
+    const corpo = { alvo: 'PERICIA', codigo: 'INVESTIGACAO', nome: 'Investigação', dados: [4, 17, 9], mantido: 17, bonus: 5, total: 22 };
+    req.flush(corpo);
+    expect(resultado).toEqual(corpo);
+  });
+
+  it('testar nao conta como alteracao da ficha', () => {
+    const antes = api.versaoFichas();
+    api.testar(7, { alvo: 'ATRIBUTO', codigo: 'AGI' }).subscribe();
+    http.expectOne(`${API}/fichas/7/testes`).flush({});
+    expect(api.versaoFichas()).toBe(antes);
+  });
+
 
   it('avisa que as fichas mudaram so depois de criar, atualizar ou excluir com sucesso', () => {
     expect(api.versaoFichas()).toBe(0);
