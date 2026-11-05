@@ -34,6 +34,7 @@ import {
   AtributoOrdem,
   ClasseOrdem,
   CodigoRecurso,
+  Ficha,
   FichaOrdem,
   FichaOrdemEntrada,
   GrauOrdem,
@@ -306,8 +307,7 @@ export class FormularioOrdem {
     this.api.buscarFicha(id).subscribe({
       next: (ficha) => {
         // A rota é a mesma para qualquer sistema; só Ordem tem formulário por enquanto.
-        const sistema: string = ficha.sistema;
-        if (sistema !== 'ORDEM_PARANORMAL') {
+        if (ficha.sistema !== 'ORDEM_PARANORMAL') {
           this.estado.set('outro-sistema');
           return;
         }
@@ -369,7 +369,7 @@ export class FormularioOrdem {
     this.salvando.set(true);
     const entrada = paraEntrada(this.form.getRawValue());
     const id = this.id();
-    const requisicao: Observable<FichaOrdem> =
+    const requisicao: Observable<Ficha> =
       id === undefined ? this.api.criar(entrada) : this.api.atualizar(Number(id), entrada);
     // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
     // permitiria um segundo envio (ficha duplicada) enquanto a navegação termina.
