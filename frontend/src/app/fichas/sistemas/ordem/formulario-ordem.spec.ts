@@ -193,6 +193,60 @@ describe('FormularioOrdem', () => {
     expect(atualizar).toHaveBeenCalledTimes(2);
   });
 
+  it('erro do servidor na pericia leva o foco ate o select dela', () => {
+    const erro = erroApi({ 'pericias.INVESTIGACAO': 'Veterano exige NEX 35% ou mais' });
+    const { el, salvar, componente } = montar({ criar: vi.fn(() => throwError(() => erro)) });
+    preencherObrigatorios(componente);
+    salvar();
+    expect(document.activeElement).toBe(el.querySelector('[data-campo="INVESTIGACAO"] mat-select'));
+  });
+
+  it('erro do servidor num campo de texto leva o foco ate ele', () => {
+    const erro = erroApi({ personagem: 'deve ter no máximo 255 caracteres' });
+    const { el, salvar, componente } = montar({ criar: vi.fn(() => throwError(() => erro)) });
+    preencherObrigatorios(componente);
+    salvar();
+    expect(document.activeElement).toBe(el.querySelector('[data-campo="personagem"] input'));
+  });
+
+  it('erro geral (sem campo) nao rouba o foco', () => {
+    const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'x', campos: {} };
+    const { el, salvar, componente } = montar({ criar: vi.fn(() => throwError(() => erro)) });
+    preencherObrigatorios(componente);
+    (document.activeElement as HTMLElement | null)?.blur();
+    salvar();
+    expect(document.activeElement).not.toBe(el.querySelector('[data-campo="personagem"] input'));
+    expect(el.contains(document.activeElement) && document.activeElement?.matches('input, mat-select')).toBeFalsy();
+  });
+
+  it('aceita recursos acima de 9999 (a API nao tem teto) e envia', () => {
+    const criar = vi.fn(() => of({ ...FICHA, id: 9 }));
+    const { salvar, componente } = montar({ criar });
+    preencherObrigatorios(componente);
+    componente.form.controls.recursos.controls.PV.controls.maximo.setValue('10000');
+    salvar();
+    expect(criar).toHaveBeenCalledTimes(1);
+    const [entrada] = criar.mock.calls[0] as unknown as [FichaOrdemEntrada];
+    expect(entrada.recursos.PV.maximo).toBe(10000);
+  });
+
+  it('recurso negativo continua barrado', () => {
+    const { el, salvar, componente } = montar({ criar: vi.fn() });
+    preencherObrigatorios(componente);
+    componente.form.controls.recursos.controls.PV.controls.atual.setValue('-1');
+    salvar();
+    expect(el.querySelector('[data-campo="PV-atual"]')?.textContent).toContain('0 ou mais');
+  });
+
+  it('o select mostra so o nome do grau, sem a dica do NEX', async () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) }, '7');
+    fixture.componentInstance.form.controls.nex.setValue('30');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const trigger = el.querySelector('[data-campo="INVESTIGACAO"] .mat-mdc-select-value');
+    expect(trigger?.textContent?.trim()).toBe('Veterano');
+  });
+
   it('mostra erro geral quando o servidor esta indisponivel', () => {
     const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
     const { el, salvar, componente } = montar({ criar: vi.fn(() => throwError(() => erro)) });
