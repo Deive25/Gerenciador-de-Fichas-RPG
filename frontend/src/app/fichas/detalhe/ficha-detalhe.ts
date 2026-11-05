@@ -72,6 +72,12 @@ export class FichaDetalhe {
     this.confirmandoExclusao.set(false);
     this.api.buscarFicha(id).subscribe({
       next: (ficha) => {
+        if (ficha.sistema !== 'ORDEM_PARANORMAL') {
+          // A tela de D&D vem na Tarefa 7; até lá, uma ficha de D&D não abre aqui.
+          this.erro.set({ status: 0, titulo: 'Sistema ainda sem tela', detalhe: 'A ficha de D&D ainda não tem tela.', campos: {} });
+          this.estado.set('erro');
+          return;
+        }
         this.ficha.set(ficha);
         this.estado.set('pronto');
       },

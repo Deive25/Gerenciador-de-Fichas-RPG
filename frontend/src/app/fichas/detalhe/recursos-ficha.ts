@@ -142,7 +142,9 @@ export class RecursosFicha {
         this.ultimoSalvo = { ...this.ultimoSalvo, ...corpo };
         this.salvando.set(false);
         if (!this.destruido) {
-          this.atualizada.emit(resposta);
+          if (resposta.sistema === 'ORDEM_PARANORMAL') {
+            this.atualizada.emit(resposta);
+          }
         }
         if (this.salvarDepois) {
           this.salvarDepois = false;
