@@ -56,6 +56,8 @@ legend {
 // Os 28 graus: um campo por perícia, com o nome e o atributo no rótulo.
 .grade-pericias {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  // subscriptSizing="dynamic": o espaço do erro só existe quando há erro; o row-gap mantém o espaçamento de antes.
+  row-gap: 1.375rem;
 }
 
 .exige-nex {
