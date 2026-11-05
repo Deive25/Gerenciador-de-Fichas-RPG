@@ -2,12 +2,14 @@ package dev.spironello.fichasrpg.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -59,6 +61,12 @@ public class FichaController {
 	@PutMapping("/{id}")
 	public FichaResponse atualizar(@PathVariable Long id, @Valid @RequestBody FichaRequest request) {
 		return service.atualizar(id, request);
+	}
+
+	@Operation(summary = "Edição rápida: muda só os valores atuais dos recursos enviados (PV, SAN, PE em Ordem)")
+	@PatchMapping("/{id}/recursos")
+	public FichaResponse atualizarRecursos(@PathVariable Long id, @RequestBody Map<String, Integer> atuais) {
+		return service.atualizarRecursos(id, atuais);
 	}
 
 	@Operation(summary = "Exclui a ficha com o id informado")
