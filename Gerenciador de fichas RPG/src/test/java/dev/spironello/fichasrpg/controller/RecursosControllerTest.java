@@ -91,6 +91,16 @@ class RecursosControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisplayName("400 para PV_TEMP, que só existe em D&D")
+	void pvTempNaoExisteEmOrdem() throws Exception {
+		Long id = criarFicha();
+
+		patchar(id, "{\"PV_TEMP\": 1}")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.PV_TEMP").value("não existe em Ordem Paranormal"));
+	}
+
+	@Test
 	@DisplayName("400 para valor negativo, com a chave do código em errors, e nada é gravado")
 	void valorNegativo() throws Exception {
 		Long id = criarFicha();
