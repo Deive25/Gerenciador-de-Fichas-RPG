@@ -1,4 +1,9 @@
-<div class="resultado" [class]="'resultado ' + classe()" role="status" aria-live="polite">
+<div class="resultado" role="status" aria-live="polite">
   <strong>{{ titulo() }}</strong>
-  <small>{{ explicacao() }}</small>
+  <span class="dados" aria-hidden="true">
+    @for (dado of resultado().dados; track $index) {
+      <span class="dado" [class.mantido]="$index === indiceMantido()">{{ dado }}</span>
+    }
+  </span>
+  <span class="so-leitor">{{ leitura() }}</span>
 </div>

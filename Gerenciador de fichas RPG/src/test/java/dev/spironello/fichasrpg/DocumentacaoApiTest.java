@@ -17,12 +17,15 @@ class DocumentacaoApiTest extends IntegrationTestBase {
 	private MockMvc mockMvc;
 
 	@Test
-	@DisplayName("GET /v3/api-docs devolve 200 e descreve os caminhos da ficha")
+	@DisplayName("GET /v3/api-docs devolve 200 e descreve os caminhos das fichas e do retrato")
 	void apiDocsListaOsCaminhos() throws Exception {
 		mockMvc.perform(get("/v3/api-docs"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.paths", hasKey("/fichas")))
-				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}")));
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}")))
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/retrato")))
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/recursos")))
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/testes")));
 	}
 
 	@Test

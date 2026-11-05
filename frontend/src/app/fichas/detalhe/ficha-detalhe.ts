@@ -5,26 +5,24 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
-import { ATRIBUTOS, PERICIAS, faixas } from '../catalogo';
+import {
+  ATRIBUTOS_ORDEM,
+  NOME_GRAU,
+  PERICIAS_ORDEM,
+  SELO_GRAU,
+  bonusDoGrau,
+  defesa,
+  rotuloClasse,
+} from '../sistemas/ordem/catalogo-ordem';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { CodigoPericia, Ficha, TestePericiaResultado } from '../ficha.model';
+import { AlvoTeste, FichaOrdem, TesteResultado } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
 type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
-
-/** Onde fica a marca do sucesso extremo na barra da perícia (⌊valor/5⌋, em %). */
-export function marcaExtremo(valor: number): number {
-  return Math.min(faixas(Math.max(valor, 0)).extremo, 100);
-}
-
-/** Largura da barra da perícia: o próprio valor, limitado a 0–100 %. */
-export function larguraBarra(valor: number): number {
-  return Math.min(Math.max(valor, 0), 100);
-}
 
 @Component({
   selector: 'app-ficha-detalhe',
@@ -41,16 +39,19 @@ export class FichaDetalhe {
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
 
-  readonly atributos = ATRIBUTOS;
-  readonly pericias = PERICIAS;
-  readonly marcaExtremo = marcaExtremo;
-  readonly larguraBarra = larguraBarra;
+  readonly atributos = ATRIBUTOS_ORDEM;
+  readonly pericias = PERICIAS_ORDEM;
+  readonly seloGrau = SELO_GRAU;
+  readonly nomeGrau = NOME_GRAU;
+  readonly bonusDoGrau = bonusDoGrau;
+  readonly defesa = defesa;
+  readonly rotuloClasse = rotuloClasse;
 
   readonly estado = signal<Estado>('carregando');
-  readonly ficha = signal<Ficha | null>(null);
+  readonly ficha = signal<FichaOrdem | null>(null);
   readonly erro = signal<ApiError | null>(null);
-  readonly ultimoResultado = signal<TestePericiaResultado | null>(null);
-  readonly rolando = signal<CodigoPericia | null>(null);
+  readonly ultimoResultado = signal<TesteResultado | null>(null);
+  readonly rolando = signal<string | null>(null);
   readonly confirmandoExclusao = signal(false);
   readonly excluindo = signal(false);
   readonly confirmandoRemocaoRetrato = signal(false);
@@ -69,7 +70,7 @@ export class FichaDetalhe {
     this.erro.set(null);
     this.ultimoResultado.set(null);
     this.confirmandoExclusao.set(false);
-    this.api.buscar(id).subscribe({
+    this.api.buscarFicha(id).subscribe({
       next: (ficha) => {
         this.ficha.set(ficha);
         this.estado.set('pronto');
@@ -82,16 +83,12 @@ export class FichaDetalhe {
   }
 
   /** "Arthur · 34 anos · F": jogador, idade (se houver) e gênero. */
-  legenda(f: Ficha): string {
+  legenda(f: FichaOrdem): string {
     return [f.jogador, f.idade === null ? null : `${f.idade} anos`, f.genero].filter((p) => p !== null).join(' · ');
   }
 
-  /** Perícia sem valor conta como 0, como na regra do servidor. */
-  valorPericia(codigo: CodigoPericia): number {
-    return this.ficha()?.pericias[codigo] ?? 0;
-  }
-
-  rolar(codigo: CodigoPericia): void {
+  /** Rola um atributo ou uma perícia: o servidor faz os d20 e devolve cada dado. */
+  rolar(alvo: AlvoTeste, codigo: string): void {
     const ficha = this.ficha();
     if (!ficha || this.rolando()) {
       return;
@@ -99,7 +96,7 @@ export class FichaDetalhe {
     this.rolando.set(codigo);
     this.erro.set(null);
     this.api
-      .testarPericia(ficha.id, codigo)
+      .testar(ficha.id, { alvo, codigo })
       .pipe(finalize(() => this.rolando.set(null)))
       .subscribe({
         next: (resultado) => this.ultimoResultado.set(resultado),

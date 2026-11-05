@@ -25,10 +25,14 @@ describe('AnelStatus', () => {
     expect(el.querySelector('circle.arco')?.getAttribute('stroke-dasharray')).toMatch(/^100\.5 /);
   });
 
-  it('sem maximo mostra traco e nao desenha o arco', () => {
+  it('sem maximo mostra o valor atual (e nao desenha o arco)', () => {
     const el = criar(5, null);
-    expect(el.textContent).toContain('—');
+    expect(el.querySelector('.valor')?.textContent?.trim()).toBe('5');
     expect(el.querySelector('circle.arco')).toBeNull();
+  });
+
+  it('sem maximo e sem atual mostra traco', () => {
+    expect(criar(null, null).querySelector('.valor')?.textContent?.trim()).toBe('—');
   });
 
   it('o desenho fica fora da leitura de tela; quem le e o texto', () => {

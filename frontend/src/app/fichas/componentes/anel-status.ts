@@ -15,7 +15,7 @@ import { proporcao } from './proporcao';
 const VOLTA = 100.5;
 
 /**
- * Vida ou sanidade em anel. O desenho é só reforço visual (aria-hidden): o valor é sempre
+ * Vida, sanidade ou esforço em anel. O desenho é só reforço visual (aria-hidden): o valor é sempre
  * lido no texto ao lado ("Vida 9/12"), então o anel nunca é a única forma de saber o número.
  *
  * Com `editavel` (edição rápida, 2.1c), ganha os botões − e + e o valor vira um botão que abre um
@@ -28,7 +28,7 @@ const VOLTA = 100.5;
 })
 export class AnelStatus {
   readonly rotulo = input.required<string>();
-  readonly tipo = input.required<'vida' | 'sanidade'>();
+  readonly tipo = input.required<'vida' | 'sanidade' | 'esforco'>();
   readonly atual = input<number | null>(null);
   readonly maximo = input<number | null>(null);
   readonly editavel = input(false, { transform: booleanAttribute });
@@ -40,7 +40,14 @@ export class AnelStatus {
 
   readonly percentual = computed(() => proporcao(this.atual(), this.maximo()));
 
-  readonly texto = computed(() => (this.percentual() === null ? '—' : `${this.atual() ?? 0}/${this.maximo()}`));
+  /** "9/12"; sem máximo (PE das fichas convertidas) só o atual; "—" se também não há atual. */
+  readonly texto = computed(() => {
+    if (this.percentual() !== null) {
+      return `${this.atual() ?? 0}/${this.maximo()}`;
+    }
+    const atual = this.atual();
+    return atual === null ? '—' : String(atual);
+  });
 
   /** "arco volta": o arco cobre `percentual`% da volta. */
   readonly tracos = computed(() => `${((this.percentual() ?? 0) * VOLTA) / 100} ${VOLTA}`);

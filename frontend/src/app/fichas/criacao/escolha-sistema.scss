@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  max-width: 860px;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--cor-texto-suave);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cor-acao);
+  }
+}
+
+h1 {
+  font-size: 1.7rem;
+}
+
+.dica-tela {
+  margin: 0 0 1rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 0.9rem;
+}
+
+.cartao-sistema {
+  display: block;
+  min-height: 44px;
+  padding: 1rem;
+  color: var(--cor-texto);
+  text-decoration: none;
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.3rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+a.cartao-sistema[href]:hover,
+a.cartao-sistema[href]:focus-visible {
+  border-color: var(--cor-acao);
+}
+
+// Desabilitado: sem hover, cursor padrão e texto mais apagado (--cor-texto-suave passa de 4,5:1 no fundo).
+.cartao-sistema[aria-disabled='true'] {
+  cursor: default;
+  color: var(--cor-texto-suave);
+
+  h2 {
+    color: var(--cor-texto-suave);
+  }
+}
+
+.em-breve {
+  font-style: italic;
+}
