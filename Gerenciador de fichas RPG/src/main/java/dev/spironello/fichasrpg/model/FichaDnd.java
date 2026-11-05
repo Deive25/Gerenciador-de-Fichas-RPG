@@ -20,7 +20,8 @@ import jakarta.persistence.Table;
 /**
  * Ficha de D&D (5e de 2014 ou 2024: a coluna edicao diz qual). Perícia sem entrada no mapa é sem proficiência.
  * Cada atributo e cada salvaguarda é uma coluna própria (como em FichaOrdem). O mapa é carregado sob demanda
- * (lazy); as leituras do repository usam @EntityGraph quando precisam dele, para evitar N+1.
+ * (lazy). A listagem continua em 1 consulta porque o resumo nunca toca em pericias; o detalhe carrega o mapa
+ * dentro da transação do service.
  */
 @Entity
 @Table(name = "ficha_dnd")

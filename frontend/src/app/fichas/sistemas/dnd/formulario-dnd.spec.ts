@@ -255,6 +255,13 @@ describe('FormularioDnd', () => {
     expect((el.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('as caixas de salvaguarda ficam num bloco que limpa a legend flutuante', () => {
+    // jsdom nao mede layout; o scss tem clear: both em .marcas, e aqui garantimos que o bloco existe.
+    const { el } = montar({}, { edicao: 'D2024' });
+    expect(el.querySelectorAll('fieldset .marcas').length).toBe(2);
+    expect(el.querySelectorAll('.marcas mat-checkbox').length).toBe(7);
+  });
+
   it('as dicas ficam em botoes pequenos: 6 atributos e 18 pericias', () => {
     const { el } = montar({}, { edicao: 'D2024' });
     const gatilhos = Array.from(el.querySelectorAll('.mat-mdc-tooltip-trigger'));
