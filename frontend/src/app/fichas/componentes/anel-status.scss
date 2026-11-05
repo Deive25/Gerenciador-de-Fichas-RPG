@@ -26,6 +26,10 @@ circle {
     stroke: var(--cor-vida);
   }
 
+  &.esforco {
+    stroke: var(--cor-esforco);
+  }
+
   &.sanidade {
     stroke: var(--cor-sanidade);
   }

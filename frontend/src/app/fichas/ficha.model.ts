@@ -75,14 +75,6 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
   return { ...resto, pericias: { ...pericias } };
 }
 
-export interface TestePericiaResultado {
-  pericia: CodigoPericia;
-  nome: string;
-  valor: number;
-  rolagem: number;
-  resultado: ResultadoTeste;
-}
-
 /** Sistemas de RPG que a API conhece (2.1d). */
 export type Sistema = 'ORDEM_PARANORMAL' | 'DND';
 
@@ -107,4 +99,83 @@ export interface FichaResumo {
   idade: number | null;
   retratoVersao: number | null;
   recursos: RecursoResumo[];
+}
+
+// ---- Ordem Paranormal (2.1d) ----
+
+export type AtributoOrdem = 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
+
+export type ClasseOrdem = 'COMBATENTE' | 'ESPECIALISTA' | 'OCULTISTA';
+
+/** Grau de treinamento; perícia sem grau é destreinada (+0). */
+export type GrauOrdem = 'TREINADO' | 'VETERANO' | 'EXPERT';
+
+export type PericiaOrdem =
+  | 'ACROBACIA'
+  | 'ADESTRAMENTO'
+  | 'ARTES'
+  | 'ATLETISMO'
+  | 'ATUALIDADES'
+  | 'CIENCIAS'
+  | 'CRIME'
+  | 'DIPLOMACIA'
+  | 'ENGANACAO'
+  | 'FORTITUDE'
+  | 'FURTIVIDADE'
+  | 'INICIATIVA'
+  | 'INTIMIDACAO'
+  | 'INTUICAO'
+  | 'INVESTIGACAO'
+  | 'LUTA'
+  | 'MEDICINA'
+  | 'OCULTISMO'
+  | 'PERCEPCAO'
+  | 'PILOTAGEM'
+  | 'PONTARIA'
+  | 'PROFISSAO'
+  | 'REFLEXOS'
+  | 'RELIGIAO'
+  | 'SOBREVIVENCIA'
+  | 'TATICA'
+  | 'TECNOLOGIA'
+  | 'VONTADE';
+
+/** Um recurso da ficha: atual e máximo podem faltar (ex.: PE das fichas convertidas). */
+export interface RecursoValor {
+  atual: number | null;
+  maximo: number | null;
+}
+
+export type CodigoRecurso = 'PV' | 'SAN' | 'PE';
+
+/** Ficha de Ordem Paranormal como `GET /fichas/{id}` devolve. */
+export interface FichaOrdem {
+  id: number;
+  sistema: 'ORDEM_PARANORMAL';
+  jogador: string;
+  personagem: string;
+  genero: string;
+  idade: number | null;
+  /** Versão do retrato (ms) para o cache do navegador, ou null sem retrato. */
+  retratoVersao: number | null;
+  classe: ClasseOrdem | null;
+  origem: string | null;
+  nex: number;
+  atributos: Record<AtributoOrdem, number>;
+  recursos: Record<CodigoRecurso, RecursoValor>;
+  /** Só as perícias treinadas. */
+  pericias: Partial<Record<PericiaOrdem, GrauOrdem>>;
+}
+
+export type AlvoTeste = 'PERICIA' | 'ATRIBUTO';
+
+/** Resultado de `POST /fichas/{id}/testes`: cada d20 rolado, o que ficou e o total. */
+export interface TesteResultado {
+  alvo: AlvoTeste;
+  codigo: string;
+  nome: string;
+  dados: number[];
+  mantido: number;
+  bonus: number;
+  total: number;
 }

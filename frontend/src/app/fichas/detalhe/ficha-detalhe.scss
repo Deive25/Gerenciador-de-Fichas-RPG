@@ -54,7 +54,7 @@
   color: #f0a597;
 }
 
-// Celular: blocos empilhados. Computador: retrato à esquerda (duas linhas), status e
+// Celular: blocos empilhados. Computador: retrato à esquerda (três linhas), status, identidade e
 // atributos à direita, perícias embaixo em largura total.
 // minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo (ex.: "Constituição ⓘ")
 // e a ficha passa da largura do celular.
@@ -67,7 +67,7 @@
     grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
 
     .retrato {
-      grid-row: span 2;
+      grid-row: span 3;
     }
 
     .pericias {
@@ -115,28 +115,51 @@ ul {
   align-items: center;
 }
 
-// 3×3 a partir de 600 px; no celular os nomes completos só cabem em 2 colunas.
-.grade-atributos {
+// Classe, NEX, origem e Defesa em quatro campos pequenos (2 por linha no celular).
+.identidade dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.2rem 1rem;
+  gap: 0.6rem 1rem;
+  margin: 0;
 
   @media (min-width: 600px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
+  dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--cor-texto-suave);
   }
 
-  strong {
+  dd {
+    margin: 0;
     font-family: var(--fonte-titulo);
     font-size: 1.1rem;
     color: var(--cor-titulo);
+    overflow-wrap: anywhere;
+  }
+}
+
+// Uma coluna no celular; duas a partir de 600 px. Nome, valor e botão de rolar na mesma linha.
+.grade-atributos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.2rem 1.5rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    column-gap: 0.6rem;
+    padding: 0.15rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--cor-texto-suave);
   }
 }
 
@@ -149,20 +172,31 @@ ul {
   }
 }
 
-// Nome e valor em cima, barra embaixo, botão de rolar à direita das duas linhas.
+// Nome, selo do grau (coluna fixa, para alinhar), bônus e botão de rolar.
 .pericia {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    'nome valor rolar'
-    'barra barra rolar';
+  grid-template-columns: minmax(0, 1fr) 1.5rem 2.6rem auto;
+  grid-template-areas: 'nome selo valor rolar';
   align-items: center;
-  column-gap: 0.6rem;
-  padding: 0.3rem 0;
+  column-gap: 0.4rem;
+  padding: 0.15rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
   .nome {
     grid-area: nome;
+  }
+
+  .selo {
+    grid-area: selo;
+  }
+
+  .valor {
+    grid-area: valor;
+    text-align: right;
+  }
+
+  .rolar {
+    grid-area: rolar;
   }
 
   // Esmaecida pela cor (texto suave, 5,13:1), e não por opacidade, que derrubava o contraste
@@ -173,40 +207,27 @@ ul {
   }
 }
 
-.barra {
-  grid-area: barra;
-  position: relative;
-  height: 5px;
-  border-radius: 3px;
-  background: var(--cor-trilho);
-
-  i {
-    position: absolute;
-    inset: 0 auto 0 0;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #7d6336, #d8b46c);
-  }
-
-  // Marca do sucesso extremo (⌊valor/5⌋).
-  em {
-    position: absolute;
-    top: -2px;
-    bottom: -2px;
-    width: 2px;
-    border-radius: 1px;
-    background: var(--cor-sanidade);
-  }
+// T, V ou E: o grau de treinamento. Só reforço visual; a leitura de tela usa o nome do grau.
+.selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--cor-borda-dourada);
+  border-radius: 50%;
+  color: var(--cor-acao);
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .valor {
-  grid-area: valor;
   font-family: var(--fonte-titulo);
   font-size: 1.1rem;
   color: var(--cor-titulo);
 }
 
 .rolar {
-  grid-area: rolar;
   min-height: 44px;
   padding: 0 0.8rem;
   border: 1px solid rgba(201, 164, 92, 0.4);
