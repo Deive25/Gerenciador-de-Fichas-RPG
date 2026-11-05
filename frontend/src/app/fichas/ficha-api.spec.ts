@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ApiError } from '../core/api-error';
 import { FichaApi } from './ficha-api';
-import { FichaEntrada } from './ficha.model';
+import { FichaEntrada, FichaResumo } from './ficha.model';
 
 const API = 'http://localhost:8080';
 
@@ -45,6 +45,20 @@ describe('FichaApi', () => {
     const req = http.expectOne(`${API}/fichas`);
     expect(req.request.method).toBe('GET');
     req.flush([]);
+  });
+
+  it('listar devolve o resumo das fichas (sistema e recursos), sem os dados completos', () => {
+    let resumo: FichaResumo[] = [];
+    api.listar().subscribe((r) => (resumo = r));
+    const corpo: FichaResumo[] = [
+      {
+        id: 1, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', idade: null, retratoVersao: null,
+        recursos: [{ codigo: 'PV', atual: 9, maximo: 12 }],
+      },
+    ];
+    http.expectOne(`${API}/fichas`).flush(corpo);
+    expect(resumo[0].sistema).toBe('ORDEM_PARANORMAL');
+    expect(resumo[0].recursos[0].codigo).toBe('PV');
   });
 
   it('buscar faz GET /fichas/7', () => {

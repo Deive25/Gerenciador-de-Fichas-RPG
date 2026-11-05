@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { proporcao } from './proporcao';
 
-/** Barra de vida ou sanidade: "atual/máximo" e uma barra proporcional (0–100%). */
+/** Barra de vida, sanidade ou esforço: "atual/máximo" e uma barra proporcional (0–100%). */
 @Component({
   selector: 'app-barra-status',
   templateUrl: './barra-status.html',
@@ -9,7 +9,7 @@ import { proporcao } from './proporcao';
 })
 export class BarraStatus {
   readonly rotulo = input.required<string>();
-  readonly tipo = input.required<'vida' | 'sanidade'>();
+  readonly tipo = input.required<'vida' | 'sanidade' | 'esforco'>();
   readonly atual = input<number | null>(null);
   readonly maximo = input<number | null>(null);
 

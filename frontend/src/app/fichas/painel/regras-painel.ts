@@ -1,4 +1,4 @@
-import { Ficha } from '../ficha.model';
+import { FichaResumo } from '../ficha.model';
 
 /** Filtros do painel (spec do redesign, §3.2). */
 export type FiltroPainel = 'todos' | 'feridos' | 'sanidade-baixa';
@@ -17,12 +17,18 @@ function ateMetade(atual: number | null, maximo: number | null): boolean {
   return atual !== null && maximo !== null && maximo > 0 && atual <= maximo / 2;
 }
 
-export function estaFerido(f: Pick<Ficha, 'vidaAtual' | 'vidaMaxima'>): boolean {
-  return ateMetade(f.vidaAtual, f.vidaMaxima);
+/** A metade ou menos do recurso `codigo`; sem o recurso (ex.: ficha sem SAN), não há o que afirmar. */
+function ateMetadeDo(f: FichaResumo, codigo: string): boolean {
+  const r = f.recursos.find((x) => x.codigo === codigo);
+  return r !== undefined && ateMetade(r.atual, r.maximo);
 }
 
-export function temSanidadeBaixa(f: Pick<Ficha, 'sanidadeAtual' | 'sanidadeMaxima'>): boolean {
-  return ateMetade(f.sanidadeAtual, f.sanidadeMaxima);
+export function estaFerido(f: FichaResumo): boolean {
+  return ateMetadeDo(f, 'PV');
+}
+
+export function temSanidadeBaixa(f: FichaResumo): boolean {
+  return ateMetadeDo(f, 'SAN');
 }
 
 /** Minúsculas e sem acentos: "Lía" e "LIA" viram "lia". */
@@ -30,14 +36,14 @@ export function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
-const PASSA_NO_FILTRO: Record<FiltroPainel, (f: Ficha) => boolean> = {
+const PASSA_NO_FILTRO: Record<FiltroPainel, (f: FichaResumo) => boolean> = {
   todos: () => true,
   feridos: estaFerido,
   'sanidade-baixa': temSanidadeBaixa,
 };
 
 /** Busca (personagem ou jogador) E filtro, mantendo a ordem recebida. */
-export function filtrarFichas(fichas: readonly Ficha[], busca: string, filtro: FiltroPainel): Ficha[] {
+export function filtrarFichas(fichas: readonly FichaResumo[], busca: string, filtro: FiltroPainel): FichaResumo[] {
   const termo = normalizar(busca);
   return fichas.filter(
     (f) =>
@@ -46,7 +52,7 @@ export function filtrarFichas(fichas: readonly Ficha[], busca: string, filtro: F
   );
 }
 
-export function contar(fichas: readonly Ficha[]): ContagemPainel {
+export function contar(fichas: readonly FichaResumo[]): ContagemPainel {
   return {
     total: fichas.length,
     feridos: fichas.filter(estaFerido).length,

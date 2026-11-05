@@ -68,3 +68,15 @@
     color: var(--cor-sanidade);
   }
 }
+
+.selo-sistema {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--cor-borda-dourada);
+  border-radius: 999px;
+  font-family: var(--fonte-titulo);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--cor-acao);
+}
