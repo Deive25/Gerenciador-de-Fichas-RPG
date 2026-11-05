@@ -66,6 +66,8 @@ legend {
 
 // Caixas de marcar (salvaguardas e inspiração): cada uma ocupa uma linha de 44 px de altura mínima.
 .marcas {
+  // A legend flutua: sem clear, o bloco logo depois dela fica espremido ao lado (largura 0).
+  clear: both;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
   column-gap: 0.75rem;
