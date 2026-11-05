@@ -40,7 +40,14 @@ export class AnelStatus {
 
   readonly percentual = computed(() => proporcao(this.atual(), this.maximo()));
 
-  readonly texto = computed(() => (this.percentual() === null ? '—' : `${this.atual() ?? 0}/${this.maximo()}`));
+  /** "9/12"; sem máximo (PE das fichas convertidas) só o atual; "—" se também não há atual. */
+  readonly texto = computed(() => {
+    if (this.percentual() !== null) {
+      return `${this.atual() ?? 0}/${this.maximo()}`;
+    }
+    const atual = this.atual();
+    return atual === null ? '—' : String(atual);
+  });
 
   /** "arco volta": o arco cobre `percentual`% da volta. */
   readonly tracos = computed(() => `${((this.percentual() ?? 0) * VOLTA) / 100} ${VOLTA}`);
