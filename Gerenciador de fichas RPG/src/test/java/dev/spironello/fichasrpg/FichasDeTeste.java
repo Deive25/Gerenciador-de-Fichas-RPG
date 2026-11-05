@@ -60,4 +60,24 @@ public final class FichasDeTeste {
 		corpo.put("atributos", atributos);
 		return corpo;
 	}
+
+	/**
+	 * Corpo JSON válido de uma ficha de D&D, como mapa mutável: edição 2024, nível 1, os seis atributos em 10,
+	 * sem recursos, salvaguardas nem perícias.
+	 */
+	public static Map<String, Object> corpoDnd() {
+		Map<String, Object> atributos = new LinkedHashMap<>();
+		for (AtributoDnd atributo : AtributoDnd.values()) {
+			atributos.put(atributo.name(), 10);
+		}
+		Map<String, Object> corpo = new LinkedHashMap<>();
+		corpo.put("sistema", "DND");
+		corpo.put("jogador", "Arthur");
+		corpo.put("personagem", "Ana");
+		corpo.put("genero", "F");
+		corpo.put("edicao", "D2024");
+		corpo.put("nivel", 1);
+		corpo.put("atributos", atributos);
+		return corpo;
+	}
 }
