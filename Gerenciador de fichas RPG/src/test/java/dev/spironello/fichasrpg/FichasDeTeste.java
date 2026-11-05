@@ -1,5 +1,8 @@
 package dev.spironello.fichasrpg;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 
@@ -20,5 +23,24 @@ public final class FichasDeTeste {
 			ficha.setAtributo(atributo, 1);
 		}
 		return ficha;
+	}
+
+	/**
+	 * Corpo JSON válido de uma ficha de Ordem, como mapa mutável: o teste troca ou remove a chave que quer
+	 * estragar e serializa com o ObjectMapper. NEX 5, os cinco atributos em 1, sem perícias nem recursos.
+	 */
+	public static Map<String, Object> corpoOrdem() {
+		Map<String, Object> atributos = new LinkedHashMap<>();
+		for (AtributoOrdem atributo : AtributoOrdem.values()) {
+			atributos.put(atributo.name(), 1);
+		}
+		Map<String, Object> corpo = new LinkedHashMap<>();
+		corpo.put("sistema", "ORDEM_PARANORMAL");
+		corpo.put("jogador", "Arthur");
+		corpo.put("personagem", "Ana");
+		corpo.put("genero", "F");
+		corpo.put("nex", 5);
+		corpo.put("atributos", atributos);
+		return corpo;
 	}
 }
