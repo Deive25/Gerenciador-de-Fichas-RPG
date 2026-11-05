@@ -1,7 +1,6 @@
 package dev.spironello.fichasrpg.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,7 +24,6 @@ import dev.spironello.fichasrpg.FichasDeTeste;
 import dev.spironello.fichasrpg.ImagensDeTeste;
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.RelogioDeTesteConfig.RelogioAjustavel;
-import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.RetratoFichaRepository;
 
@@ -181,17 +179,23 @@ class RetratoControllerTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("a ficha informa retratoVersao (instante em ms) com retrato, e null sem retrato")
-	void retratoVersaoNaEntidade() throws Exception {
-		// As rotas GET /fichas e /fichas/{id} voltam na Tarefa 3; até lá a versão é lida da entidade (o @Formula).
+	@DisplayName("a ficha informa retratoVersao (instante em ms) na busca e na listagem, e null sem retrato")
+	void retratoVersaoNoJson() throws Exception {
 		Long semRetrato = fichas.save(FichasDeTeste.ordem("Hale")).getId();
 
 		enviar(ImagensDeTeste.jpeg(10, 10));
 
-		assertThat(fichas.findById(fichaId).orElseThrow().getRetratoVersao()).isEqualTo(INSTANTE.toEpochMilli());
-		assertThat(fichas.findById(semRetrato).orElseThrow().getRetratoVersao()).isNull();
-		assertThat(fichas.findAll()).extracting(Ficha::getId, Ficha::getRetratoVersao)
-				.containsExactlyInAnyOrder(tuple(fichaId, INSTANTE.toEpochMilli()), tuple(semRetrato, null));
+		mockMvc.perform(get("/fichas/{id}", fichaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").value(INSTANTE.toEpochMilli()));
+		mockMvc.perform(get("/fichas/{id}", semRetrato))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").isEmpty());
+		mockMvc.perform(get("/fichas"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[?(@.id == " + fichaId + ")].retratoVersao").value(INSTANTE.toEpochMilli()))
+				.andExpect(jsonPath("$[?(@.id == " + semRetrato + ")].retratoVersao")
+						.value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())));
 	}
 
 	@Test
@@ -200,7 +204,9 @@ class RetratoControllerTest extends IntegrationTestBase {
 		enviar(ImagensDeTeste.jpeg(10, 10));
 		mockMvc.perform(delete("/fichas/{id}/retrato", fichaId)).andExpect(status().isNoContent());
 
-		assertThat(fichas.findById(fichaId).orElseThrow().getRetratoVersao()).isNull();
+		mockMvc.perform(get("/fichas/{id}", fichaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.retratoVersao").isEmpty());
 	}
 
 	private void enviar(byte[] jpeg) throws Exception {
