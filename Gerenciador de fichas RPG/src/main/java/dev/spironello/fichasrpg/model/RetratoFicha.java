@@ -9,8 +9,8 @@ import jakarta.persistence.Table;
 
 /**
  * Retrato do personagem (JPEG já validado), numa tabela própria: a ficha não carrega os bytes.
- * A chave é o id da ficha; não há relação JPA com SheetPlayer porque nenhuma leitura da ficha
- * precisa da imagem (a versão vem por subconsulta, ver SheetPlayer.retratoVersao).
+ * A chave é o id da ficha; não há relação JPA com Ficha porque nenhuma leitura da ficha
+ * precisa da imagem (a versão vem por subconsulta, ver Ficha.retratoVersao).
  * Sem @Lob: no PostgreSQL, @Lob vira "oid" (objeto grande); byte[] simples vira "bytea".
  */
 @Entity

@@ -46,7 +46,7 @@ class MigracaoRetratoTest extends IntegrationTestBase {
 		jdbc.update("insert into " + SCHEMA + ".sheet_player (id, namej, namec, gender, lifea) "
 				+ "overriding system value values (1, 'Ana', 'Lia', 'F', 9)");
 
-		Flyway.configure().dataSource(dataSource).schemas(SCHEMA).load().migrate();
+		Flyway.configure().dataSource(dataSource).schemas(SCHEMA).target("3").load().migrate();
 
 		assertThat(jdbc.queryForObject("select count(*) from " + SCHEMA + ".retrato_ficha", Integer.class)).isZero();
 		assertThat(jdbc.queryForObject("select namec from " + SCHEMA + ".sheet_player where id = 1", String.class))
