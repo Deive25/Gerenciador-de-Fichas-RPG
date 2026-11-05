@@ -33,11 +33,35 @@ legend {
   padding: 0;
 }
 
+// min(100%, …) e minmax(0, …): a coluna nunca passa da largura da tela (sem rolagem lateral em 375 px).
 .grade {
   clear: both;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
   column-gap: 0.75rem;
+}
+
+// Atributos e recursos são números curtos: duas colunas no celular, como no 2.1b.
+.grade-atributos,
+.grade-recursos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .grade-atributos {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+// Os 28 graus: um campo por perícia, com o nome e o atributo no rótulo.
+.grade-pericias {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+}
+
+.exige-nex {
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-style: italic;
 }
 
 // Barra de ações presa ao rodapé da tela enquanto o formulário rola.
