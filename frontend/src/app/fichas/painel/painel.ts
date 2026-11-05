@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
-import { Ficha } from '../ficha.model';
+import { FichaResumo } from '../ficha.model';
 import { CartaoFicha } from './cartao-ficha';
 import { FiltroPainel, contar, filtrarFichas } from './regras-painel';
 
@@ -29,7 +29,7 @@ export class Painel {
   ];
 
   readonly estado = signal<Estado>('carregando');
-  readonly fichas = signal<Ficha[]>([]);
+  readonly fichas = signal<FichaResumo[]>([]);
   readonly erro = signal<ApiError | null>(null);
   readonly busca = signal('');
   readonly filtro = signal<FiltroPainel>('todos');

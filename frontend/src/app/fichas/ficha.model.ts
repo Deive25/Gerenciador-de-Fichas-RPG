@@ -82,3 +82,29 @@ export interface TestePericiaResultado {
   rolagem: number;
   resultado: ResultadoTeste;
 }
+
+/** Sistemas de RPG que a API conhece (2.1d). */
+export type Sistema = 'ORDEM_PARANORMAL' | 'DND';
+
+export const NOMES_SISTEMA: Record<Sistema, string> = {
+  ORDEM_PARANORMAL: 'Ordem Paranormal',
+  DND: 'D&D',
+};
+
+/** Um recurso (PV, SAN, PE...) no resumo da listagem; atual e máximo podem faltar. */
+export interface RecursoResumo {
+  codigo: string;
+  atual: number | null;
+  maximo: number | null;
+}
+
+/** O que `GET /fichas` devolve por ficha: o bastante para o cartão do painel. */
+export interface FichaResumo {
+  id: number;
+  sistema: Sistema;
+  jogador: string;
+  personagem: string;
+  idade: number | null;
+  retratoVersao: number | null;
+  recursos: RecursoResumo[];
+}

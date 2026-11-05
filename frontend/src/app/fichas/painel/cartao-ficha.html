@@ -5,10 +5,12 @@
     <span class="identificacao">
       <span class="nome nome-versalete">{{ f.personagem }}</span>
       <span class="legenda">{{ legenda() }}</span>
+      <span class="selo-sistema">{{ sistema() }}</span>
     </span>
   </span>
-  <app-barra-status rotulo="Vida" tipo="vida" [atual]="f.vidaAtual" [maximo]="f.vidaMaxima" />
-  <app-barra-status rotulo="Sanidade" tipo="sanidade" [atual]="f.sanidadeAtual" [maximo]="f.sanidadeMaxima" />
+  @for (b of barras(); track b.codigo) {
+    <app-barra-status [rotulo]="b.rotulo" [tipo]="b.tipo" [atual]="b.atual" [maximo]="b.maximo" />
+  }
   @if (ferido() || sanidadeBaixa()) {
     <span class="etiquetas">
       @if (ferido()) {
