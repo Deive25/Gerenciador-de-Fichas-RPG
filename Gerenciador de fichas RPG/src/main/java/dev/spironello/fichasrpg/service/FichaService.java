@@ -1,6 +1,8 @@
 package dev.spironello.fichasrpg.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,10 +13,12 @@ import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
 import dev.spironello.fichasrpg.dto.FichaRequest;
 import dev.spironello.fichasrpg.dto.FichaResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
+import dev.spironello.fichasrpg.exception.DadosInvalidosException;
 import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.exception.SistemaImutavelException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaOrdem;
+import dev.spironello.fichasrpg.model.RecursoOrdem;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
@@ -81,6 +85,51 @@ public class FichaService {
 		FichaResponse atualizada = resposta(repository.save(ficha));
 		log.info("Ficha atualizada id={}", id);
 		return atualizada;
+	}
+
+	/**
+	 * Edição rápida (PATCH): muda só os valores atuais dos recursos enviados (PV, SAN, PE em Ordem); o resto da
+	 * ficha e os máximos não mudam. Valida tudo antes de gravar: se um código ou valor for inválido, nada muda.
+	 */
+	@Transactional
+	public FichaResponse atualizarRecursos(Long id, Map<String, Integer> atuais) {
+		Ficha ficha = repository.findById(id).orElseThrow(() -> new FichaNaoEncontradaException(id));
+		if (!(ficha instanceof FichaOrdem ordem)) {
+			throw new IllegalStateException("Sistema sem recursos: " + ficha.getSistema());
+		}
+		Map<String, String> erros = new LinkedHashMap<>();
+		Map<RecursoOrdem, Integer> validos = new LinkedHashMap<>();
+		atuais.forEach((codigo, valor) -> {
+			RecursoOrdem recurso = recursoOuNulo(codigo);
+			if (recurso == null) {
+				erros.put(codigo, "não existe em Ordem Paranormal");
+			} else if (valor == null || valor < 0) {
+				erros.put(codigo, "deve ser um número maior ou igual a 0");
+			} else {
+				validos.put(recurso, valor);
+			}
+		});
+		if (!erros.isEmpty()) {
+			throw new DadosInvalidosException(erros);
+		}
+		validos.forEach((recurso, valor) -> {
+			switch (recurso) {
+				case PV -> ordem.setPvAtual(valor);
+				case SAN -> ordem.setSanAtual(valor);
+				case PE -> ordem.setPeAtual(valor);
+			}
+		});
+		FichaResponse atualizada = resposta(repository.save(ordem));
+		log.info("Recursos atualizados id={}", id);
+		return atualizada;
+	}
+
+	private static RecursoOrdem recursoOuNulo(String codigo) {
+		try {
+			return RecursoOrdem.valueOf(codigo);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
 	}
 
 	@Transactional
