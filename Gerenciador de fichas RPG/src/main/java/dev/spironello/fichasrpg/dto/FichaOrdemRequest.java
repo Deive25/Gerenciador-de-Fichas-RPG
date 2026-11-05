@@ -9,6 +9,7 @@ import dev.spironello.fichasrpg.model.ClasseOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.RecursoOrdem;
+import dev.spironello.fichasrpg.model.Sistema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -36,4 +37,9 @@ public record FichaOrdemRequest(
 		@NotNull(message = "é obrigatório") Map<AtributoOrdem, @NotNull(message = "é obrigatório") @Min(value = 0, message = "deve estar entre 0 e 5") @Max(value = 5, message = "deve estar entre 0 e 5") Integer> atributos,
 		Map<RecursoOrdem, @Valid RecursoValor> recursos,
 		Map<PericiaOrdem, GrauOrdem> pericias) implements FichaRequest {
+
+	@Override
+	public Sistema sistema() {
+		return Sistema.ORDEM_PARANORMAL;
+	}
 }
