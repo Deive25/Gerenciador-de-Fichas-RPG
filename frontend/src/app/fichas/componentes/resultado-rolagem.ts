@@ -1,32 +1,26 @@
 import { Component, computed, input } from '@angular/core';
-import { faixas, rotuloResultado } from '../catalogo';
-import { TestePericiaResultado } from '../ficha.model';
+import { TesteResultado } from '../ficha.model';
 
-/** Resultado de um teste de perícia, com as faixas que explicam o porquê. */
+/** Resultado de um teste de Ordem: cada d20 rolado, o dado que ficou e o total. */
 @Component({
   selector: 'app-resultado-rolagem',
   templateUrl: './resultado-rolagem.html',
   styleUrl: './resultado-rolagem.scss',
 })
 export class ResultadoRolagem {
-  readonly resultado = input.required<TestePericiaResultado>();
+  readonly resultado = input.required<TesteResultado>();
 
-  readonly classe = computed(() => {
-    const r = this.resultado().resultado;
-    return r === 'SUCESSO_EXTREMO' ? 'extremo' : r === 'SUCESSO' ? 'sucesso' : 'falha';
-  });
-
+  /** "Investigação: 19 + 5 = 24"; sem bônus (atributo, destreinada) fica "Força: 12 = 12". */
   readonly titulo = computed(() => {
     const r = this.resultado();
-    return `${r.nome}: ${r.rolagem} → ${rotuloResultado(r.resultado)}`;
+    return r.bonus === 0 ? `${r.nome}: ${r.mantido} = ${r.total}` : `${r.nome}: ${r.mantido} + ${r.bonus} = ${r.total}`;
   });
 
-  readonly explicacao = computed(() => {
-    const valor = this.resultado().valor;
-    if (valor <= 0) {
-      return 'sem treino: sempre falha';
-    }
-    const f = faixas(valor);
-    return `extremo ≤ ${f.extremo} · sucesso ≤ ${f.sucesso}`;
+  /** Posição do dado que ficou: só um é marcado, mesmo com valores repetidos. */
+  readonly indiceMantido = computed(() => this.resultado().dados.indexOf(this.resultado().mantido));
+
+  readonly leitura = computed(() => {
+    const r = this.resultado();
+    return `Dados: ${r.dados.join(', ')}. Ficou o ${r.mantido}.`;
   });
 }

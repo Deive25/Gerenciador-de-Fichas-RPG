@@ -2,31 +2,37 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.4rem;
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
-  border: 1px solid var(--cor-borda);
+  border: 1px solid var(--cor-borda-dourada);
+  background: #1a1620;
+  color: var(--cor-titulo);
   text-align: center;
+}
 
-  small {
-    opacity: 0.8;
-  }
+.dados {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
 
-  &.extremo {
-    color: var(--cor-acao);
+// Cada d20 rolado; o que ficou ganha o destaque dourado (os outros ficam esmaecidos pela cor, não pela opacidade).
+.dado {
+  min-width: 2.2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-trilho);
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+
+  &.mantido {
     border-color: var(--cor-acao);
     background: #2a2416;
-  }
-
-  &.sucesso {
-    color: var(--cor-sanidade);
-    border-color: #2e5c4c;
-    background: #1e2a24;
-  }
-
-  &.falha {
-    color: #e48a7c;
-    border-color: #6b2d25;
-    background: #2a1a18;
+    color: var(--cor-titulo);
+    font-weight: 700;
   }
 }

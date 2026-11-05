@@ -35,8 +35,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
-	@ExceptionHandler(SheetPlayerNotFoundException.class)
-	public ProblemDetail handleNotFound(SheetPlayerNotFoundException ex) {
+	@ExceptionHandler(FichaNaoEncontradaException.class)
+	public ProblemDetail handleNotFound(FichaNaoEncontradaException ex) {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
 				"Não existe ficha com o id " + ex.getId() + ".");
 		problema.setTitle("Ficha não encontrada");
@@ -88,13 +88,32 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		Map<String, String> erros = new LinkedHashMap<>();
 		ex.getBindingResult().getFieldErrors()
 				.forEach(erro -> erros.putIfAbsent(erro.getField(), erro.getDefaultMessage()));
+		return handleExceptionInternal(ex, problemaDadosInvalidos(erros), headers, status, request);
+	}
+
+	/** Regra de validação de um sistema (ex.: Veterano com NEX baixo): o mesmo 400 "Dados inválidos" do Bean Validation. */
+	@ExceptionHandler(DadosInvalidosException.class)
+	public ProblemDetail handleDadosInvalidos(DadosInvalidosException ex) {
+		return problemaDadosInvalidos(ex.getErros());
+	}
+
+	/** O PUT trouxe um sistema diferente do da ficha. */
+	@ExceptionHandler(SistemaImutavelException.class)
+	public ProblemDetail handleSistemaImutavel(SistemaImutavelException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"O sistema de uma ficha não muda.");
+		problema.setTitle("Sistema não muda");
+		return problema;
+	}
+
+	private ProblemDetail problemaDadosInvalidos(Map<String, String> erros) {
 		// Só os NOMES dos campos: o valor rejeitado pode ser dado pessoal e não vai para o log.
 		log.warn("Validação falhou nos campos {}", erros.keySet());
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
 				"Há campos inválidos na requisição. Veja a propriedade errors.");
 		problema.setTitle("Dados inválidos");
 		problema.setProperty("errors", erros);
-		return handleExceptionInternal(ex, problema, headers, status, request);
+		return problema;
 	}
 
 	/** Parâmetro de rota com tipo errado (ex.: GET /fichas/abc): mensagem em português. */

@@ -8,16 +8,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.RetratoFicha;
-import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.RetratoFichaRepository;
-import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 @DisplayName("Retrato da ficha no banco")
 class RetratoFichaRepositoryTest extends IntegrationTestBase {
 
 	@Autowired
-	private SheetPlayerRepository fichas;
+	private FichaRepository fichas;
 
 	@Autowired
 	private RetratoFichaRepository retratos;
@@ -25,7 +25,7 @@ class RetratoFichaRepositoryTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("grava e lê os bytes e o instante")
 	void gravaELe() {
-		SheetPlayer ficha = novaFicha();
+		Ficha ficha = novaFicha();
 		Instant instante = Instant.parse("2026-01-01T00:00:00.123Z");
 		retratos.save(new RetratoFicha(ficha.getId(), new byte[] { 1, 2, 3 }, instante));
 
@@ -37,7 +37,7 @@ class RetratoFichaRepositoryTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("excluir a ficha apaga o retrato junto (on delete cascade)")
 	void excluirFichaApagaRetrato() {
-		SheetPlayer ficha = novaFicha();
+		Ficha ficha = novaFicha();
 		retratos.save(new RetratoFicha(ficha.getId(), new byte[] { 9 }, Instant.parse("2026-01-01T00:00:00Z")));
 
 		fichas.deleteById(ficha.getId());
@@ -45,11 +45,7 @@ class RetratoFichaRepositoryTest extends IntegrationTestBase {
 		assertThat(retratos.existsById(ficha.getId())).isFalse();
 	}
 
-	private SheetPlayer novaFicha() {
-		SheetPlayer ficha = new SheetPlayer();
-		ficha.setNameJ("Ana");
-		ficha.setNameC("Lia");
-		ficha.setGender("F");
-		return fichas.save(ficha);
+	private Ficha novaFicha() {
+		return fichas.save(FichasDeTeste.ordem("Lia"));
 	}
 }

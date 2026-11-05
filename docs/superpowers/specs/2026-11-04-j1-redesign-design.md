@@ -40,7 +40,7 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
 | **2.1c** | Retrato (§4): migração V3, rotas do retrato, `retratoVersao` no JSON, recorte no navegador e medalhão com retrato ou iniciais. Mais a **edição rápida de vida e sanidade** na ficha (§4.6), pedida pelo Arthur depois de ver o 2.1b. | Os testes de integração da §4.5 ficam verdes, o recorte e a edição rápida têm testes unitários, e trocar e remover o retrato e ajustar vida e sanidade funcionam no navegador a 375 px e a 1280 px. |
 | **2.1d** | Dado 3D (§5): spike, sobreposição com dois d10 forçados, plano B automático e toque para pular. | A conversão e a escolha entre 3D e plano B têm testes. A rolagem é conferida a 375 px e a 1280 px com captura de tela, e o build mostra a biblioteca 3D num pedaço separado do pacote inicial. |
 
-**Ordem revista pelo Arthur em 2026-11-04**, depois de ver o 2.1b: 2.1c → **suporte a vários sistemas** (Ordem Paranormal, D&D 5e e D&D 2024; spec própria, a escrever) → 2.1d. O dado animado vem depois dos sistemas porque precisa do d20 (D&D), de vários d20 (Ordem Paranormal) e do d100 (sistema atual). A §5 será revista na spec dos sistemas.
+**Ordem revista pelo Arthur em 2026-11-04**, depois de ver o 2.1b: 2.1c → **vários sistemas** (spec `2026-11-04-j1-sistemas-design.md`: 2.1d Ordem Paranormal, 2.1e D&D 5e e 2024; o d100 sai) → **2.1f dado animado**. O dado vem depois dos sistemas porque precisa do d20 (D&D) e de vários d20 (Ordem Paranormal). A §5 abaixo vale como histórico: o dado é revisto num design curto antes do 2.1f, já sem o d100.
 
 **Novos ADRs** (próximos números livres a partir de 0014):
 - retrato no PostgreSQL, numa tabela separada (alternativa: armazenamento de objetos, reavaliado no 2.6);
@@ -229,7 +229,7 @@ Pedido do Arthur ao ver o 2.1b: mudar a vida e a sanidade **atuais** sem abrir o
 - **Painel:** o `versaoFichas` muda depois do `PUT`, então o painel já mostra o valor novo ao voltar.
 - **Testes:** limites de 0 ao máximo; vários toques viram um `PUT` (com relógio simulado); erro volta o valor; toque durante o salvamento; digitar o valor; nomes acessíveis.
 
-## 5. Dado 3D (2.1d)
+## 5. Dado 3D (agora 2.1f; ver a spec dos sistemas)
 
 ### 5.1 Biblioteca
 
