@@ -120,9 +120,15 @@ describe('RecursosFicha', () => {
     const { fixture } = montar(vi.fn(() => of(responder({ PE: 7 }))), semMaximo);
     const mais = () => fixture.nativeElement.querySelector('button[aria-label="Aumentar esforço"]') as HTMLButtonElement;
 
+    const nomeEditar = () =>
+      fixture.nativeElement.querySelector('button[aria-label^="Editar esforço"]')?.getAttribute('aria-label');
+
+    expect(nomeEditar()).toContain('5');
+    expect(fixture.nativeElement.textContent).not.toContain('—');
     expect(mais().disabled).toBe(false);
     clicar(fixture, 'Aumentar esforço', 2);
     expect(mais().disabled).toBe(false);
+    expect(nomeEditar()).toContain('7');
     vi.advanceTimersByTime(800);
 
     expect(atualizarRecursos).toHaveBeenCalledWith(7, { PE: 7 });
