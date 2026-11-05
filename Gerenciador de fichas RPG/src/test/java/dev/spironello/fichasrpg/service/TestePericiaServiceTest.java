@@ -33,7 +33,7 @@ class TestePericiaServiceTest {
 	private SheetPlayerRepository repository;
 
 	private TestePericiaService servico(int rolagemFixa) {
-		Dado dadoFixo = () -> rolagemFixa;
+		Dado dadoFixo = faces -> rolagemFixa;
 		return new TestePericiaService(repository, dadoFixo);
 	}
 
