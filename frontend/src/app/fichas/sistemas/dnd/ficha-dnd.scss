@@ -1,0 +1,176 @@
+// O corpo não cria caixa própria: seus blocos entram direto na grade `.bento` da tela da ficha.
+:host {
+  display: contents;
+}
+
+// Computador: atributos, salvaguardas e perícias em largura total (a grade tem 2 colunas).
+@media (min-width: 900px) {
+  .atributos,
+  .salvaguardas,
+  .pericias {
+    grid-column: 1 / -1;
+  }
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nome {
+  display: inline-flex;
+  align-items: center;
+}
+
+// Oito campos pequenos (2 por linha no celular, 4 a partir de 600 px).
+.identidade dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1rem;
+  margin: 0;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cor-texto-suave);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--fonte-titulo);
+    font-size: 1.1rem;
+    color: var(--cor-titulo);
+    overflow-wrap: anywhere;
+  }
+}
+
+// Seletor de modo: três botões lado a lado, o pressionado ganha o dourado.
+.botoes-modo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+
+  button {
+    min-height: 44px;
+    padding: 0 0.4rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--cor-texto);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--cor-acao);
+      background: #2a2416;
+      color: var(--cor-titulo);
+      font-weight: 700;
+    }
+  }
+}
+
+// Uma coluna no celular; duas a partir de 900 px (como as perícias de Ordem).
+// minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo e a ficha passa de 375 px.
+.grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.15rem 1.5rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Nome, selo (coluna fixa, para alinhar), bônus e botão de rolar.
+.linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.5rem 2.6rem auto;
+  grid-template-areas: 'nome selo valor rolar';
+  align-items: center;
+  column-gap: 0.4rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  .nome {
+    grid-area: nome;
+  }
+
+  .selo {
+    grid-area: selo;
+  }
+
+  .valor {
+    grid-area: valor;
+    text-align: right;
+  }
+
+  .rolar {
+    grid-area: rolar;
+  }
+
+  // Sem proficiência: esmaecida pela cor (5,13:1), não por opacidade, para manter o contraste AA.
+  &.sem-valor .nome,
+  &.sem-valor .valor {
+    color: var(--cor-texto-suave);
+  }
+}
+
+// Atributo: nome, valor bruto, modificador e botão de rolar.
+.linha-atributo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2rem 2.6rem auto;
+  align-items: center;
+  column-gap: 0.4rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--cor-texto-suave);
+
+  .bruto,
+  .valor {
+    text-align: right;
+  }
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--cor-borda-dourada);
+  border-radius: 50%;
+  color: var(--cor-acao);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  color: var(--cor-titulo);
+}
+
+.rolar {
+  min-height: 44px;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: #e9d9b4;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}

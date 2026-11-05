@@ -153,6 +153,9 @@ export type AlvoTeste = 'PERICIA' | 'ATRIBUTO' | 'SALVAGUARDA';
 /** Vantagem rola 2d20 e fica o maior; desvantagem, o menor (só D&D). */
 export type ModoTeste = 'NORMAL' | 'VANTAGEM' | 'DESVANTAGEM';
 
+/** O que a ficha pede ao rolar: o modo só existe em D&D e, sem ele, é Normal. */
+export type PedidoTeste = { alvo: AlvoTeste; codigo: string; modo?: ModoTeste };
+
 /** Resultado de `POST /fichas/{id}/testes`: cada d20 rolado, o que ficou e o total. */
 export interface TesteResultado {
   alvo: AlvoTeste;
