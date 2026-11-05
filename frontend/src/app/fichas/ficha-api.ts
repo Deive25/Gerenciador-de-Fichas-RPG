@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { paraApiError } from '../core/api-error';
-import { CodigoPericia, Ficha, FichaEntrada, FichaResumo, TestePericiaResultado } from './ficha.model';
+import { AlvoTeste, Ficha, FichaEntrada, FichaOrdem, FichaResumo, TesteResultado } from './ficha.model';
 
 /** Único ponto de contato com a API de fichas. Todo erro sai como ApiError. */
 @Injectable({ providedIn: 'root' })
@@ -24,6 +24,10 @@ export class FichaApi {
 
   buscar(id: number): Observable<Ficha> {
     return this.tratar(this.http.get<Ficha>(`${this.base}/${id}`));
+  }
+
+  buscarFicha(id: number): Observable<FichaOrdem> {
+    return this.tratar(this.http.get<FichaOrdem>(`${this.base}/${id}`));
   }
 
   criar(entrada: FichaEntrada): Observable<Ficha> {
@@ -60,8 +64,14 @@ export class FichaApi {
     return this.tratar(this.http.get(`${this.base}/${id}/retrato`, { params: { v: versao }, responseType: 'blob' }));
   }
 
-  testarPericia(id: number, pericia: CodigoPericia): Observable<TestePericiaResultado> {
-    return this.tratar(this.http.post<TestePericiaResultado>(`${this.base}/${id}/testes-de-pericia`, { pericia }));
+  /** Edição rápida: só os valores atuais dos códigos enviados mudam (PV, SAN, PE). */
+  atualizarRecursos(id: number, atuais: Partial<Record<string, number>>): Observable<FichaOrdem> {
+    return this.alterou(this.tratar(this.http.patch<FichaOrdem>(`${this.base}/${id}/recursos`, atuais)));
+  }
+
+  /** O servidor rola os d20 (ele é a fonte do aleatório); o navegador só mostra o resultado. */
+  testar(id: number, teste: { alvo: AlvoTeste; codigo: string; modo?: 'NORMAL' }): Observable<TesteResultado> {
+    return this.tratar(this.http.post<TesteResultado>(`${this.base}/${id}/testes`, teste));
   }
 
   private alterou<T>(requisicao: Observable<T>): Observable<T> {
