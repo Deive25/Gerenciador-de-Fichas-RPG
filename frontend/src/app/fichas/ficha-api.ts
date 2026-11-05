@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { paraApiError } from '../core/api-error';
-import { CodigoPericia, Ficha, FichaEntrada, TestePericiaResultado } from './ficha.model';
+import { CodigoPericia, Ficha, FichaEntrada, FichaResumo, TestePericiaResultado } from './ficha.model';
 
 /** Único ponto de contato com a API de fichas. Todo erro sai como ApiError. */
 @Injectable({ providedIn: 'root' })
@@ -18,8 +18,8 @@ export class FichaApi {
    */
   readonly versaoFichas = this.versao.asReadonly();
 
-  listar(): Observable<Ficha[]> {
-    return this.tratar(this.http.get<Ficha[]>(this.base));
+  listar(): Observable<FichaResumo[]> {
+    return this.tratar(this.http.get<FichaResumo[]>(this.base));
   }
 
   buscar(id: number): Observable<Ficha> {

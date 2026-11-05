@@ -4,16 +4,23 @@ import { provideRouter } from '@angular/router';
 import { NEVER, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
-import { Ficha } from '../ficha.model';
+import { FichaResumo } from '../ficha.model';
 import { Painel } from './painel';
 
-function ficha(id: number, personagem: string, parcial: Partial<Ficha> = {}): Ficha {
+function ficha(
+  id: number,
+  personagem: string,
+  parcial: Partial<FichaResumo> & { vida?: [number, number]; sanidade?: [number, number] } = {},
+): FichaResumo {
+  const { vida = [9, 12], sanidade = [48, 60], ...resto } = parcial;
   return {
-    id, jogador: 'Arthur', personagem, genero: 'F', idade: null,
-    vidaAtual: 9, vidaMaxima: 12, sanidadeAtual: 48, sanidadeMaxima: 60,
-    forca: null, destreza: null, constituicao: null, inteligencia: null, carisma: null,
-    sabedoria: null, tamanho: null, sorte: null, poder: null, pericias: {}, retratoVersao: null,
-    ...parcial,
+    id, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem, idade: null, retratoVersao: null,
+    recursos: [
+      { codigo: 'PV', atual: vida[0], maximo: vida[1] },
+      { codigo: 'SAN', atual: sanidade[0], maximo: sanidade[1] },
+      { codigo: 'PE', atual: 5, maximo: 5 },
+    ],
+    ...resto,
   };
 }
 
@@ -22,8 +29,8 @@ const INDISPONIVEL: ApiError = {
 };
 
 const MESA = [
-  ficha(1, 'Lía Fontaine', { jogador: 'Bia', sanidadeAtual: 21, sanidadeMaxima: 55 }),
-  ficha(2, 'Prof. Hale', { jogador: 'Caio', vidaAtual: 4, vidaMaxima: 10 }),
+  ficha(1, 'Lía Fontaine', { jogador: 'Bia', sanidade: [21, 55] }),
+  ficha(2, 'Prof. Hale', { jogador: 'Caio', vida: [4, 10] }),
   ficha(3, 'Jack Moreau'),
 ];
 
