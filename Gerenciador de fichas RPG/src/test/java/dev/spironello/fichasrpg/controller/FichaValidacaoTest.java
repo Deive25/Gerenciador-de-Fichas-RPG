@@ -378,10 +378,10 @@ class FichaValidacaoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("sistema DND devolve 400 (subtipo desconhecido) e nada é salvo")
+	@DisplayName("sistema PATHFINDER devolve 400 (subtipo desconhecido) e nada é salvo")
 	void sistemaDesconhecido() throws Exception {
 		Map<String, Object> corpo = FichasDeTeste.corpoOrdem();
-		corpo.put("sistema", "DND");
+		corpo.put("sistema", "PATHFINDER");
 
 		problema400(enviar("POST", "/fichas", corpo));
 
