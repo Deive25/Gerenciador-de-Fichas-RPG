@@ -1,0 +1,152 @@
+@let f = ficha();
+<section class="identidade bloco" aria-label="Edição, classe, espécie, antecedente, nível, CA e inspiração">
+  <dl>
+    <div>
+      <dt>Edição</dt>
+      <dd>{{ nomeEdicao[f.edicao] }}</dd>
+    </div>
+    <div>
+      <dt>Classe</dt>
+      <dd>{{ f.classe ?? '—' }}</dd>
+    </div>
+    <div>
+      <dt>{{ rotuloEspecie(f.edicao) }}</dt>
+      <dd>{{ f.especie ?? '—' }}</dd>
+    </div>
+    <div>
+      <dt>Antecedente</dt>
+      <dd>{{ f.antecedente ?? '—' }}</dd>
+    </div>
+    <div>
+      <dt>Nível</dt>
+      <dd>{{ f.nivel }}</dd>
+    </div>
+    <div>
+      <dt>Proficiência</dt>
+      <dd>{{ comSinal(proficiencia()) }}</dd>
+    </div>
+    <div>
+      <dt>CA</dt>
+      <dd>{{ f.ca ?? '—' }}</dd>
+    </div>
+    <div>
+      <dt>Inspiração</dt>
+      <dd>{{ f.inspiracao ? 'Sim' : 'Não' }}</dd>
+    </div>
+  </dl>
+</section>
+
+<section class="modo bloco" role="group" aria-labelledby="rotulo-modo-rolagem">
+  <span id="rotulo-modo-rolagem" class="titulo-secao">Modo da próxima rolagem</span>
+  <div class="botoes-modo">
+    @for (m of modos; track m.valor) {
+      <button type="button" [attr.aria-pressed]="modo() === m.valor" (click)="modo.set(m.valor)">
+        {{ m.rotulo }}
+      </button>
+    }
+  </div>
+</section>
+
+<section class="atributos bloco">
+  <h2 class="titulo-secao">Atributos</h2>
+  <ul class="grade">
+    @for (atributo of atributos; track atributo.codigo) {
+      @let valor = f.atributos[atributo.codigo];
+      @let mod = comSinal(modificador(valor));
+      <li class="linha-atributo">
+        <span class="nome">
+          {{ atributo.nome }}
+          <button
+            type="button"
+            class="dica"
+            [matTooltip]="atributo.descricao"
+            matTooltipTouchGestures="off"
+            #dicaAtributo="matTooltip"
+            (click)="dicaAtributo.toggle()"
+            [attr.aria-label]="'Sobre ' + atributo.nome"
+          >
+            ⓘ
+          </button>
+        </span>
+        <span class="bruto">{{ valor }}</span>
+        <strong class="valor">{{ mod }}</strong>
+        <button
+          type="button"
+          class="rolar"
+          [attr.aria-label]="'Rolar ' + atributo.nome + ', ' + mod"
+          [disabled]="rolando()"
+          (click)="pedir('ATRIBUTO', atributo.codigo)"
+        >
+          🎲 Rolar
+        </button>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="salvaguardas bloco">
+  <h2 class="titulo-secao">Salvaguardas</h2>
+  <ul class="grade">
+    @for (atributo of atributos; track atributo.codigo) {
+      @let proficiente = f.salvaguardas.includes(atributo.codigo);
+      @let bonus = comSinal(bonusSalvaguarda(f.atributos[atributo.codigo], f.nivel, proficiente));
+      <li class="linha">
+        <span class="nome">{{ atributo.nome }}</span>
+        @if (proficiente) {
+          <span class="selo" aria-hidden="true">P</span>
+          <span class="so-leitor">Proficiente</span>
+        }
+        <strong class="valor">{{ bonus }}</strong>
+        <button
+          type="button"
+          class="rolar"
+          [attr.aria-label]="'Rolar salvaguarda de ' + atributo.nome + ', ' + bonus"
+          [disabled]="rolando()"
+          (click)="pedir('SALVAGUARDA', atributo.codigo)"
+        >
+          🎲 Rolar
+        </button>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="pericias bloco">
+  <h2 class="titulo-secao">Perícias</h2>
+  <ul class="grade">
+    @for (pericia of pericias; track pericia.codigo) {
+      @let grau = f.pericias[pericia.codigo];
+      @let bonus = comSinal(bonusPericia(f.atributos[pericia.atributo], f.nivel, grau));
+      <li class="linha" [class.sem-valor]="grau === undefined">
+        <span class="nome">
+          {{ pericia.nome }}
+          <button
+            type="button"
+            class="dica"
+            [matTooltip]="pericia.descricao"
+            matTooltipTouchGestures="off"
+            #dicaPericia="matTooltip"
+            (click)="dicaPericia.toggle()"
+            [attr.aria-label]="'Sobre ' + pericia.nome"
+          >
+            ⓘ
+          </button>
+        </span>
+        @if (grau) {
+          <span class="selo" aria-hidden="true">{{ seloGrau[grau] }}</span>
+          <span class="so-leitor">{{ nomeGrau[grau] }}</span>
+        }
+        <strong class="valor">{{ bonus }}</strong>
+        <button
+          type="button"
+          class="rolar"
+          [attr.aria-label]="'Rolar ' + pericia.nome + ', ' + bonus"
+          [disabled]="rolando()"
+          (click)="pedir('PERICIA', pericia.codigo)"
+        >
+          🎲 Rolar
+        </button>
+      </li>
+    }
+  </ul>
+</section>

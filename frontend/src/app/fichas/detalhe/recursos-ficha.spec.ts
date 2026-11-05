@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
-import { FichaOrdem } from '../ficha.model';
+import { FichaDnd, FichaOrdem } from '../ficha.model';
 import { RecursosFicha, aplicarAjuste, limitarDigitado } from './recursos-ficha';
 
 const FICHA: FichaOrdem = {
@@ -16,6 +16,14 @@ const FICHA: FichaOrdem = {
     PE: { atual: 5, maximo: 10 },
   },
   pericias: { INVESTIGACAO: 'TREINADO' },
+};
+
+const FICHA_DND: FichaDnd = {
+  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+  edicao: 'D2024', classe: 'Ladino', especie: 'Halfling', antecedente: null, nivel: 5,
+  atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
+  recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },
+  ca: 15, inspiracao: false, salvaguardas: [], pericias: {},
 };
 
 describe('aplicarAjuste', () => {
@@ -64,7 +72,7 @@ describe('RecursosFicha', () => {
     return { ...FICHA, recursos };
   }
 
-  function montar(respostas: ReturnType<typeof vi.fn>, ficha: FichaOrdem = FICHA) {
+  function montar(respostas: ReturnType<typeof vi.fn>, ficha: FichaOrdem | FichaDnd = FICHA) {
     atualizarRecursos = respostas;
     TestBed.configureTestingModule({
       imports: [RecursosFicha],
@@ -234,5 +242,62 @@ describe('RecursosFicha', () => {
     expect((el.querySelector('button[aria-label="Diminuir vida"]') as HTMLButtonElement).disabled).toBe(true);
     expect((el.querySelector('button[aria-label="Aumentar sanidade"]') as HTMLButtonElement).disabled).toBe(true);
     expect((el.querySelector('button[aria-label="Aumentar vida"]') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  describe('em D&D', () => {
+    it('tem dois aneis: Vida e Temporario', () => {
+      const { el } = montar(vi.fn(), FICHA_DND);
+      expect(el.querySelectorAll('app-anel-status').length).toBe(2);
+      for (const nome of ['vida', 'temporário']) {
+        expect(el.querySelector(`button[aria-label="Diminuir ${nome}"]`)).not.toBeNull();
+        expect(el.querySelector(`button[aria-label="Aumentar ${nome}"]`)).not.toBeNull();
+      }
+      expect(el.querySelector('button[aria-label="Aumentar sanidade"]')).toBeNull();
+    });
+
+    it('PV temporario sem maximo: o + continua habilitado e 2 toques viram um PATCH so com PV_TEMP', () => {
+      const resposta: FichaDnd = { ...FICHA_DND, recursos: { ...FICHA_DND.recursos, PV_TEMP: { atual: 6, maximo: null } } };
+      const { fixture } = montar(vi.fn(() => of(resposta)), FICHA_DND);
+      const mais = () => fixture.nativeElement.querySelector('button[aria-label="Aumentar temporário"]') as HTMLButtonElement;
+
+      expect(mais().disabled).toBe(false);
+      clicar(fixture, 'Aumentar temporário', 2);
+      expect(mais().disabled).toBe(false);
+      expect(
+        fixture.nativeElement.querySelector('button[aria-label^="Editar temporário"]')?.getAttribute('aria-label'),
+      ).toContain('6');
+      vi.advanceTimersByTime(800);
+
+      expect(atualizarRecursos).toHaveBeenCalledTimes(1);
+      expect(atualizarRecursos).toHaveBeenCalledWith(9, { PV_TEMP: 6 });
+    });
+
+    it('a vida de D&D respeita o maximo e o PATCH leva so o PV', () => {
+      const { fixture } = montar(vi.fn(() => of(FICHA_DND)), FICHA_DND);
+      clicar(fixture, 'Diminuir vida', 2);
+      vi.advanceTimersByTime(800);
+      expect(atualizarRecursos).toHaveBeenCalledWith(9, { PV: 28 });
+    });
+
+    it('a resposta de D&D tambem emite atualizada', () => {
+      const resposta: FichaDnd = { ...FICHA_DND, recursos: { ...FICHA_DND.recursos, PV: { atual: 29, maximo: 38 } } };
+      const { fixture } = montar(vi.fn(() => of(resposta)), FICHA_DND);
+      const emitidas: unknown[] = [];
+      fixture.componentInstance.atualizada.subscribe((f) => emitidas.push(f));
+
+      clicar(fixture, 'Diminuir vida');
+      vi.advanceTimersByTime(800);
+
+      expect(emitidas).toEqual([resposta]);
+    });
+
+    it('erro no salvamento volta o PV temporario ao ultimo valor salvo', () => {
+      const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Tente de novo.', campos: {} };
+      const { fixture, el } = montar(vi.fn(() => throwError(() => erro)), FICHA_DND);
+      clicar(fixture, 'Aumentar temporário', 3);
+      vi.advanceTimersByTime(800);
+      fixture.detectChanges();
+      expect(el.querySelector('button[aria-label^="Editar temporário"]')?.getAttribute('aria-label')).toContain('4');
+    });
   });
 });

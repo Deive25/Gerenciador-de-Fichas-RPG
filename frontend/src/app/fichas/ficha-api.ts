@@ -3,7 +3,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { paraApiError } from '../core/api-error';
-import { AlvoTeste, Ficha, FichaEntrada, FichaResumo, ModoTeste, TesteResultado } from './ficha.model';
+import { Ficha, FichaEntrada, FichaResumo, PedidoTeste, TesteResultado } from './ficha.model';
 
 /** Único ponto de contato com a API de fichas. Todo erro sai como ApiError. */
 @Injectable({ providedIn: 'root' })
@@ -66,7 +66,7 @@ export class FichaApi {
   }
 
   /** O servidor rola os d20 (ele é a fonte do aleatório); o navegador só mostra o resultado. */
-  testar(id: number, teste: { alvo: AlvoTeste; codigo: string; modo?: ModoTeste }): Observable<TesteResultado> {
+  testar(id: number, teste: PedidoTeste): Observable<TesteResultado> {
     return this.tratar(this.http.post<TesteResultado>(`${this.base}/${id}/testes`, teste));
   }
 

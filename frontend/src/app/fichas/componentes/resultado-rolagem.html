@@ -5,5 +5,8 @@
       <span class="dado" [class.mantido]="$index === indiceMantido()">{{ dado }}</span>
     }
   </span>
+  @if (avisoNatural(); as aviso) {
+    <span class="natural">{{ aviso }}</span>
+  }
   <span class="so-leitor">{{ leitura() }}</span>
 </div>
