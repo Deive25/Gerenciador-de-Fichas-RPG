@@ -1,0 +1,179 @@
+@if (estado() !== 'nao-encontrada') {
+  <a class="voltar" routerLink="/fichas">← Investigadores</a>
+}
+<h1 class="nome-versalete">{{ editando() ? 'Editar ficha' : 'Nova ficha de Ordem Paranormal' }}</h1>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <p class="aviso" role="status">Carregando ficha…</p>
+  }
+  @case ('nao-encontrada') {
+    <div class="aviso-erro" role="alert">
+      <strong>Ficha não encontrada</strong>
+      <p>Ela pode ter sido excluída.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
+  @case ('outro-sistema') {
+    <div class="aviso-erro" role="alert">
+      <strong>Este sistema ainda não tem formulário</strong>
+      <p>Por enquanto só as fichas de Ordem Paranormal podem ser editadas.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erroCarga()?.titulo }}</strong>
+      <p>{{ erroCarga()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar(+id()!)">Tentar de novo</button>
+    </div>
+  }
+  @default {
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+  <fieldset class="bloco">
+    <legend class="titulo-secao">Identificação</legend>
+    <div class="grade">
+      @for (campo of identificacao; track campo.chave) {
+        <mat-form-field appearance="outline" [attr.data-campo]="campo.chave">
+          <mat-label>{{ campo.nome }}</mat-label>
+          <input matInput [formControlName]="campo.chave" maxlength="300" />
+          @if (mensagem(form.controls[campo.chave]); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline" data-campo="idade">
+        <mat-label>Idade</mat-label>
+        <input matInput formControlName="idade" inputmode="numeric" />
+        @if (mensagem(form.controls.idade); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </fieldset>
+
+  <fieldset class="bloco">
+    <legend class="titulo-secao">Personagem</legend>
+    <div class="grade">
+      <mat-form-field appearance="outline" data-campo="classe">
+        <mat-label>Classe</mat-label>
+        <mat-select formControlName="classe">
+          @for (classe of classes; track classe.valor) {
+            <mat-option [value]="classe.valor">{{ classe.nome }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" data-campo="origem">
+        <mat-label>Origem</mat-label>
+        <input matInput formControlName="origem" maxlength="300" />
+        @if (mensagem(form.controls.origem); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" data-campo="nex">
+        <mat-label>NEX (%)</mat-label>
+        <input matInput formControlName="nex" inputmode="numeric" />
+        @if (mensagem(form.controls.nex); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </fieldset>
+
+  <fieldset class="bloco" formGroupName="atributos">
+    <legend class="titulo-secao">Atributos (0 a 5)</legend>
+    <div class="grade grade-atributos">
+      @for (atributo of atributos; track atributo.codigo) {
+        <mat-form-field appearance="outline" [attr.data-campo]="atributo.codigo">
+          <mat-label>{{ atributo.nome }}</mat-label>
+          <input matInput [formControlName]="atributo.codigo" inputmode="numeric" />
+          <button
+            matSuffix
+            type="button"
+            class="dica"
+            [matTooltip]="atributo.descricao"
+            matTooltipTouchGestures="off"
+            #dicaAtributo="matTooltip"
+            (click)="dicaAtributo.toggle()"
+            [attr.aria-label]="'Sobre ' + atributo.nome"
+          >
+            ⓘ
+          </button>
+          @if (mensagem(form.controls.atributos.controls[atributo.codigo]); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="bloco" formGroupName="recursos">
+    <legend class="titulo-secao">Pontos de vida, sanidade e esforço</legend>
+    <div class="grade grade-recursos">
+      @for (recurso of recursos; track recurso.codigo) {
+        <ng-container [formGroupName]="recurso.codigo">
+          <mat-form-field appearance="outline" [attr.data-campo]="recurso.codigo + '-atual'">
+            <mat-label>{{ recurso.nome }} atual</mat-label>
+            <input matInput formControlName="atual" inputmode="numeric" />
+            @if (mensagem(form.controls.recursos.controls[recurso.codigo].controls.atual); as texto) {
+              <mat-error>{{ texto }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline" [attr.data-campo]="recurso.codigo + '-maximo'">
+            <mat-label>{{ recurso.nome }} máximo</mat-label>
+            <input matInput formControlName="maximo" inputmode="numeric" />
+            @if (mensagem(form.controls.recursos.controls[recurso.codigo].controls.maximo); as texto) {
+              <mat-error>{{ texto }}</mat-error>
+            }
+          </mat-form-field>
+        </ng-container>
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="bloco" formGroupName="pericias">
+    <legend class="titulo-secao">Perícias</legend>
+    <div class="grade grade-pericias">
+      @for (pericia of pericias; track pericia.codigo) {
+        <mat-form-field appearance="outline" [attr.data-campo]="pericia.codigo">
+          <mat-label>{{ pericia.nome }} ({{ pericia.atributo }})</mat-label>
+          <mat-select [formControlName]="pericia.codigo">
+            @for (grau of graus; track grau.valor) {
+              <mat-option [value]="grau.valor" [disabled]="!grauPermitido(grau.nexMinimo)">
+                {{ grau.nome }}
+                @if (!grauPermitido(grau.nexMinimo)) {
+                  <span class="exige-nex">exige NEX {{ grau.nexMinimo }}%</span>
+                }
+              </mat-option>
+            }
+          </mat-select>
+          <button
+            matSuffix
+            type="button"
+            class="dica"
+            [matTooltip]="pericia.descricao"
+            matTooltipTouchGestures="off"
+            #dicaPericia="matTooltip"
+            (click)="$event.stopPropagation(); dicaPericia.toggle()"
+            [attr.aria-label]="'Sobre ' + pericia.nome"
+          >
+            ⓘ
+          </button>
+          @if (mensagem(form.controls.pericias.controls[pericia.codigo]); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+  </fieldset>
+
+  <div class="acoes">
+    @if (erroGeral(); as erro) {
+      <p class="erro-salvar" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+    }
+    <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', id()] : ['/fichas']">Cancelar</a>
+    <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
+  </div>
+</form>
+  }
+}

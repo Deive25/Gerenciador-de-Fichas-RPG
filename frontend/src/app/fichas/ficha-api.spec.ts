@@ -3,29 +3,22 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ApiError } from '../core/api-error';
 import { FichaApi } from './ficha-api';
-import { FichaEntrada, FichaResumo } from './ficha.model';
+import { FichaOrdemEntrada, FichaResumo } from './ficha.model';
 
 const API = 'http://localhost:8080';
 
-const ENTRADA: FichaEntrada = {
+const ENTRADA: FichaOrdemEntrada = {
+  sistema: 'ORDEM_PARANORMAL',
   jogador: 'Arthur',
   personagem: 'Lia',
   genero: 'F',
   idade: 34,
-  vidaAtual: 9,
-  vidaMaxima: 12,
-  sanidadeAtual: 48,
-  sanidadeMaxima: 60,
-  forca: 45,
-  destreza: null,
-  constituicao: null,
-  inteligencia: null,
-  carisma: null,
-  sabedoria: null,
-  tamanho: null,
-  sorte: null,
-  poder: null,
-  pericias: { INVESTIGACAO: 70 },
+  classe: 'OCULTISTA',
+  origem: 'Acadêmica',
+  nex: 35,
+  atributos: { AGI: 1, FOR: 1, INT: 3, PRE: 2, VIG: 1 },
+  recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: null, maximo: null } },
+  pericias: { INVESTIGACAO: 'VETERANO' },
 };
 
 describe('FichaApi', () => {
@@ -61,14 +54,7 @@ describe('FichaApi', () => {
     expect(resumo[0].recursos[0].codigo).toBe('PV');
   });
 
-  it('buscar faz GET /fichas/7', () => {
-    api.buscar(7).subscribe();
-    const req = http.expectOne(`${API}/fichas/7`);
-    expect(req.request.method).toBe('GET');
-    req.flush({});
-  });
-
-  it('criar faz POST /fichas com o corpo sem id', () => {
+  it('criar faz POST /fichas com o corpo de Ordem, sem id', () => {
     api.criar(ENTRADA).subscribe();
     const req = http.expectOne(`${API}/fichas`);
     expect(req.request.method).toBe('POST');
@@ -174,7 +160,7 @@ describe('FichaApi', () => {
 
   it('erros chegam como ApiError', () => {
     let recebido: ApiError | undefined;
-    api.buscar(9).subscribe({ error: (e: ApiError) => (recebido = e) });
+    api.buscarFicha(9).subscribe({ error: (e: ApiError) => (recebido = e) });
     http
       .expectOne(`${API}/fichas/9`)
       .flush(
