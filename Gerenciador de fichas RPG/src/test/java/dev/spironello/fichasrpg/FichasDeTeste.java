@@ -3,7 +3,10 @@ package dev.spironello.fichasrpg;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
+import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 
 /** Fichas válidas para os testes que só precisam de "uma ficha" no banco. */
@@ -21,6 +24,20 @@ public final class FichasDeTeste {
 		ficha.setNex(5);
 		for (AtributoOrdem atributo : AtributoOrdem.values()) {
 			ficha.setAtributo(atributo, 1);
+		}
+		return ficha;
+	}
+
+	/** Ficha de D&D válida: edição 2024, nível 1, os seis atributos em 10, sem perícias, salvaguardas nem recursos. */
+	public static FichaDnd dnd(String personagem) {
+		FichaDnd ficha = new FichaDnd();
+		ficha.setJogador("Ana");
+		ficha.setPersonagem(personagem);
+		ficha.setGenero("F");
+		ficha.setEdicao(EdicaoDnd.D2024);
+		ficha.setNivel(1);
+		for (AtributoDnd atributo : AtributoDnd.values()) {
+			ficha.setAtributo(atributo, 10);
 		}
 		return ficha;
 	}
