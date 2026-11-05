@@ -1,5 +1,5 @@
 <div class="aneis">
-  @for (anel of aneis; track anel.codigo) {
+  @for (anel of aneis(); track anel.codigo) {
     <app-anel-status
       [rotulo]="anel.rotulo"
       [tipo]="anel.tipo"

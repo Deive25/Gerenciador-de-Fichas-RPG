@@ -38,4 +38,14 @@ describe('AnelStatus', () => {
   it('o desenho fica fora da leitura de tela; quem le e o texto', () => {
     expect(criar(9, 12).querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('o tipo temporario pinta o arco com a classe temporario', () => {
+    const fixture = TestBed.createComponent(AnelStatus);
+    fixture.componentRef.setInput('rotulo', 'Temporário');
+    fixture.componentRef.setInput('tipo', 'temporario');
+    fixture.componentRef.setInput('atual', 4);
+    fixture.componentRef.setInput('maximo', 10);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('circle.arco')?.classList).toContain('temporario');
+  });
 });
