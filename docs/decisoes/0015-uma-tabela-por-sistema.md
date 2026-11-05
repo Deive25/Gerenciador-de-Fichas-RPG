@@ -23,3 +23,5 @@ O Arthur pediu que o app tenha fichas de Ordem Paranormal, D&D 5e e D&D 2024, e 
 - Cada sistema novo custa uma migração, uma entidade, um DTO de entrada, um de saída e um mapper (a regra de rolagem é uma classe pura à parte, como `RegrasOrdem`).
 - **Pior:** mais arquivos por sistema do que nas alternativas genéricas.
 - **Pior:** o `FichaService` tem hoje duas cadeias de `instanceof` (uma para a resposta completa e outra para o resumo). Com um só sistema é aceitável; o 2.1e troca as duas por um mapper por sistema, para o serviço não crescer a cada sistema novo.
+
+Atualização (2.1e): ver [ADR 0017](0017-regras-de-cada-sistema-atras-de-uma-interface.md); as duas cadeias de `instanceof` foram trocadas por `SistemaDeFicha`.
