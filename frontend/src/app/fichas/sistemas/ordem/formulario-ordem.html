@@ -135,9 +135,10 @@
     <legend class="titulo-secao">Perícias</legend>
     <div class="grade grade-pericias">
       @for (pericia of pericias; track pericia.codigo) {
-        <mat-form-field appearance="outline" [attr.data-campo]="pericia.codigo">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" [attr.data-campo]="pericia.codigo">
           <mat-label>{{ pericia.nome }} ({{ pericia.atributo }})</mat-label>
           <mat-select [formControlName]="pericia.codigo">
+            <mat-select-trigger>{{ nomeDoGrau(form.controls.pericias.controls[pericia.codigo].value) }}</mat-select-trigger>
             @for (grau of graus; track grau.valor) {
               <mat-option [value]="grau.valor" [disabled]="!grauPermitido(grau.nexMinimo)">
                 {{ grau.nome }}

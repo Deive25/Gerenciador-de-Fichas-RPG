@@ -1,4 +1,16 @@
-import { Component, ElementRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -77,7 +89,6 @@ const RECURSOS: readonly { codigo: CodigoRecurso; nome: string }[] = [
 const NEX_MINIMO = 5;
 const NEX_MAXIMO = 99;
 const ATRIBUTO_MAXIMO = 5;
-const RECURSO_MAXIMO = 9999;
 
 /** O NEX mínimo de cada grau (as mesmas regras do servidor). */
 const NEX_DO_GRAU: Record<GrauOrdem, number> = { TREINADO: 0, VETERANO: 35, EXPERT: 70 };
@@ -164,15 +175,15 @@ function paraValor(ficha: FichaOrdem): ValorFormulario {
   return valor;
 }
 
-/** Inteiro entre `minimo` e `maximo`. Vazio e não numérico ficam para os outros validadores. */
-function faixa(minimo: number, maximo: number): ValidatorFn {
+/** Inteiro entre `minimo` e `maximo` (sem teto se omitido). Vazio e não numérico ficam para os outros validadores. */
+function faixa(minimo: number, maximo = Infinity): ValidatorFn {
   return (controle: AbstractControl): ValidationErrors | null => {
     const texto = String(controle.value ?? '').trim();
     if (!INTEIRO.test(texto)) {
       return null;
     }
     const numero = Number(texto);
-    return numero < minimo || numero > maximo ? { faixa: `De ${minimo} a ${maximo}` } : null;
+    return numero < minimo || numero > maximo ? { faixa: maximo === Infinity ? `${minimo} ou mais` : `De ${minimo} a ${maximo}` } : null;
   };
 }
 
@@ -198,6 +209,8 @@ export class FormularioOrdem {
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   /** Presente no modo editar (rota /fichas/:id/editar). */
   readonly id = input<string>();
@@ -278,8 +291,8 @@ export class FormularioOrdem {
       recursos: this.fb.group(
         registro(['PV', 'SAN', 'PE'] as const, () =>
           this.fb.group({
-            atual: inteiro(faixa(0, RECURSO_MAXIMO)),
-            maximo: inteiro(faixa(0, RECURSO_MAXIMO)),
+            atual: inteiro(faixa(0)),
+            maximo: inteiro(faixa(0)),
           }),
         ),
       ),
@@ -332,6 +345,11 @@ export class FormularioOrdem {
     return null;
   }
 
+  /** Só o nome do grau no select fechado (a dica "exige NEX" fica na lista de opções). */
+  nomeDoGrau(valor: string): string {
+    return this.graus.find((g) => g.valor === valor)?.nome ?? '';
+  }
+
   /** O grau só pode ser escolhido se o NEX atual o permite (o servidor confere de novo). */
   grauPermitido(nexMinimo: number): boolean {
     return this.nex() >= nexMinimo;
@@ -344,7 +362,7 @@ export class FormularioOrdem {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       // No celular o formulário é longo: leva o usuário até o primeiro campo com problema.
-      this.host.nativeElement.querySelector<HTMLElement>('input.ng-invalid, mat-select.ng-invalid')?.focus();
+      this.focarPrimeiroInvalido();
       return;
     }
     this.erroGeral.set(null);
@@ -376,6 +394,15 @@ export class FormularioOrdem {
     }
     if (!algumNoCampo) {
       this.erroGeral.set(erro);
+      return;
     }
+    // O erro pode estar longe da tela (perícias ficam no fim do formulário): leva a pessoa até ele.
+    // Espera a próxima renderização para o campo já estar com .ng-invalid no DOM.
+    this.cdr.markForCheck();
+    afterNextRender(() => this.focarPrimeiroInvalido(), { injector: this.injector });
+  }
+
+  private focarPrimeiroInvalido(): void {
+    this.host.nativeElement.querySelector<HTMLElement>('input.ng-invalid, mat-select.ng-invalid')?.focus();
   }
 }
