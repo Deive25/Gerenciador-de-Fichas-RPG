@@ -15,7 +15,7 @@ export const ZOOM_MAXIMO = 4;
  * Qual parte da imagem cabe na moldura 4:5. Com zoom 1, é a maior janela 4:5 que cabe na imagem;
  * com zoom z, a janela fica z vezes menor (mais aproximada). A janela fica centrada em `centro`,
  * mas nunca sai da imagem: perto da borda ela é empurrada para dentro, então a imagem sempre
- * cobre a moldura inteira (sem faixas vazias).
+ * cobre a moldura inteira (sem bordas vazias).
  */
 export function janelaDeRecorte(
   largura: number,
