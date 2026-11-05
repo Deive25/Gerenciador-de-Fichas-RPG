@@ -1,0 +1,103 @@
+:host {
+  display: block;
+  max-width: 860px;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--cor-texto-suave);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--cor-acao);
+  }
+}
+
+h1 {
+  font-size: 1.7rem;
+}
+
+// Cada seção é um bloco (classe global .bloco); o fieldset só ganha o espaçamento.
+fieldset {
+  margin: 0 0 0.9rem;
+  padding: 0.85rem 1rem 0.25rem;
+  min-width: 0;
+}
+
+// legend flutuante: o título fica dentro do bloco (e não cortando a borda, como o padrão).
+legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+// min(100%, …) e minmax(0, …): a coluna nunca passa da largura da tela (sem rolagem lateral em 375 px).
+.grade {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  column-gap: 0.75rem;
+}
+
+// Atributos, PV e CA são números curtos: duas colunas no celular, como no 2.1b.
+.grade-curta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 600px) {
+  .grade-curta {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+// As 18 perícias: um campo por perícia, com o nome e o atributo no rótulo.
+.grade-pericias {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  // subscriptSizing="dynamic": o espaço do erro só existe quando há erro; o row-gap mantém o espaçamento de antes.
+  row-gap: 1.375rem;
+}
+
+.edicao {
+  margin: 0 0 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+// Caixas de marcar (salvaguardas e inspiração): cada uma ocupa uma linha de 44 px de altura mínima.
+.marcas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  column-gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.opcao {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+// Barra de ações presa ao rodapé da tela enquanto o formulário rola.
+.acoes {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--cor-fundo) 35%);
+}
+
+// Erro ao salvar fica junto dos botões (barra fixa embaixo), onde quem tocou em Salvar está olhando.
+.erro-salvar {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: 8px;
+  background: var(--cor-fundo-erro);
+  color: #f0b3a9;
+}
