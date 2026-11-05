@@ -1,23 +1,15 @@
-@let f = ficha();
 <div class="aneis">
-  <app-anel-status
-    rotulo="Vida"
-    tipo="vida"
-    [atual]="vidaAtual()"
-    [maximo]="f.vidaMaxima"
-    editavel
-    (ajustar)="ajustar('vidaAtual', $event)"
-    (definir)="definir('vidaAtual', $event)"
-  />
-  <app-anel-status
-    rotulo="Sanidade"
-    tipo="sanidade"
-    [atual]="sanidadeAtual()"
-    [maximo]="f.sanidadeMaxima"
-    editavel
-    (ajustar)="ajustar('sanidadeAtual', $event)"
-    (definir)="definir('sanidadeAtual', $event)"
-  />
+  @for (anel of aneis; track anel.codigo) {
+    <app-anel-status
+      [rotulo]="anel.rotulo"
+      [tipo]="anel.tipo"
+      [atual]="valores()[anel.codigo]"
+      [maximo]="maximo(anel.codigo)"
+      editavel
+      (ajustar)="ajustar(anel.codigo, $event)"
+      (definir)="definir(anel.codigo, $event)"
+    />
+  }
 </div>
 @if (salvando()) {
   <p class="estado" role="status">salvando…</p>

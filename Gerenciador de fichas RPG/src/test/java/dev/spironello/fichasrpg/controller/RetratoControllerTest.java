@@ -20,12 +20,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import dev.spironello.fichasrpg.FichasDeTeste;
 import dev.spironello.fichasrpg.ImagensDeTeste;
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.RelogioDeTesteConfig.RelogioAjustavel;
-import dev.spironello.fichasrpg.model.SheetPlayer;
+import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.RetratoFichaRepository;
-import dev.spironello.fichasrpg.repository.SheetPlayerRepository;
 
 /** Rotas do retrato (spec do redesign §4.2 e §4.5). */
 @DisplayName("API /fichas/{id}/retrato")
@@ -38,7 +38,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 	private MockMvc mockMvc;
 
 	@Autowired
-	private SheetPlayerRepository fichas;
+	private FichaRepository fichas;
 
 	@Autowired
 	private RetratoFichaRepository retratos;
@@ -52,11 +52,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 	void prepararFicha() {
 		fichas.deleteAll();
 		relogio.definir(INSTANTE);
-		SheetPlayer ficha = new SheetPlayer();
-		ficha.setNameJ("Ana");
-		ficha.setNameC("Lia");
-		ficha.setGender("F");
-		fichaId = fichas.save(ficha).getId();
+		fichaId = fichas.save(FichasDeTeste.ordem("Lia")).getId();
 	}
 
 	@Test
@@ -185,11 +181,7 @@ class RetratoControllerTest extends IntegrationTestBase {
 	@Test
 	@DisplayName("a ficha informa retratoVersao (instante em ms) na busca e na listagem, e null sem retrato")
 	void retratoVersaoNoJson() throws Exception {
-		SheetPlayer outra = new SheetPlayer();
-		outra.setNameJ("Bia");
-		outra.setNameC("Hale");
-		outra.setGender("M");
-		Long semRetrato = fichas.save(outra).getId();
+		Long semRetrato = fichas.save(FichasDeTeste.ordem("Hale")).getId();
 
 		enviar(ImagensDeTeste.jpeg(10, 10));
 
@@ -202,7 +194,8 @@ class RetratoControllerTest extends IntegrationTestBase {
 		mockMvc.perform(get("/fichas"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[?(@.id == " + fichaId + ")].retratoVersao").value(INSTANTE.toEpochMilli()))
-				.andExpect(jsonPath("$[?(@.id == " + semRetrato + ")].retratoVersao").value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())));
+				.andExpect(jsonPath("$[?(@.id == " + semRetrato + ")].retratoVersao")
+						.value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())));
 	}
 
 	@Test
