@@ -59,6 +59,13 @@ public class FichaDnd extends Ficha {
 	private boolean salvaSabedoria;
 	private boolean salvaCarisma;
 
+	/** Moedas: cobre, prata, electro, ouro e platina. A API só as altera pelo PATCH de moedas. */
+	private int pc;
+	private int pp;
+	private int pe;
+	private int po;
+	private int pl;
+
 	@ElementCollection
 	@CollectionTable(name = "ficha_dnd_pericia", joinColumns = @JoinColumn(name = "ficha_id"))
 	@MapKeyEnumerated(EnumType.STRING)
@@ -211,6 +218,36 @@ public class FichaDnd extends Ficha {
 	}
 	public void setInspiracao(boolean inspiracao) {
 		this.inspiracao = inspiracao;
+	}
+	public int getPc() {
+		return pc;
+	}
+	public void setPc(int pc) {
+		this.pc = pc;
+	}
+	public int getPp() {
+		return pp;
+	}
+	public void setPp(int pp) {
+		this.pp = pp;
+	}
+	public int getPe() {
+		return pe;
+	}
+	public void setPe(int pe) {
+		this.pe = pe;
+	}
+	public int getPo() {
+		return po;
+	}
+	public void setPo(int po) {
+		this.po = po;
+	}
+	public int getPl() {
+		return pl;
+	}
+	public void setPl(int pl) {
+		this.pl = pl;
 	}
 	public Map<PericiaDnd, GrauDnd> getPericias() {
 		return pericias;
