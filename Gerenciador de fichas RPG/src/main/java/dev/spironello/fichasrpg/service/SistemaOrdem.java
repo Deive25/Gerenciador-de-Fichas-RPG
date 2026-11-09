@@ -32,10 +32,12 @@ public class SistemaOrdem implements SistemaDeFicha {
 
 	private final FichaOrdemMapper mapper;
 	private final PartesComunsDaFicha partesComuns;
+	private final ItensOrdem itens;
 
-	public SistemaOrdem(FichaOrdemMapper mapper, PartesComunsDaFicha partesComuns) {
+	public SistemaOrdem(FichaOrdemMapper mapper, PartesComunsDaFicha partesComuns, ItensOrdem itens) {
 		this.mapper = mapper;
 		this.partesComuns = partesComuns;
+		this.itens = itens;
 	}
 
 	@Override
@@ -59,7 +61,7 @@ public class SistemaOrdem implements SistemaDeFicha {
 
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
-		return mapper.resposta((FichaOrdem) ficha, partesComuns.de(ficha));
+		return mapper.resposta((FichaOrdem) ficha, partesComuns.de(ficha), new ListasOrdem(itens.listar(ficha.getId())));
 	}
 
 	@Override

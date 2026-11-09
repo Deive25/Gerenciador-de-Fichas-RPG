@@ -17,7 +17,7 @@ class SistemasDeFichaTest {
 	@Test
 	@DisplayName("de(ORDEM_PARANORMAL) devolve o componente de Ordem")
 	void devolveOComponenteDoSistema() {
-		SistemaOrdem ordem = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente());
+		SistemaOrdem ordem = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.itensOrdem());
 		SistemasDeFicha sistemas = new SistemasDeFicha(List.of(ordem));
 
 		assertThat(sistemas.de(Sistema.ORDEM_PARANORMAL)).isSameAs(ordem);
@@ -26,8 +26,8 @@ class SistemasDeFichaTest {
 	@Test
 	@DisplayName("dois componentes do mesmo sistema falham na construção")
 	void sistemaDuplicado() {
-		SistemaOrdem um = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente());
-		SistemaOrdem outro = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente());
+		SistemaOrdem um = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.itensOrdem());
+		SistemaOrdem outro = new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.itensOrdem());
 
 		assertThatThrownBy(() -> new SistemasDeFicha(List.of(um, outro)))
 				.isInstanceOf(IllegalStateException.class)
@@ -37,7 +37,7 @@ class SistemasDeFichaTest {
 	@Test
 	@DisplayName("sistema sem componente lança IllegalStateException")
 	void sistemaSemImplementacao() {
-		SistemasDeFicha sistemas = new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente())));
+		SistemasDeFicha sistemas = new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.itensOrdem())));
 
 		assertThatThrownBy(() -> sistemas.de(Sistema.DND))
 				.isInstanceOf(IllegalStateException.class)
