@@ -82,16 +82,40 @@
         <section class="status bloco" [attr.aria-label]="f.sistema === 'DND' ? 'Vida e PV temporário' : 'Vida, sanidade e esforço'">
           <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" />
         </section>
-
-        @switch (f.sistema) {
-          @case ('ORDEM_PARANORMAL') {
-            <app-ficha-ordem [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
-          }
-          @case ('DND') {
-            <app-ficha-dnd [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
-          }
-        }
       </div>
+
+      <mat-tab-group
+        class="abas"
+        [selectedIndex]="indiceDaAba()"
+        (selectedIndexChange)="trocarAba($event)"
+        [mat-stretch-tabs]="false"
+        animationDuration="0ms"
+      >
+        @for (aba of abas(); track aba.codigo) {
+          <mat-tab [label]="aba.rotulo">
+            @switch (aba.codigo) {
+              @case ('ficha') {
+                <div class="bento corpo">
+                  @switch (f.sistema) {
+                    @case ('ORDEM_PARANORMAL') {
+                      <app-ficha-ordem [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                    }
+                    @case ('DND') {
+                      <app-ficha-dnd [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                    }
+                  }
+                </div>
+              }
+              @case ('habilidades') {
+                <p class="aba-provisoria">Habilidades em breve.</p>
+              }
+              @case ('descricao') {
+                <p class="aba-provisoria">Descrição em breve.</p>
+              }
+            }
+          </mat-tab>
+        }
+      </mat-tab-group>
     }
   }
 }
