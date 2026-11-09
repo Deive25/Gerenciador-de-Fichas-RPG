@@ -21,6 +21,9 @@ import dev.spironello.fichasrpg.dto.FichaResumoResponse;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.Ficha;
+import dev.spironello.fichasrpg.model.FichaDnd;
+import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaDnd;
@@ -28,6 +31,8 @@ import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
+import dev.spironello.fichasrpg.repository.ItemDndRepository;
+import dev.spironello.fichasrpg.repository.ItemOrdemRepository;
 import dev.spironello.fichasrpg.service.FichaService;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -45,6 +50,10 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	@Autowired
 	private HabilidadeFichaRepository habilidades;
 	@Autowired
+	private ItemOrdemRepository itensOrdem;
+	@Autowired
+	private ItemDndRepository itensDnd;
+	@Autowired
 	private EntityManagerFactory entityManagerFactory;
 
 	private final List<Long> criadas = new ArrayList<>();
@@ -55,15 +64,21 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias e habilidades, executa 1 consulta, e não 1 + 4")
+	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, habilidades e itens, executa 1 consulta, e não 1 + 4")
 	void listarEmUmaConsulta() {
 		for (int i = 1; i <= 2; i++) {
 			criadas.add(service.criar(pedido("ficha" + i)).id());
 			criadas.add(service.criar(pedidoDnd("dnd" + i)).id());
 		}
-		// Habilidades em todas as fichas: o resumo não pode lê-las (nem a descrição) para continuar em 1 consulta.
+		// Habilidades e itens em todas as fichas: o resumo não pode lê-los (nem a descrição) para continuar em 1 consulta.
 		for (Long id : criadas) {
 			habilidades.save(FichasDeTeste.habilidade(repository.getReferenceById(id), "Ataque", TipoHabilidade.CLASSE, null));
+			Ficha ficha = repository.findById(id).orElseThrow();
+			if (ficha instanceof FichaOrdem ordem) {
+				itensOrdem.save(FichasDeTeste.itemOrdem(ordem, "Pistola"));
+			} else {
+				itensDnd.save(FichasDeTeste.itemDnd((FichaDnd) ficha, "Corda"));
+			}
 		}
 		Statistics estatisticas = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
 		estatisticas.setStatisticsEnabled(true);

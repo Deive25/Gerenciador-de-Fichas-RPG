@@ -25,6 +25,8 @@ public record FichaDndResponse(
 		Long retratoVersao,
 		DescricaoFicha descricao,
 		List<HabilidadeResponse> habilidades,
+		List<ItemDndResponse> itens,
+		MoedasDnd moedas,
 		EdicaoDnd edicao,
 		String classe,
 		String especie,

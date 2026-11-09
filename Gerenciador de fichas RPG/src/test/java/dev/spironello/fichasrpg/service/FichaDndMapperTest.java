@@ -44,7 +44,7 @@ class FichaDndMapperTest {
 	@DisplayName("cada atributo do pedido vai para o seu campo e volta com o mesmo código")
 	void seisAtributos() {
 		FichaDnd ficha = mapper.criar(pedido(null, null, null, null));
-		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS);
+		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND);
 
 		assertThat(ficha.getForca()).isEqualTo(8);
 		assertThat(ficha.getDestreza()).isEqualTo(9);
@@ -64,7 +64,7 @@ class FichaDndMapperTest {
 		FichaDnd ficha = mapper.criar(pedido(
 				Map.of(RecursoDnd.PV, new RecursoValor(7, 9), RecursoDnd.PV_TEMP, new RecursoValor(3, null)),
 				null, null, null));
-		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS);
+		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND);
 
 		assertThat(ficha.getPvAtual()).isEqualTo(7);
 		assertThat(ficha.getPvMax()).isEqualTo(9);
@@ -72,7 +72,7 @@ class FichaDndMapperTest {
 		assertThat(resposta.recursos().get(RecursoDnd.PV)).isEqualTo(new RecursoValor(7, 9));
 		assertThat(resposta.recursos().get(RecursoDnd.PV_TEMP)).isEqualTo(new RecursoValor(3, null));
 
-		FichaDndResponse vazia = mapper.resposta(mapper.criar(pedido(null, null, null, null)), PartesComunsDeTeste.VAZIAS);
+		FichaDndResponse vazia = mapper.resposta(mapper.criar(pedido(null, null, null, null)), PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND);
 		assertThat(vazia.recursos()).containsOnlyKeys(RecursoDnd.PV, RecursoDnd.PV_TEMP);
 		assertThat(vazia.recursos().get(RecursoDnd.PV)).isEqualTo(new RecursoValor(null, null));
 	}
@@ -80,12 +80,12 @@ class FichaDndMapperTest {
 	@Test
 	@DisplayName("inspiracao nula vira false; salvaguardas nulas viram vazio; salvaguardas saem na ordem do enum")
 	void nulosEOrdem() {
-		FichaDndResponse padrao = mapper.resposta(mapper.criar(pedido(null, null, null, null)), PartesComunsDeTeste.VAZIAS);
+		FichaDndResponse padrao = mapper.resposta(mapper.criar(pedido(null, null, null, null)), PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND);
 		assertThat(padrao.inspiracao()).isFalse();
 		assertThat(padrao.salvaguardas()).isEmpty();
 
 		FichaDndResponse com = mapper.resposta(mapper.criar(pedido(null, true,
-				Set.of(AtributoDnd.CAR, AtributoDnd.FOR, AtributoDnd.INT), null)), PartesComunsDeTeste.VAZIAS);
+				Set.of(AtributoDnd.CAR, AtributoDnd.FOR, AtributoDnd.INT), null)), PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND);
 		assertThat(com.inspiracao()).isTrue();
 		assertThat(com.salvaguardas()).containsExactly(AtributoDnd.FOR, AtributoDnd.INT, AtributoDnd.CAR);
 	}
@@ -101,7 +101,7 @@ class FichaDndMapperTest {
 		FichaDnd ficha = mapper.criar(pedido(null, null, null, doPedido));
 
 		assertThat(ficha.getPericias()).hasSize(17).doesNotContainKey(PericiaDnd.ATLETISMO);
-		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS).pericias()).isEqualTo(ficha.getPericias());
+		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND).pericias()).isEqualTo(ficha.getPericias());
 
 		mapper.copiar(pedido(null, null, null, Map.of(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA)), ficha);
 		assertThat(ficha.getPericias()).containsOnly(Map.entry(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA));
