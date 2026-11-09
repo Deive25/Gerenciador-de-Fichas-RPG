@@ -8,11 +8,12 @@ import { ApiError } from '../../core/api-error';
 import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
+import { HabilidadesAba } from '../abas/habilidades-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { Ficha, PedidoTeste, TesteResultado } from '../ficha.model';
+import { Ficha, Habilidade, PedidoTeste, TesteResultado } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
@@ -26,6 +27,7 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     MatTabsModule,
     Medalhao,
     RecursosFicha,
+    HabilidadesAba,
     ResultadoRolagem,
     FichaOrdemCorpo,
     FichaDndCorpo,
@@ -106,6 +108,11 @@ export class FichaDetalhe {
       return;
     }
     void this.router.navigate([], { queryParams: { aba: aba.codigo }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
+
+  /** A aba já gravou na API: só troca a lista na ficha, sem recarregar. */
+  atualizarHabilidades(habilidades: Habilidade[]): void {
+    this.ficha.update((f) => f && { ...f, habilidades });
   }
 
   /** Rola o que o corpo da ficha pediu: o servidor faz os d20 e devolve cada dado. */
