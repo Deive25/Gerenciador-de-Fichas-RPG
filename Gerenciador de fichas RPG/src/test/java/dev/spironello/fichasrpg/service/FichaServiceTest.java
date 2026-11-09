@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.RecordComponent;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -53,7 +54,7 @@ class FichaServiceTest {
 
 	@BeforeEach
 	void criarServico() {
-		service = new FichaService(repository, new FichaOrdemMapper());
+		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper()))));
 	}
 
 	/** Ficha de outro sistema, só para os testes: no 2.1d existe apenas Ordem, mas a regra do 409 já vale. */

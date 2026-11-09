@@ -1,24 +1,16 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
-import {
-  ATRIBUTOS_ORDEM,
-  NOME_GRAU,
-  PERICIAS_ORDEM,
-  SELO_GRAU,
-  bonusDoGrau,
-  defesa,
-  rotuloClasse,
-} from '../sistemas/ordem/catalogo-ordem';
+import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
+import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { AlvoTeste, FichaOrdem, TesteResultado } from '../ficha.model';
+import { Ficha, PedidoTeste, TesteResultado } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
@@ -26,7 +18,15 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
 
 @Component({
   selector: 'app-ficha-detalhe',
-  imports: [RouterLink, MatMenuModule, MatTooltipModule, Medalhao, RecursosFicha, ResultadoRolagem],
+  imports: [
+    RouterLink,
+    MatMenuModule,
+    Medalhao,
+    RecursosFicha,
+    ResultadoRolagem,
+    FichaOrdemCorpo,
+    FichaDndCorpo,
+  ],
   templateUrl: './ficha-detalhe.html',
   styleUrl: './ficha-detalhe.scss',
 })
@@ -39,16 +39,8 @@ export class FichaDetalhe {
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
 
-  readonly atributos = ATRIBUTOS_ORDEM;
-  readonly pericias = PERICIAS_ORDEM;
-  readonly seloGrau = SELO_GRAU;
-  readonly nomeGrau = NOME_GRAU;
-  readonly bonusDoGrau = bonusDoGrau;
-  readonly defesa = defesa;
-  readonly rotuloClasse = rotuloClasse;
-
   readonly estado = signal<Estado>('carregando');
-  readonly ficha = signal<FichaOrdem | null>(null);
+  readonly ficha = signal<Ficha | null>(null);
   readonly erro = signal<ApiError | null>(null);
   readonly ultimoResultado = signal<TesteResultado | null>(null);
   readonly rolando = signal<string | null>(null);
@@ -83,20 +75,20 @@ export class FichaDetalhe {
   }
 
   /** "Arthur · 34 anos · F": jogador, idade (se houver) e gênero. */
-  legenda(f: FichaOrdem): string {
+  legenda(f: Ficha): string {
     return [f.jogador, f.idade === null ? null : `${f.idade} anos`, f.genero].filter((p) => p !== null).join(' · ');
   }
 
-  /** Rola um atributo ou uma perícia: o servidor faz os d20 e devolve cada dado. */
-  rolar(alvo: AlvoTeste, codigo: string): void {
+  /** Rola o que o corpo da ficha pediu: o servidor faz os d20 e devolve cada dado. */
+  rolar(pedido: PedidoTeste): void {
     const ficha = this.ficha();
     if (!ficha || this.rolando()) {
       return;
     }
-    this.rolando.set(codigo);
+    this.rolando.set(pedido.codigo);
     this.erro.set(null);
     this.api
-      .testar(ficha.id, { alvo, codigo })
+      .testar(ficha.id, pedido)
       .pipe(finalize(() => this.rolando.set(null)))
       .subscribe({
         next: (resultado) => this.ultimoResultado.set(resultado),

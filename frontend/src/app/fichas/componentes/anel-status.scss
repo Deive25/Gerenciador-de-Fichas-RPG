@@ -33,6 +33,10 @@ circle {
   &.sanidade {
     stroke: var(--cor-sanidade);
   }
+
+  &.temporario {
+    stroke: var(--cor-acao);
+  }
 }
 
 text {

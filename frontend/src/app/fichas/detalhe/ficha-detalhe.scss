@@ -54,8 +54,9 @@
   color: #f0a597;
 }
 
-// Celular: blocos empilhados. Computador: retrato à esquerda (três linhas), status, identidade e
-// atributos à direita, perícias embaixo em largura total.
+// Celular: blocos empilhados. Computador: retrato à esquerda (três linhas) e, à direita, status e
+// os primeiros blocos do corpo (identidade etc.); o resto do corpo vem embaixo em largura total.
+// O corpo (FichaOrdemCorpo / FichaDndCorpo) tem `display: contents`: seus blocos são itens desta grade.
 // minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo (ex.: "Constituição ⓘ")
 // e a ficha passa da largura do celular.
 .bento {
@@ -68,10 +69,6 @@
 
     .retrato {
       grid-row: span 3;
-    }
-
-    .pericias {
-      grid-column: 1 / -1;
     }
   }
 }
@@ -102,146 +99,6 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.nome {
-  display: inline-flex;
-  align-items: center;
-}
-
-// Classe, NEX, origem e Defesa em quatro campos pequenos (2 por linha no celular).
-.identidade dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem 1rem;
-  margin: 0;
-
-  @media (min-width: 600px) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  dt {
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--cor-texto-suave);
-  }
-
-  dd {
-    margin: 0;
-    font-family: var(--fonte-titulo);
-    font-size: 1.1rem;
-    color: var(--cor-titulo);
-    overflow-wrap: anywhere;
-  }
-}
-
-// Uma coluna no celular; duas a partir de 600 px. Nome, valor e botão de rolar na mesma linha.
-.grade-atributos {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.2rem 1.5rem;
-
-  @media (min-width: 600px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    column-gap: 0.6rem;
-    padding: 0.15rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: var(--cor-texto-suave);
-  }
-}
-
-.lista-pericias {
-  display: grid;
-  gap: 0.15rem 1.5rem;
-
-  @media (min-width: 900px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-// Nome, selo do grau (coluna fixa, para alinhar), bônus e botão de rolar.
-.pericia {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 1.5rem 2.6rem auto;
-  grid-template-areas: 'nome selo valor rolar';
-  align-items: center;
-  column-gap: 0.4rem;
-  padding: 0.15rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-  .nome {
-    grid-area: nome;
-  }
-
-  .selo {
-    grid-area: selo;
-  }
-
-  .valor {
-    grid-area: valor;
-    text-align: right;
-  }
-
-  .rolar {
-    grid-area: rolar;
-  }
-
-  // Esmaecida pela cor (texto suave, 5,13:1), e não por opacidade, que derrubava o contraste
-  // abaixo do AA: o botão de rolar continua ativo, então o texto não é "desabilitado".
-  &.sem-valor .nome,
-  &.sem-valor .valor {
-    color: var(--cor-texto-suave);
-  }
-}
-
-// T, V ou E: o grau de treinamento. Só reforço visual; a leitura de tela usa o nome do grau.
-.selo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 1px solid var(--cor-borda-dourada);
-  border-radius: 50%;
-  color: var(--cor-acao);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.valor {
-  font-family: var(--fonte-titulo);
-  font-size: 1.1rem;
-  color: var(--cor-titulo);
-}
-
-.rolar {
-  min-height: 44px;
-  padding: 0 0.8rem;
-  border: 1px solid rgba(201, 164, 92, 0.4);
-  border-radius: 999px;
-  background: transparent;
-  color: #e9d9b4;
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: wait;
-  }
 }
 
 .acoes-retrato {

@@ -1,0 +1,32 @@
+@switch (estado()) {
+  @case ('pronto') {
+    @let atual = ficha()!;
+    @if (atual.sistema === 'DND') {
+      <app-formulario-dnd [ficha]="atual" />
+    } @else {
+      <app-formulario-ordem [ficha]="atual" />
+    }
+  }
+  @case ('carregando') {
+    <a class="voltar" routerLink="/fichas">← Investigadores</a>
+    <h1 class="nome-versalete">Editar ficha</h1>
+    <p class="aviso" role="status">Carregando ficha…</p>
+  }
+  @case ('nao-encontrada') {
+    <h1 class="nome-versalete">Editar ficha</h1>
+    <div class="aviso-erro" role="alert">
+      <strong>Ficha não encontrada</strong>
+      <p>Ela pode ter sido excluída.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
+  @case ('erro') {
+    <a class="voltar" routerLink="/fichas">← Investigadores</a>
+    <h1 class="nome-versalete">Editar ficha</h1>
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erro()?.titulo }}</strong>
+      <p>{{ erro()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar(+id())">Tentar de novo</button>
+    </div>
+  }
+}

@@ -16,28 +16,22 @@ describe('EscolhaSistema', () => {
     expect(nomes).toEqual(['Ordem Paranormal', 'D&D 5e (2014)', 'D&D 2024']);
   });
 
-  it('so a Ordem e um link, e leva ao formulario de Ordem', () => {
+  it('os tres cartoes sao links para o formulario de cada sistema', () => {
     const el = montar();
-    const links = el.querySelectorAll('a.cartao-sistema[href]');
-    expect(links.length).toBe(1);
-    expect(links[0].getAttribute('href')).toBe('/fichas/nova/ordem-paranormal');
+    const links = Array.from(el.querySelectorAll('a.cartao-sistema[href]'));
+    expect(links.map((l) => l.getAttribute('href'))).toEqual([
+      '/fichas/nova/ordem-paranormal',
+      '/fichas/nova/dnd-2014',
+      '/fichas/nova/dnd-2024',
+    ]);
     expect(links[0].textContent).toContain('Ordem Paranormal');
+    expect(links[1].textContent).toContain('D&D 5e (2014)');
+    expect(links[2].textContent).toContain('D&D 2024');
   });
 
-  it('os de D&D ficam desabilitados com "Em breve" e sem link', () => {
+  it('nenhum cartao fica desabilitado nem mostra "Em breve"', () => {
     const el = montar();
-    const desabilitados = Array.from(el.querySelectorAll('.cartao-sistema[aria-disabled="true"]'));
-    expect(desabilitados.length).toBe(2);
-    for (const cartao of desabilitados) {
-      expect(cartao.textContent).toContain('Em breve');
-      expect(cartao.hasAttribute('href')).toBe(false);
-    }
-    expect(desabilitados[0].textContent).toContain('D&D 5e (2014)');
-    expect(desabilitados[1].textContent).toContain('D&D 2024');
-  });
-
-  it('a Ordem nao mostra "Em breve"', () => {
-    const el = montar();
-    expect(el.querySelector('a.cartao-sistema[href]')?.textContent).not.toContain('Em breve');
+    expect(el.querySelector('[aria-disabled]')).toBeNull();
+    expect(el.textContent).not.toContain('Em breve');
   });
 });

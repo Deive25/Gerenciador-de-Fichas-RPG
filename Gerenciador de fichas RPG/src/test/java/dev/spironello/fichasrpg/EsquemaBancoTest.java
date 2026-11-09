@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia e retrato_ficha), que vem das migrações
+ * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia e retrato_ficha), que vem das migrações
  * Flyway e não do Hibernate: com ddl-auto=validate ele só confere.
  * O teste protege os nomes de coluna e a nulabilidade que as entidades esperam, e também mostra que
- * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 4 aplicadas).
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 5 aplicadas).
  */
 @DisplayName("Esquema do banco (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
@@ -30,7 +30,8 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		List<Map<String, Object>> tabelas = jdbc.queryForList(
 				"select table_name from information_schema.tables where table_schema = current_schema()");
 		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder(
-				"ficha", "ficha_ordem", "ficha_ordem_pericia", "retrato_ficha", "flyway_schema_history");
+				"ficha", "ficha_ordem", "ficha_ordem_pericia", "ficha_dnd", "ficha_dnd_pericia", "retrato_ficha",
+				"flyway_schema_history");
 	}
 
 	@Test
@@ -77,6 +78,42 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisplayName("a tabela ficha_dnd tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDaFichaDnd() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("edicao", "character varying/NO");
+		for (String c : List.of("classe", "especie", "antecedente")) {
+			esperado.put(c, "character varying/YES");
+		}
+		esperado.put("nivel", "integer/NO");
+		for (String c : List.of("forca", "destreza", "constituicao", "inteligencia", "sabedoria", "carisma")) {
+			esperado.put(c, "integer/NO");
+		}
+		for (String c : List.of("pv_atual", "pv_max", "pv_temporario", "ca")) {
+			esperado.put(c, "integer/YES");
+		}
+		esperado.put("inspiracao", "boolean/NO");
+		for (String c : List.of("salva_forca", "salva_destreza", "salva_constituicao", "salva_inteligencia",
+				"salva_sabedoria", "salva_carisma")) {
+			esperado.put(c, "boolean/NO");
+		}
+
+		assertThat(colunas("ficha_dnd")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("a tabela ficha_dnd_pericia tem as colunas e a nulabilidade esperadas")
+	void esquemaDasPericiasDnd() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("pericia", "character varying/NO");
+		esperado.put("grau", "character varying/NO");
+
+		assertThat(colunas("ficha_dnd_pericia")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
 	@DisplayName("a tabela retrato_ficha tem as colunas, os tipos e a nulabilidade esperados")
 	void esquemaDaTabelaDeRetratos() {
 		Map<String, String> esperado = new LinkedHashMap<>();
@@ -88,11 +125,11 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1, V2, V3 e V4 com sucesso")
+	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4 e V5 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(4);
+		assertThat(historico).hasSize(5);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
@@ -108,6 +145,10 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(historico.get(3))
 				.containsEntry("version", "4")
 				.containsEntry("description", "sistemas ordem paranormal")
+				.containsEntry("success", true);
+		assertThat(historico.get(4))
+				.containsEntry("version", "5")
+				.containsEntry("description", "cria tabelas dnd")
 				.containsEntry("success", true);
 	}
 

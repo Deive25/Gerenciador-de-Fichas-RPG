@@ -15,7 +15,7 @@ import { proporcao } from './proporcao';
 const VOLTA = 100.5;
 
 /**
- * Vida, sanidade ou esforço em anel. O desenho é só reforço visual (aria-hidden): o valor é sempre
+ * Vida, sanidade, esforço ou PV temporário em anel. O desenho é só reforço visual (aria-hidden): o valor é sempre
  * lido no texto ao lado ("Vida 9/12"), então o anel nunca é a única forma de saber o número.
  *
  * Com `editavel` (edição rápida, 2.1c), ganha os botões − e + e o valor vira um botão que abre um
@@ -28,7 +28,7 @@ const VOLTA = 100.5;
 })
 export class AnelStatus {
   readonly rotulo = input.required<string>();
-  readonly tipo = input.required<'vida' | 'sanidade' | 'esforco'>();
+  readonly tipo = input.required<'vida' | 'sanidade' | 'esforco' | 'temporario'>();
   readonly atual = input<number | null>(null);
   readonly maximo = input<number | null>(null);
   readonly editavel = input(false, { transform: booleanAttribute });

@@ -1,12 +1,20 @@
 # Gerenciador de Fichas RPG
 
-Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fichas de personagens de RPG de mais de um sistema (hoje Ordem Paranormal; D&D vem no 2.1e), com interface Angular e API REST em Java e Spring Boot, persistida em PostgreSQL, com o esquema versionado por migrações Flyway.
+Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fichas de personagens de RPG de mais de um sistema (hoje Ordem Paranormal, D&D 5e e D&D 2024), com interface Angular e API REST em Java e Spring Boot, persistida em PostgreSQL, com o esquema versionado por migrações Flyway.
 
-> **App não oficial.** Ordem Paranormal é de seus autores e da Jambô Editora; o app usa só nomes e mecânicas, sem texto dos livros.
+> **App não oficial.** Ordem Paranormal é de seus autores e da Jambô Editora; o app usa só nomes e mecânicas, sem texto dos livros. Para D&D, o app é compatível com a quinta edição (5E) e usa material do SRD 5.1 e do SRD 5.2.1 sob a licença CC-BY-4.0 (atribuição abaixo).
+
+### Atribuição do SRD (D&D)
+
+O app usa do SRD só nomes de atributos e perícias e a mecânica de modificador, proficiência e vantagem, sem nenhum texto do SRD. As duas frases abaixo são as atribuições que a licença CC-BY-4.0 pede, uma para cada edição:
+
+> This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.
+
+> This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
 ## Problema
 
-Mestres e jogadores de RPG de mesa costumam manter as fichas de personagem em papel, que se perdem e são difíceis de atualizar. Este sistema guarda a ficha em um banco de dados e permite editá-la a qualquer momento, e cada ficha pertence a um sistema de RPG, com as regras dele. Começa por **Ordem Paranormal**: dados do jogador e do personagem, classe, origem, NEX (5% a 99%), 5 atributos de 0 a 5, 28 perícias com grau de treinamento (Treinado, Veterano, Expert) e os recursos PV, SAN e PE (atual e máximo). D&D 5e e D&D 2024 entram no incremento 2.1e.
+Mestres e jogadores de RPG de mesa costumam manter as fichas de personagem em papel, que se perdem e são difíceis de atualizar. Este sistema guarda a ficha em um banco de dados e permite editá-la a qualquer momento, e cada ficha pertence a um sistema de RPG, com as regras dele. Começa por **Ordem Paranormal**: dados do jogador e do personagem, classe, origem, NEX (5% a 99%), 5 atributos de 0 a 5, 28 perícias com grau de treinamento (Treinado, Veterano, Expert) e os recursos PV, SAN e PE (atual e máximo). Em **D&D 5e (2014) e D&D 2024**: nível, 6 atributos com modificador, 6 salvaguardas, 18 perícias com proficiência ou especialização, PV, PV temporário, CA e inspiração.
 
 ## Status da modernização
 
@@ -30,7 +38,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 2.1b | Redesign: painel de fichas e tela própria para cada ficha, visual "Moderno com alma gótica" ([spec](docs/superpowers/specs/2026-11-04-j1-redesign-design.md)) | Concluído (PR #9) |
 | 2.1c | Retrato do personagem enviado pelo jogador (recorte no navegador, tabela `retrato_ficha`) e edição rápida de vida e sanidade na ficha | Concluído nesta branch |
 | 2.1d | Vários sistemas de RPG, começando por Ordem Paranormal completa: uma tabela por sistema (migração V4), API polimórfica, rolagem de vários d20, edição rápida por `PATCH`, escolha do sistema na criação. **O d100 saiu** e as fichas antigas viraram Ordem ([spec](docs/superpowers/specs/2026-11-04-j1-sistemas-design.md), [ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md), [ADR 0016](docs/decisoes/0016-saida-do-d100-e-conversao-para-ordem.md)) | Concluído nesta branch |
-| 2.1e | D&D 5e e D&D 2024 no mesmo esqueleto (`ficha_dnd`, proficiência, especialização, vantagem e desvantagem) | Planejado |
+| 2.1e | D&D 5e e D&D 2024 no mesmo esqueleto: tabelas `ficha_dnd` e `ficha_dnd_pericia` (migração V5), proficiência, especialização, salvaguardas, vantagem e desvantagem, e as regras de cada sistema atrás da interface `SistemaDeFicha` ([spec](docs/superpowers/specs/2026-11-04-j1-sistemas-design.md), [plano](docs/superpowers/plans/2026-11-05-j1-2.1e-dnd.md), [ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)) | Concluído nesta branch |
 | 2.1f | Dado animado, já com d20 (vários dados em Ordem, 2 com vantagem ou desvantagem) | Planejado |
 | 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
 | 2.3 | Campanhas, convite por link, papéis Mestre/Jogador | Planejado |
@@ -51,13 +59,13 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 
 ## Funcionalidades da API
 
-O controlador `FichaController` expõe o recurso `/fichas`. O campo `sistema` do corpo escolhe o tipo da ficha ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)); por enquanto o único valor aceito é `ORDEM_PARANORMAL`:
+O controlador `FichaController` expõe o recurso `/fichas`. O campo `sistema` do corpo escolhe o tipo da ficha ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)); os valores aceitos são `ORDEM_PARANORMAL` e `DND`:
 
 | Método | Rota | Finalidade | Respostas |
 | --- | --- | --- | --- |
 | GET | `/fichas` | Listar o **resumo** das fichas (o que o painel mostra) | 200 |
 | GET | `/fichas/{id}` | Consultar a ficha completa | 200; 404 se não existe |
-| POST | `/fichas` | Cadastrar uma ficha (o corpo leva o `sistema`) | 201 com `Location: /fichas/{id}`; 400 se inválida, ou se `sistema` falta ou é desconhecido (inclusive `DND`, que só chega no 2.1e) |
+| POST | `/fichas` | Cadastrar uma ficha (o corpo leva o `sistema`) | 201 com `Location: /fichas/{id}`; 400 se inválida, ou se `sistema` falta ou é desconhecido |
 | PUT | `/fichas/{id}` | Substituir uma ficha | 200; 400 se inválida; 404 se não existe; 409 "Sistema não muda" se o `sistema` do corpo for outro |
 | PATCH | `/fichas/{id}/recursos` | Edição rápida: muda só os valores **atuais** enviados, por exemplo `{"PV": 10, "SAN": 30}` | 200 com a ficha completa; 400 se o código não existe no sistema da ficha ou o valor é negativo ou nulo; 404 se não existe |
 | DELETE | `/fichas/{id}` | Excluir uma ficha | 204; 404 se não existe |
@@ -100,10 +108,10 @@ A listagem (`GET /fichas`) devolve só um **resumo** por ficha, igual para qualq
 **Entrada** (`POST` e `PUT`, sem o `id`, que vem da URL):
 - `sistema` é obrigatório e escolhe o formato do resto do corpo (o Jackson usa `@JsonTypeInfo`). Em Ordem: `jogador`, `personagem` e `genero` são obrigatórios (até 255 caracteres), `nex` é obrigatório (5 a 99), `atributos` traz os 5 códigos (`AGI`, `FOR`, `INT`, `PRE`, `VIG`) de 0 a 5, e `classe` (`COMBATENTE`, `ESPECIALISTA` ou `OCULTISTA`), `origem`, `idade`, `recursos` e `pericias` são opcionais.
 - Perícia ausente é destreinada. `VETERANO` exige NEX 35 ou mais e `EXPERT`, NEX 70 ou mais.
-- O JSON é **estrito**: uma chave desconhecida (por exemplo `"STR"`) devolve 400 citando a chave, em vez de ser ignorada. Em `pericias`, um código que não existe (por exemplo `"VOAR"`) ou um grau que não existe (`"MESTRE"`) também devolve 400. Um sistema desconhecido (`"DND"` por enquanto) ou ausente devolve 400.
+- O JSON é **estrito**: uma chave desconhecida (por exemplo `"STR"`) devolve 400 citando a chave, em vez de ser ignorada. Em `pericias`, um código que não existe (por exemplo `"VOAR"`) ou um grau que não existe (`"MESTRE"`) também devolve 400. Um sistema desconhecido ou ausente devolve 400.
 - O `id` no corpo é aceito e **ignorado**, porque o Angular o envia sempre: no PUT vale o id da URL; no POST o id é gerado.
 - O PUT é substituição completa ([ADR 0008](docs/decisoes/0008-put-como-substituicao-completa.md)): campos omitidos viram `null` e perícias e recursos omitidos são removidos. O sistema da ficha não muda: um `sistema` diferente devolve 409.
-- O `PATCH` é o oposto, de propósito: só os recursos enviados mudam, e só o valor **atual** (os máximos ficam como estavam). Os códigos aceitos dependem do sistema (em Ordem, `PV`, `SAN` e `PE`).
+- O `PATCH` é o oposto, de propósito: só os recursos enviados mudam, e só o valor **atual** (os máximos ficam como estavam). Os códigos aceitos dependem do sistema (em Ordem, `PV`, `SAN` e `PE`; em D&D, `PV` e `PV_TEMP`).
 
 **Erros** seguem o ProblemDetail (RFC 9457, `Content-Type: application/problem+json`). Exemplo de validação (`POST` de Ordem sem `jogador` e com o atributo `AGI` igual a 6):
 
@@ -130,6 +138,67 @@ As regras cruzadas só rodam depois do Bean Validation: com NEX inválido, só o
 Decisões em [ADR 0007](docs/decisoes/0007-erros-padronizados-e-json-estrito.md), [ADR 0012](docs/decisoes/0012-contrato-com-nomes-claros.md) (o formato de nomes) e [ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md) (o formato por sistema). A API permite chamadas da interface local em `http://localhost:4200`.
 
 Com a API rodando, a documentação interativa (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` e a especificação OpenAPI em `http://localhost:8080/v3/api-docs`.
+### Ficha de D&D
+
+Com `sistema: DND` a ficha vale para as duas edições, que usam as mesmas fórmulas: o campo `edicao` diz qual é (`D2014` para a 5e de 2014, `D2024` para a de 2024). `atributos` traz os 6 códigos (`FOR`, `DES`, `CON`, `INT`, `SAB`, `CAR`) de 1 a 30 e `nivel` vai de 1 a 20. `recursos` traz `PV` (atual e máximo) e `PV_TEMP` (só o atual, **sem máximo**: o `maximo` vem sempre `null`). `salvaguardas` é a lista dos atributos em que a ficha tem proficiência, e `pericias` traz só as perícias com `PROFICIENTE` ou `ESPECIALISTA` (perícia ausente é sem proficiência). `classe`, `especie` e `antecedente` são texto livre e opcionais, e `ca` e `inspiracao` são opcionais (a inspiração nula vira `false`).
+
+```json
+{
+  "id": 9, "sistema": "DND", "edicao": "D2024",
+  "jogador": "Bia", "personagem": "Thalia", "genero": "F", "idade": 27, "retratoVersao": null,
+  "classe": "Ladina", "especie": "Elfa", "antecedente": "Criminosa", "nivel": 5,
+  "atributos": { "FOR": 8, "DES": 16, "CON": 12, "INT": 13, "SAB": 10, "CAR": 14 },
+  "recursos": { "PV": { "atual": 28, "maximo": 33 }, "PV_TEMP": { "atual": 0, "maximo": null } },
+  "ca": 14, "inspiracao": false,
+  "salvaguardas": ["DES", "INT"],
+  "pericias": { "FURTIVIDADE": "ESPECIALISTA", "PERCEPCAO": "PROFICIENTE" }
+}
+```
+
+As 18 perícias de D&D (iguais nas duas edições). O código é a constante do enum `PericiaDnd`, a chave de `pericias` e o `codigo` do teste:
+
+| Código em `pericias` | Nome | Atributo |
+| --- | --- | --- |
+| `ATLETISMO` | Atletismo | FOR |
+| `ACROBACIA` | Acrobacia | DES |
+| `FURTIVIDADE` | Furtividade | DES |
+| `PRESTIDIGITACAO` | Prestidigitação | DES |
+| `ARCANISMO` | Arcanismo | INT |
+| `HISTORIA` | História | INT |
+| `INVESTIGACAO` | Investigação | INT |
+| `NATUREZA` | Natureza | INT |
+| `RELIGIAO` | Religião | INT |
+| `INTUICAO` | Intuição | SAB |
+| `LIDAR_COM_ANIMAIS` | Lidar com Animais | SAB |
+| `MEDICINA` | Medicina | SAB |
+| `PERCEPCAO` | Percepção | SAB |
+| `SOBREVIVENCIA` | Sobrevivência | SAB |
+| `ATUACAO` | Atuação | CAR |
+| `ENGANACAO` | Enganação | CAR |
+| `INTIMIDACAO` | Intimidação | CAR |
+| `PERSUASAO` | Persuasão | CAR |
+
+**Erros de D&D** (o mesmo ProblemDetail, com as chaves `campo.X` das regras cruzadas):
+- `atributos.CON` ("é obrigatório"): faltou um dos 6 atributos; nível fora de 1–20 e atributo fora de 1–30 vêm do Bean Validation.
+- `recursos.PV_TEMP.maximo` ("PV temporário não tem máximo"): o `PV_TEMP` não aceita `maximo`.
+- `codigo` ("não existe em D&D"): no `PATCH` a chave é o próprio código errado (por exemplo `SAN`), e no teste é `codigo`.
+- **409 "Sistema não muda" nos dois sentidos:** um `PUT` com `sistema: DND` numa ficha de Ordem, ou com `sistema: ORDEM_PARANORMAL` numa ficha de D&D. O 409 vem antes da validação.
+
+**Edição rápida:** `PATCH /fichas/{id}/recursos` com `{"PV": 20, "PV_TEMP": 5}` muda só os valores atuais (os máximos ficam como estavam). Código fora de `PV` e `PV_TEMP` e valor negativo ou nulo dão 400.
+
+**Rolagem de D&D** (`POST /fichas/{id}/testes`, `RegrasDnd`, código puro, sem Spring). O `alvo` aceita `PERICIA`, `ATRIBUTO` e `SALVAGUARDA`, e o `modo` aceita `NORMAL`, `VANTAGEM` e `DESVANTAGEM`:
+
+| Conta | Fórmula |
+| --- | --- |
+| Modificador | ⌊(valor − 10) / 2⌋, com `Math.floorDiv` (valor 9 dá −1, e não 0) |
+| Proficiência | 2 + ⌊(nível − 1) / 4⌋ (nível 1 a 4 dá +2, nível 17 a 20 dá +6) |
+| Perícia | modificador do atributo, mais a proficiência (`PROFICIENTE`) ou 2× a proficiência (`ESPECIALISTA`) |
+| Salvaguarda | modificador, mais a proficiência se o atributo está em `salvaguardas` |
+| Teste de atributo | só o modificador |
+| Dados | `NORMAL`: 1d20. `VANTAGEM`: 2d20, fica o **maior**. `DESVANTAGEM`: 2d20, fica o **menor** |
+
+A resposta é a mesma de Ordem (`dados`, `mantido`, `bonus`, `total`). O "20 natural" e o "1 natural" **não vêm da API**: a interface os mostra olhando o dado mantido. `SALVAGUARDA` e `modo` agora valem em D&D e **continuam respondendo 400 em Ordem** (`alvo` "SALVAGUARDA não existe em Ordem Paranormal", `modo` "só NORMAL existe em Ordem Paranormal").
+
 ### Do contrato antigo para o novo
 
 Até o incremento 1.5 a rota era `/sheetPlayer` e o JSON tinha 41 chaves. Não há rota antiga mantida nem versionamento: o Angular mudou junto.
@@ -164,7 +233,7 @@ Depois, no 2.1d, a migração V4 ([ADR 0016](docs/decisoes/0016-saida-do-d100-e-
 
 ### Teste de Ordem
 
-O `TesteController` expõe uma rota à parte, e o CRUD acima não mudou:
+O `TesteController` expõe uma rota à parte, e o CRUD acima não mudou. A rota é a mesma para qualquer sistema (a rolagem de D&D está em "Ficha de D&D"); esta seção descreve a de Ordem:
 
 | Método | Rota | Finalidade | Respostas |
 | --- | --- | --- | --- |
@@ -190,7 +259,7 @@ Regras (`RegrasOrdem`, código puro, sem Spring):
 
 O `total` é o dado mantido mais o bônus do grau: destreinado +0, Treinado +5, Veterano +10 e Expert +15 (Veterano exige NEX 35 e Expert, NEX 70). Teste de atributo não tem bônus. A resposta traz **todos** os dados (`dados`), para a interface mostrar cada um e destacar o `mantido`. Não há comparação com dificuldade (DT): quem compara é o mestre, como na mesa.
 
-O contrato já prevê o que o D&D vai usar (`alvo` `SALVAGUARDA`, `modo` `VANTAGEM` e `DESVANTAGEM`), mas **no 2.1d esses valores respondem 400** em Ordem. Pedir um atributo como perícia (ou o contrário) e um código que não existe também dão 400, com a chave `codigo`. A sorte entra pela interface `Dado`, como no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md) (a regra d100 daquele ADR saiu; a injeção do `Dado` continua).
+O contrato tem valores que só o D&D usa (`alvo` `SALVAGUARDA`, `modo` `VANTAGEM` e `DESVANTAGEM`, veja "Ficha de D&D"), e **em Ordem esses valores respondem 400**. Pedir um atributo como perícia (ou o contrário) e um código que não existe também dão 400, com a chave `codigo`. A sorte entra pela interface `Dado`, como no [ADR 0011](docs/decisoes/0011-teste-de-pericia-e-aleatoriedade-injetavel.md) (a regra d100 daquele ADR saiu; a injeção do `Dado` continua).
 
 > Nota sobre rotas removidas: até o incremento 1.1, a dependência `spring-data-rest-hal-explorer`, adicionada junto com o Springfox, trazia o Spring Data REST de forma transitiva, que expunha uma segunda API CRUD não intencional e sem documentação em `/sheetPlayers`, além de `/profile` e `/explorer`. No incremento 1.2 a dependência foi removida e essas rotas passaram a responder 404. Veja o [ADR 0005](docs/decisoes/0005-springdoc-e-remocao-do-spring-data-rest.md). No 2.1d saiu também `/fichas/{id}/testes-de-pericia`, a rota do d100.
 
@@ -203,27 +272,29 @@ Estado atual:
 flowchart LR
     A["Angular 22 (porta 4200)"] -->|HTTP/JSON| B[FichaController]
     B -->|FichaRequest / FichaResponse| C[FichaService]
-    C --> V["ValidacaoFichaOrdem (regras que cruzam campos)"]
-    C --> M[FichaOrdemMapper]
+    C --> SS["SistemasDeFicha (registro por sistema)"]
     A -->|HTTP/JSON| T[TesteController]
     T -->|TesteRequest / TesteResponse| S[TesteService]
-    S --> G["RegrasOrdem (regra pura)"]
-    S --> Q["Dado (interface) ← DadoAleatorio"]
+    S --> SS
+    SS --> SO["SistemaOrdem: FichaOrdemMapper, ValidacaoFichaOrdem, RegrasOrdem"]
+    SS --> SD["SistemaDnd: FichaDndMapper, ValidacaoFichaDnd, RegrasDnd"]
+    SO --> Q["Dado (interface) ← DadoAleatorio"]
+    SD --> Q
     S --> R
     C --> R["FichaRepository (Spring Data JPA / Hibernate 7)"]
     R --> D[("PostgreSQL 17 (Docker)")]
-    F["Flyway: migrações V1 a V4 em db/migration"] -.->|cria o esquema| D
+    F["Flyway: migrações V1 a V5 em db/migration"] -.->|cria o esquema| D
     X["ApiExceptionHandler (ProblemDetail)"] -.->|traduz exceções em erros HTTP| B
     B -.-> O["springdoc: /v3/api-docs"]
     T -.-> O
     X -.-> T
 ```
 
-O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O corpo de entrada é a `sealed interface FichaRequest`, e o Jackson escolhe o record certo (`FichaOrdemRequest`) pelo campo `sistema`. O `FichaService` guarda as regras, as transações (`@Transactional`) e os logs, e lança `FichaNaoEncontradaException` quando a ficha não existe e `SistemaImutavelException` quando o `PUT` troca o sistema (409). O Bean Validation confere o que se vê campo a campo; a `ValidacaoFichaOrdem` confere o que cruza campos (atributo ausente, grau que exige mais NEX) e lança `DadosInvalidosException`, que vira o mesmo 400 "Dados inválidos". O `FichaOrdemMapper` converte DTO e entidade `FichaOrdem` à mão, campo a campo. A entidade `Ficha` é abstrata (dados comuns) e `FichaOrdem` a estende, com herança JPA JOINED ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)). As perícias treinadas ficam em `ficha_ordem_pericia` (um `Map<PericiaOrdem, GrauOrdem>` na entidade). Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só, e a listagem usa o resumo, que nem toca nas perícias. Hoje o `FichaService` decide o sistema com `instanceof` (resposta e resumo); o 2.1e troca isso por um mapper por sistema. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
+O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O corpo de entrada é a `sealed interface FichaRequest`, e o Jackson escolhe o record certo (`FichaOrdemRequest` ou `FichaDndRequest`) pelo campo `sistema`. O `FichaService` guarda as transações (`@Transactional`) e os logs, e lança `FichaNaoEncontradaException` quando a ficha não existe e `SistemaImutavelException` quando o `PUT` troca o sistema (409). Ele não conhece nenhum sistema: pede ao registro `SistemasDeFicha` a implementação da interface `SistemaDeFicha` que atende a ficha (`SistemaOrdem` ou `SistemaDnd`) e delega `criar`, `copiar`, `resposta`, `resumo`, `atualizarRecursos` e `testar` ([ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)). O 409 de sistema continua no serviço, antes da validação. O Bean Validation confere o que se vê campo a campo; a `ValidacaoFichaOrdem` e a `ValidacaoFichaDnd` conferem o que cruza campos (atributo ausente, grau que exige mais NEX, PV temporário com máximo) e lançam `DadosInvalidosException`, que vira o mesmo 400 "Dados inválidos". O `FichaOrdemMapper` e o `FichaDndMapper` convertem DTO e entidade à mão, campo a campo. A entidade `Ficha` é abstrata (dados comuns) e `FichaOrdem` e `FichaDnd` a estendem, com herança JPA JOINED ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)). As perícias treinadas ficam em `ficha_ordem_pericia` (um `Map<PericiaOrdem, GrauOrdem>` na entidade) e as de D&D com proficiência em `ficha_dnd_pericia` (um `Map<PericiaDnd, GrauDnd>`). Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só, e a listagem usa o resumo, que nem toca nas perícias. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
 
-O teste de Ordem tem camadas próprias, para o CRUD ficar intacto: o `TesteService` busca a ficha (404 com a mesma `FichaNaoEncontradaException`), valida o pedido, pede os d20 ao `Dado` e aplica a `RegrasOrdem` (quantos dados, qual se mantém, bônus do grau). A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma sequência fixa nos testes.
+O teste tem camadas próprias, para o CRUD ficar intacto: o `TesteService` busca a ficha (404 com a mesma `FichaNaoEncontradaException`), delega a rolagem ao `SistemaDeFicha` da ficha, que valida o pedido, pede os d20 ao `Dado` e aplica a regra pura do sistema: a `RegrasOrdem` (quantos dados, qual se mantém, bônus do grau) ou a `RegrasDnd` (modificador, proficiência, vantagem e desvantagem). A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma sequência fixa nos testes.
 
-Modelo de dados (esquema criado pelas migrações V1 a V4):
+Modelo de dados (esquema criado pelas migrações V1 a V5):
 
 ```mermaid
 erDiagram
@@ -251,6 +322,20 @@ erDiagram
         varchar pericia PK "constante do enum PericiaOrdem"
         varchar grau "TREINADO, VETERANO ou EXPERT"
     }
+    ficha_dnd {
+        bigint ficha_id PK, FK "on delete cascade"
+        varchar edicao "D2014 ou D2024"
+        varchar texto_livre "classe, especie, antecedente"
+        integer nivel "1 a 20"
+        integer seis_atributos "forca, destreza, constituicao, inteligencia, sabedoria, carisma: 1 a 30"
+        integer pv_ca "pv_atual, pv_max, pv_temporario e ca: 0 ou mais, ou nulos"
+        boolean inspiracao_e_salvaguardas "inspiracao e seis colunas salva_*"
+    }
+    ficha_dnd_pericia {
+        bigint ficha_id PK, FK "on delete cascade"
+        varchar pericia PK "constante do enum PericiaDnd"
+        varchar grau "PROFICIENTE ou ESPECIALISTA"
+    }
     retrato_ficha {
         bigint ficha_id PK, FK "on delete cascade"
         bytea conteudo "JPEG até 200 KB"
@@ -261,6 +346,8 @@ erDiagram
 O retrato fica numa tabela própria para a listagem nunca ler bytes de imagem: a ficha só traz o `retratoVersao`, por uma subconsulta (`@Formula`) no mesmo SELECT, então listar continua sendo uma consulta só.
 
 A V4 renomeou `sheet_player` para `ficha` sem mudar os ids, por isso o retrato e as URLs continuam valendo. `ficha_ordem` tem `check` para NEX (5 a 99), atributos (0 a 5) e recursos (≥ 0), e `ficha_ordem_pericia` limita o grau a três valores. Perícia destreinada não tem linha; no JSON ela não aparece em `pericias`.
+
+A V5 (migração só de criação, sem mexer em dados) acrescentou `ficha_dnd` e `ficha_dnd_pericia`: uma tabela serve as duas edições, e a coluna `edicao` diz qual é. `ficha_dnd` tem `check` para nível (1 a 20), atributos (1 a 30), recursos e CA (≥ 0) e edição (`D2014` ou `D2024`); `ficha_dnd_pericia` limita o grau a `PROFICIENTE` e `ESPECIALISTA`. As salvaguardas são seis colunas booleanas (`salva_forca` etc.), e o PV temporário é só o valor atual, sem máximo. Perícia sem proficiência não tem linha. A V1 a V4 não foram editadas.
 
 ### Perícias
 
@@ -299,15 +386,15 @@ As 28 perícias de Ordem Paranormal. O código é a constante do enum `PericiaOr
 Estrutura de pastas:
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST (`FichaController`, `TesteController`, `RetratoController`).
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API (a `FichaRequest` e a `FichaResponse` são interfaces seladas; `FichaOrdemRequest` e `FichaOrdemResponse` são os de Ordem).
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, `FichaService`, `FichaOrdemMapper`, `ValidacaoFichaOrdem`, o teste (`TesteService`, `RegrasOrdem` e o `Dado`) e o retrato (`RetratoService` e `ValidadorRetrato`).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API (a `FichaRequest` e a `FichaResponse` são interfaces seladas; `FichaOrdemRequest` e `FichaOrdemResponse` são os de Ordem, e `FichaDndRequest` e `FichaDndResponse`, os de D&D).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, `FichaService`, a interface `SistemaDeFicha` com o registro `SistemasDeFicha` e as implementações `SistemaOrdem` e `SistemaDnd`, os mappers `FichaOrdemMapper` e `FichaDndMapper`, as validações `ValidacaoFichaOrdem` e `ValidacaoFichaDnd`, o teste (`TesteService`, `RegrasOrdem`, `RegrasDnd` e o `Dado`) e o retrato (`RetratoService` e `ValidadorRetrato`).
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/config/`: o `Clock` da aplicação (`RelogioConfig`), injetável como o `Dado` para os testes escolherem o instante.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidades JPA (`Ficha`, `FichaOrdem`, `RetratoFicha`) e os enums (`Sistema` e os de Ordem: `AtributoOrdem`, `PericiaOrdem`, `GrauOrdem`, `ClasseOrdem`, `RecursoOrdem`).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidades JPA (`Ficha`, `FichaOrdem`, `FichaDnd`, `RetratoFicha`) e os enums (`Sistema`, os de Ordem: `AtributoOrdem`, `PericiaOrdem`, `GrauOrdem`, `ClasseOrdem`, `RecursoOrdem`, e os de D&D: `EdicaoDnd`, `AtributoDnd`, `PericiaDnd`, `GrauDnd`, `RecursoDnd`).
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
 - `Gerenciador de fichas RPG/src/test/java/dev/spironello/fichasrpg/`: testes.
 - `docs/decisoes/`: registros de decisões (ADRs).
-- `frontend/`: aplicação Angular. Cada sistema fica em `frontend/src/app/fichas/sistemas/<sistema>/` (hoje `ordem/`, com o catálogo e o formulário); a escolha do sistema fica em `fichas/criacao/`.
+- `frontend/`: aplicação Angular. Cada sistema fica em `frontend/src/app/fichas/sistemas/<sistema>/` (`ordem/` e `dnd/`, cada um com o catálogo, a ficha e o formulário; `comum/` guarda o que os formulários repartem); a escolha do sistema fica em `fichas/criacao/`.
 
 ## Como rodar
 
@@ -358,11 +445,13 @@ Para parar o banco: `docker compose down` (acrescente `-v` para apagar também o
 A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma gótica". A organização é de app moderno (busca, filtros, blocos) e a aparência é de grimório: fundo grafite com névoa púrpura, dourado, títulos em EB Garamond (fonte de licença aberta servida pelo próprio app) e retrato em medalhão. É pensada primeiro para o celular, e é a mesma tela no computador, só com mais colunas:
 
 - **Painel (`/fichas`):** contadores (investigadores, feridos e sanidade baixa), busca por personagem ou jogador sem diferenciar acentos, filtros "Feridos" e "Sanidade baixa" (PV ou SAN atual ≤ metade do máximo) e um cartão por ficha, com medalhão, o **selo do sistema** e uma barra para cada recurso (PV, SAN e PE). O painel lê o resumo da API, igual para qualquer sistema.
-- **Nova ficha (`/fichas/nova`):** primeiro a **escolha do sistema**. Ordem Paranormal leva ao formulário (`/fichas/nova/ordem-paranormal`); D&D 5e e D&D 2024 aparecem desabilitados, com "Em breve", para a escolha já ter o desenho final. O sistema não muda depois.
+- **Nova ficha (`/fichas/nova`):** primeiro a **escolha do sistema**, com 3 links: Ordem Paranormal (`/fichas/nova/ordem-paranormal`), D&D 5e (`/fichas/nova/dnd-2014`) e D&D 2024 (`/fichas/nova/dnd-2024`). As duas edições de D&D usam a mesma tela, que recebe a edição pela rota. O sistema não muda depois.
 - **Formulário de Ordem (criar e editar):** as mesmas regras da API, com o erro do servidor mostrado no campo certo (a interface normaliza `atributos[AGI]` para `atributos.AGI`). Os graus de cada perícia ficam **limitados pelo NEX** (Veterano a partir de 35, Expert a partir de 70). Uma ficha nova começa em NEX 5 com os atributos em 1.
 - **Ficha de Ordem (`/fichas/:id`), em blocos:** retrato com nome, classe e NEX, anéis de PV, SAN e PE, a Defesa (10 + Agilidade), os 5 atributos e as 28 perícias, com **33 botões "Rolar"** (5 atributos + 28 perícias) e 33 dicas curtas, escritas com palavras próprias. O resultado mostra **cada dado** rolado, destaca o mantido e soma o bônus do grau (selo T, V ou E). Editar e Excluir ficam no menu ⋮, e excluir pede confirmação.
-- **Retrato do personagem:** "Trocar imagem" abre um recorte na moldura oval 4:5 (arrastar ou setas para posicionar, controle de zoom). O navegador reduz a foto para 400×500 em JPEG antes de enviar, então uma foto de celular de vários MB vira dezenas de KB. "Remover imagem" pede confirmação e volta às iniciais.
-- **Edição rápida de PV, SAN e PE:** botões − e + em cada anel e o número clicável para digitar o valor. A tela muda na hora e salva sozinha 0,8 s depois do último toque, por um `PATCH` que leva **só os códigos que mudaram** (vários toques viram uma requisição só, e uma edição rápida nunca sobrescreve o resto da ficha). Se falhar, o valor volta ao último salvo; sair da ficha com um ajuste pendente salva na hora.
+- **Formulário de D&D (criar e editar):** os mesmos cuidados do de Ordem, com o erro do servidor no campo certo. O campo do texto livre se chama **"Raça" em 2014 e "Espécie" em 2024** (é o mesmo campo `especie` da API), e as 6 salvaguardas com proficiência e as 18 perícias (nenhuma, proficiente ou especialista) ficam em blocos próprios.
+- **Ficha de D&D (`/fichas/:id`):** mostra os **6 atributos com o modificador**, as **6 salvaguardas** e as **18 perícias**, cada um com o bônus calculado e um botão "Rolar" (os atributos rolam só o modificador). Um seletor **Normal · Vantagem · Desvantagem** vale para a próxima rolagem e **volta a Normal depois de rolar**. O resultado mostra os dados, destaca o mantido e o bônus (com "−" de verdade quando negativo), e avisa **"20 natural"** ou "1 natural" olhando o dado mantido. Os anéis são **Vida** (PV atual e máximo) e **Temporário** (PV temporário, sem máximo), com o mesmo − e + e a mesma edição rápida de Ordem; CA e inspiração aparecem no cabeçalho.
+- **`/fichas/:id/editar`** é uma rota só: a tela carrega a ficha e abre o formulário do sistema dela (Ordem ou D&D).- **Retrato do personagem:** "Trocar imagem" abre um recorte na moldura oval 4:5 (arrastar ou setas para posicionar, controle de zoom). O navegador reduz a foto para 400×500 em JPEG antes de enviar, então uma foto de celular de vários MB vira dezenas de KB. "Remover imagem" pede confirmação e volta às iniciais.
+- **Edição rápida de PV, SAN e PE (em D&D, PV e PV temporário):** botões − e + em cada anel e o número clicável para digitar o valor. A tela muda na hora e salva sozinha 0,8 s depois do último toque, por um `PATCH` que leva **só os códigos que mudaram** (vários toques viram uma requisição só, e uma edição rápida nunca sobrescreve o resto da ficha). Se falhar, o valor volta ao último salvo; sair da ficha com um ajuste pendente salva na hora.
 - **API fora do ar ou "acordando":** a tela mostra "Servidor indisponível" com o botão "Tentar de novo", em vez de ficar em branco.
 - A ficha e os formulários carregam sob demanda, para a primeira tela abrir rápido no celular.
 
@@ -407,20 +496,21 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 186 testes unitários em 22 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco. Número da última execução, na branch do 2.1d:
+**Front-end:** 260 testes unitários em 29 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco. Número da última execução, na branch do 2.1e (eram 186 em 22 arquivos no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
 - medalhão (iniciais e cor estável por ficha) e status em barra e em anel (limitados a 0–100%);
 - `catalogo-ordem.spec`: as 5 atributos e as 28 perícias (atributo-base de cada uma, 33 dicas), o bônus por grau e a Defesa;
 - o cliente da API e o modelo (`ficha-api.spec`, `ficha.model.spec`: URLs, corpos, `PATCH` de recursos, `POST` de testes, tradução de erros, inclusive a API fora do ar e a chave `campo[X]` virando `campo.X`);
-- `escolha-sistema.spec`: Ordem leva ao formulário, e D&D 5e e 2024 aparecem desabilitados ("Em breve");
+- `escolha-sistema.spec`: os três cartões (Ordem, D&D 5e e D&D 2024) são links para o formulário de cada sistema, e nenhum fica desabilitado;
 - `formulario-ordem.spec`: valores iniciais (NEX 5, atributos 1), obrigatórios, limites de NEX e atributos, graus limitados pelo NEX, o erro do servidor no campo certo (e o foco nele), envio duplo bloqueado, edição;
 - `ficha-detalhe.spec`: os 33 botões "Rolar", o resultado com cada dado e o mantido destacado, toque duplo bloqueado, menu ⋮ com exclusão confirmada, 404;
 - `recursos-ficha.spec` (edição rápida): limites do + e do −, vários toques viram um `PATCH` só (relógio simulado) com apenas os códigos mudados, erro volta o valor, toque durante o salvamento, salvar ao sair, digitar com Enter e cancelar com Esc;
 - o retrato: a conta do recorte 4:5, o diálogo (salvar, cancelar, imagem que não abre), o cache de URLs locais e trocar e remover na ficha.
+- D&D (2.1e): `regras-dnd.spec` (modificador com 9 dando −1, proficiência por nível, bônus de perícia, especialização e salvaguarda, nas fronteiras), `catalogo-dnd.spec` (6 atributos, 18 perícias, rótulo "Raça" e "Espécie"), `ficha-dnd.spec` (bônus na tela, "Rolar", seletor de modo que volta a Normal, "−" no bônus negativo, "20 natural", anéis Vida e Temporário), `ficha-ordem.spec` (a ficha de Ordem, agora um componente por sistema), `formulario-dnd.spec` (valores iniciais, limites, erro do servidor no campo, edição), `edicao-ficha.spec` (a rota de edição abre o formulário do sistema da ficha) e `formulario-comum.spec` (o que os dois formulários repartem).
 
-**Back-end:** são 137 testes (número da última execução do `./mvnw -B clean verify`, feita pelo verificador independente), em 21 classes:
+**Back-end:** são 210 testes (número da última execução do `./mvnw -B clean verify`, depois da correção final; eram 137 no 2.1d), em 30 classes:
 
 | Grupo | O que cobre |
 | --- | --- |
@@ -429,13 +519,19 @@ cd "Gerenciador de fichas RPG"
 | `RecursosControllerTest` | `PATCH /fichas/{id}/recursos`: muda só o que foi enviado, PV, SAN e PE juntos, código desconhecido, valor negativo ou nulo (400), 404 |
 | `TesteControllerTest` | `POST /fichas/{id}/testes` de ponta a ponta com `Dado` fixo: perícia com e sem grau, atributo 0 (2d20, o menor), atributo sem bônus, e 400 para `SALVAGUARDA`, `modo` `VANTAGEM`, código que não existe em Ordem e atributo pedido como perícia; 404 |
 | `FichaServiceTest`, `TesteServiceTest` | Unitários com Mockito, sem Spring e sem Docker: sistema que não pode mudar (409), substituição completa, regras cruzadas, ficha inexistente, perícia que usa o atributo-base, e o log sem a lista de dados |
+| `SistemasDeFichaTest` | Unitário: o registro devolve o componente de cada sistema, e sistema duplicado ou sem implementação lança `IllegalStateException` |
+| `RegrasDndTest`, `PericiaDndTest` | Unitários: modificador (9 dá −1), proficiência por nível, perícia, especialização, salvaguarda, 1d20 e 2d20 com o maior e o menor; as 18 perícias e o atributo de cada uma |
+| `FichaDndRepositoryTest` | A ficha de D&D vai e volta do banco (atributos, salvaguardas, perícias com proficiência) e a cascata ao excluir |
+| `FichaDndControllerTest`, `FichaDndValidacaoTest` | O CRUD de D&D e o 409 nos dois sentidos; 400 para atributo ausente ou fora de 1–30, nível fora de 1–20, `recursos.PV_TEMP.maximo` e perícia ou grau inexistente |
+| `RecursosDndControllerTest`, `TesteDndControllerTest` | `PATCH` com `PV` e `PV_TEMP` (e o 400 de `SAN`); `POST /fichas/{id}/testes` de D&D com `Dado` fixo: perícia, atributo, salvaguarda, vantagem, desvantagem e "não existe em D&D" |
+| `FichaDndMapperTest` | Unitário: a ida e a volta entre DTO e entidade de D&D, e o resumo com PV e PV temporário |
 | `FichaOrdemMapperTest` | Unitário: perícias, atributos e recursos vão para os campos certos e voltam; o resumo traz PV, SAN e PE sem perícias |
 | `RegrasOrdemTest` | Unitário: quantidade de dados (atributo 0 rola 2 e mantém o menor), bônus de cada grau e o dado de 20 faces |
 | `PericiaOrdemTest` | Unitário: as 28 perícias, a distribuição por atributo (AGI 7, FOR 2, INT 9, PRE 9, VIG 1) e nomes sem repetição |
 | `MigracaoSistemasTest` | Migra um schema separado até a V3, insere fichas d100 (uma com perícias e retrato, outra sem vida nem sanidade, outra sem perícias) e confere, após a V4, ids e dados comuns, `sistema`, NEX 5, atributos 1, PV e SAN copiados, nenhuma perícia, retrato intacto e as colunas e a tabela d100 ausentes |
 | `ContratoJsonTest` | O contrato do front: as 13 chaves da ficha de Ordem (com mapas por código) e as 7 do resumo |
 | `ListagemSemNMaisUmTest` | Listar 3 fichas de Ordem com perícias executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + 3, mesmo com a herança JOINED |
-| `EsquemaBancoTest` | As tabelas `ficha`, `ficha_ordem`, `ficha_ordem_pericia` e `retrato_ficha` (nomes, tipos e nulabilidade) e a prova de que o Flyway aplicou da V1 à V4 |
+| `EsquemaBancoTest` | As tabelas `ficha`, `ficha_ordem`, `ficha_ordem_pericia` e `retrato_ficha` (e, desde o 2.1e, `ficha_dnd` e `ficha_dnd_pericia`) (nomes, tipos e nulabilidade) e a prova de que o Flyway aplicou da V1 à V5 |
 | `MigracaoPericiasTest`, `MigracaoRetratoTest` | Migrações antigas (V2 e V3) continuam provadas, cada uma com dados no formato anterior |
 | `RetratoFichaRepositoryTest`, `ValidadorRetratoTest`, `RetratoControllerTest` | O retrato do 2.1c: bytes e instante, cascata, JPEG válido e inválido, a "bomba de decodificação", as 3 rotas e os cabeçalhos |
 | `ApiExceptionHandlerTest`, `DocumentacaoApiTest`, `FichasRpgApplicationTests` | O 500 genérico sem vazar texto interno, Swagger UI e OpenAPI respondem, e o contexto sobe |
@@ -469,8 +565,9 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0012 Contrato com nomes claros](docs/decisoes/0012-contrato-com-nomes-claros.md): rota `/fichas`, JSON em português com `pericias` como objeto, sem versionar a API; a entidade e o banco só mudam depois.
 - [0013 Frontend novo em Angular 22](docs/decisoes/0013-frontend-novo-em-angular-22.md): refazer as telas na versão atual em vez de atualizar o Angular 13 versão a versão.
 - [0014 Retrato no PostgreSQL em tabela separada](docs/decisoes/0014-retrato-no-postgresql-em-tabela-separada.md): a imagem do personagem numa tabela própria (a listagem nunca lê os bytes), validada no servidor pelo cabeçalho do JPEG antes de decodificar.
-- [0015 Uma tabela por sistema (herança JPA JOINED)](docs/decisoes/0015-uma-tabela-por-sistema.md): `ficha` com o comum e `ficha_ordem` (depois `ficha_dnd`) por sistema, JSON polimórfico pelo campo `sistema`, e por que não catálogo genérico nem JSONB.
+- [0015 Uma tabela por sistema (herança JPA JOINED)](docs/decisoes/0015-uma-tabela-por-sistema.md): `ficha` com o comum e `ficha_ordem` (e `ficha_dnd`) por sistema, JSON polimórfico pelo campo `sistema`, e por que não catálogo genérico nem JSONB.
 - [0016 Saída do d100 e conversão para Ordem Paranormal](docs/decisoes/0016-saida-do-d100-e-conversao-para-ordem.md): a V4 renomeia `sheet_player` sem mudar os ids, converte cada ficha em Ordem (NEX 5, atributos 1) e apaga o que era só do d100; o risco de vida ou sanidade negativas.
+- [0017 Regras de cada sistema atrás de `SistemaDeFicha`](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md): `criar`, `copiar`, `resposta`, `resumo`, `atualizarRecursos` e `testar` por sistema, um registro que falha na subida se houver dois, o 409 antes da validação, e o cast `Ficha` → `FichaDnd` como ponto fraco.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -553,24 +650,35 @@ Para o portfólio, com poucas fichas, uma tabela `retrato_ficha` separada resolv
 O servidor não confia no navegador: só aceita `image/jpeg` (415), lê no máximo 200 KB do corpo (413) e confere os bytes iniciais do JPEG. A revisão independente achou o ponto mais sutil: eu decodificava a imagem antes de conferir o limite de 1000 px, e um JPEG de poucos bytes com o cabeçalho dizendo 50000×50000 derrubava a API por falta de memória ("bomba de decodificação"). Agora o tamanho vem do cabeçalho, antes de decodificar, com um teste que reproduz o ataque. O `GET` responde com `nosniff` e SVG nunca é aceito, porque pode carregar script.
 
 **Por que uma tabela por sistema e não JSONB?**
-Cada sistema tem atributos, perícias e recursos diferentes, mas o banco precisa garantir as regras de cada um: atributo de 0 a 5, NEX de 5 a 99, grau com três valores. Com uma tabela por sistema (`ficha_ordem`) cada regra vira um `check` no banco, e o Hibernate confere o mapeamento ao subir. O JSONB seria mais fácil de mudar, mas a validação ficaria só no código. O catálogo genérico (atributo/valor) também perde a checagem. O custo é uma migração, uma entidade, um DTO e um mapper por sistema novo, e duas cadeias de `instanceof` no serviço que o 2.1e troca por um mapper por sistema ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)).
+Cada sistema tem atributos, perícias e recursos diferentes, mas o banco precisa garantir as regras de cada um: atributo de 0 a 5, NEX de 5 a 99, grau com três valores. Com uma tabela por sistema (`ficha_ordem`) cada regra vira um `check` no banco, e o Hibernate confere o mapeamento ao subir. O JSONB seria mais fácil de mudar, mas a validação ficaria só no código. O catálogo genérico (atributo/valor) também perde a checagem. O custo é uma migração, uma entidade, um DTO e um mapper por sistema novo, e duas cadeias de `instanceof` no serviço, que o 2.1e trocou pela interface `SistemaDeFicha` ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md), [ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)).
 
 **Como a ficha antiga virou Ordem sem perder o retrato?**
 A V4 não cria uma tabela nova e copia: ela **renomeia** `sheet_player` para `ficha`, então os ids não mudam e o `retrato_ficha`, que aponta para o id, nem percebe. Depois insere uma linha em `ficha_ordem` por ficha (NEX 5, atributos 1, PV e SAN copiados) e só então apaga as colunas do d100. Tudo numa transação, porque o PostgreSQL tem DDL transacional. Escrevi o teste antes (`MigracaoSistemasTest`: migra até a V3 com fichas d100 e retrato, aplica a V4 e confere tudo) e fiz um backup do banco antes de aplicar no meu. O risco que registrei: vida ou sanidade negativas violariam o `check` novo e a V4 falharia, sem perda de dados ([ADR 0016](docs/decisoes/0016-saida-do-d100-e-conversao-para-ordem.md)).
 
 **Como o JSON escolhe o tipo certo?**
-O corpo de entrada é uma `sealed interface FichaRequest` com `@JsonTypeInfo` pelo campo `sistema` e `@JsonSubTypes`. O Jackson lê o valor e cria o record certo (`FichaOrdemRequest`). Sistema desconhecido (`DND`, por enquanto) ou ausente vira 400; `PUT` com outro sistema vira 409, porque o sistema é escolhido na criação e não muda. A interface selada faz o compilador avisar quando um sistema novo não for tratado.
+O corpo de entrada é uma `sealed interface FichaRequest` com `@JsonTypeInfo` pelo campo `sistema` e `@JsonSubTypes`. O Jackson lê o valor e cria o record certo (`FichaOrdemRequest` ou `FichaDndRequest`). Sistema desconhecido ou ausente vira 400; `PUT` com outro sistema vira 409, porque o sistema é escolhido na criação e não muda. A interface selada faz o compilador avisar quando um sistema novo não for tratado.
 
 **Como testar uma rolagem aleatória?**
 Testo a regra, não a sorte. A sorte entra pela interface `Dado`, injetada, e os testes usam uma sequência fixa. A `RegrasOrdem` é uma classe pura: com atributo N rola N d20 e mantém o maior, e com atributo 0 rola 2 e mantém o **menor**. As fronteiras (0, 1, 5 e cada grau) são testadas sem Spring, e o endpoint recebe o `Dado` fixo. O `TesteService` devolve todos os dados rolados, então o teste confere também a lista, não só o total.
 
 **Como a edição rápida evita sobrescrever a ficha?**
 Ela não usa o `PUT`, que é substituição completa. O `PATCH /fichas/{id}/recursos` recebe só os **valores atuais** dos códigos que mudaram (`{"PV": 10}`), e o servidor mexe só neles. No navegador, a tela muda na hora e o `PATCH` sai 800 ms depois do último toque, então vários toques viram uma requisição só e, se falhar, o valor volta ao último salvo.
+**Como você acrescentou um segundo sistema sem `instanceof` espalhado?**
+Tirei tudo o que muda de um sistema para outro para trás da interface `SistemaDeFicha` (`criar`, `copiar`, `resposta`, `resumo`, `atualizarRecursos` e `testar`). `SistemaOrdem` e `SistemaDnd` implementam a interface, e o `FichaService` e o `TesteService` só pedem ao registro `SistemasDeFicha` a implementação certa e delegam. A lógica de Ordem foi movida, não reescrita, e os testes de Ordem passaram sem mudar uma asserção. Um sistema novo vira um `@Component`, um record de pedido e uma linha em `@JsonSubTypes`. O custo é um cast `Ficha` para `FichaDnd` dentro de cada implementação: seguro, porque o registro escolhe pelo `sistema` e o 409 vem antes, mas ainda é um cast ([ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)).
+
+**Por que `Math.floorDiv` no modificador?**
+O modificador de D&D é (valor − 10) / 2 arredondado para baixo. Na divisão inteira do Java, (9 − 10) / 2 dá 0, porque ela arredonda para o zero, mas na regra do jogo o valor 9 tem modificador −1. O `Math.floorDiv` arredonda para baixo e dá −1. Escrevi o teste da fronteira (9, 10, 11 e 1) antes do código, e o front usa a mesma fórmula com o mesmo teste.
+
+**Onde a regra é calculada, no front ou no back?**
+A rolagem é no servidor: é ele que sorteia os dados e devolve `dados`, `mantido`, `bonus` e `total`. O front só mostra, na ficha, os bônus de cada perícia e salvaguarda (para o botão "Rolar" já dizer "+5"), e para isso repete as fórmulas, com os mesmos testes de borda dos dois lados. O custo é a duplicação; o ganho é a tela não esperar a rede para mostrar um bônus. O "20 natural" é só informação da interface, olhando o dado mantido.
+
+**O que o teste no navegador pegou que os testes automáticos não pegaram?**
+O layout das salvaguardas. O jsdom, que roda os testes do front, não faz layout: ele confere o HTML, mas não sabe como o bloco aparece na tela. Só abrindo o app no navegador de verdade deu para ver o problema, e então corrigi. Por isso o teste automático não substitui olhar a tela.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- **2.1e D&D 5e e D&D 2024** no mesmo esqueleto (`ficha_dnd`, proficiência, especialização, vantagem e desvantagem). Usam o SRD 5.1 e 5.2.1, licença CC-BY-4.0, e a atribuição entra neste README quando o conteúdo entrar. Também troca as cadeias de `instanceof` do `FichaService` por um mapper por sistema.
 - **2.1f Dado animado**, já com d20 (vários dados em Ordem, 2 com vantagem ou desvantagem, e o dado mantido em destaque).
 - **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
 - **2.3 Campanhas** com convite e papéis Mestre/Jogador.
@@ -592,6 +700,7 @@ A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 - Frontend Angular atual (standalone, signals, carregamento sob demanda), pensado primeiro para o celular, com testes unitários (Vitest) e erros da API tratados na tela.
 - Modelagem de dados para mais de um domínio: herança JPA JOINED (uma tabela por sistema de RPG) com `check` no banco, JSON polimórfico por `@JsonTypeInfo` e interface selada.
 - Migração que preserva dados: renomear em vez de copiar para manter ids e retratos, testada com dados no formato antigo.
+- Um segundo sistema de RPG sem duplicar regra: interface `SistemaDeFicha` com registro e uma implementação por sistema, regras puras testadas nas fronteiras (modificador de D&D, vantagem e desvantagem) e atribuição de licença (SRD, CC-BY-4.0).
 
 ## Contexto do portfólio
 
