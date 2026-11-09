@@ -1,0 +1,28 @@
+:host {
+  display: block;
+}
+
+form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.erro-acao {
+  margin: 0;
+  color: #f0a597;
+}
+
+.acoes-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.salvo {
+  margin: 0;
+  color: var(--cor-texto-suave);
+}

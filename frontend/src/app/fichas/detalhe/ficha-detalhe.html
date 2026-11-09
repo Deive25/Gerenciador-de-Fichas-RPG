@@ -82,16 +82,40 @@
         <section class="status bloco" [attr.aria-label]="f.sistema === 'DND' ? 'Vida e PV temporário' : 'Vida, sanidade e esforço'">
           <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" />
         </section>
-
-        @switch (f.sistema) {
-          @case ('ORDEM_PARANORMAL') {
-            <app-ficha-ordem [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
-          }
-          @case ('DND') {
-            <app-ficha-dnd [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
-          }
-        }
       </div>
+
+      <mat-tab-group
+        class="abas"
+        [selectedIndex]="indiceDaAba()"
+        (selectedIndexChange)="trocarAba($event)"
+        [mat-stretch-tabs]="false"
+        animationDuration="0ms"
+      >
+        @for (aba of abas(); track aba.codigo) {
+          <mat-tab [label]="aba.rotulo">
+            @switch (aba.codigo) {
+              @case ('ficha') {
+                <div class="bento corpo">
+                  @switch (f.sistema) {
+                    @case ('ORDEM_PARANORMAL') {
+                      <app-ficha-ordem [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                    }
+                    @case ('DND') {
+                      <app-ficha-dnd [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                    }
+                  }
+                </div>
+              }
+              @case ('habilidades') {
+                <app-habilidades-aba [ficha]="f" (atualizada)="atualizarHabilidades($event)" />
+              }
+              @case ('descricao') {
+                <app-descricao-aba [ficha]="f" (atualizada)="atualizarDescricao($event)" />
+              }
+            }
+          </mat-tab>
+        }
+      </mat-tab-group>
     }
   }
 }

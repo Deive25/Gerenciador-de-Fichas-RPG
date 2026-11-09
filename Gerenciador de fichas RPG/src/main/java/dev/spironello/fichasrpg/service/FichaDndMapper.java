@@ -63,7 +63,7 @@ public class FichaDndMapper {
 	}
 
 	/** Lê as perícias da ficha: chame dentro da transação (a coleção é lazy). */
-	public FichaDndResponse resposta(FichaDnd ficha) {
+	public FichaDndResponse resposta(FichaDnd ficha, PartesComuns comuns) {
 		Map<AtributoDnd, Integer> atributos = new EnumMap<>(AtributoDnd.class);
 		Set<AtributoDnd> salvaguardas = EnumSet.noneOf(AtributoDnd.class);
 		for (AtributoDnd atributo : AtributoDnd.values()) {
@@ -85,6 +85,8 @@ public class FichaDndMapper {
 				ficha.getGenero(),
 				ficha.getIdade(),
 				ficha.getRetratoVersao(),
+				comuns.descricao(),
+				comuns.habilidades(),
 				ficha.getEdicao(),
 				ficha.getClasse(),
 				ficha.getEspecie(),

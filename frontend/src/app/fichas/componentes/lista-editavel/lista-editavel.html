@@ -1,0 +1,49 @@
+<button type="button" class="botao adicionar" [disabled]="salvando() || editando() === 'novo'" (click)="adicionar()">
+  Adicionar {{ nomeDoItem() }}
+</button>
+
+@if (editando() === 'novo') {
+  <div class="cartao bloco">
+    <ng-container *ngTemplateOutlet="formulario() ?? null; context: { $implicit: null }" />
+  </div>
+} @else if (itens().length === 0) {
+  <p class="aviso">{{ vazio() }}</p>
+}
+
+@for (item of itens(); track item.id) {
+  <div class="cartao bloco">
+    @if (editando() === item.id) {
+      <ng-container *ngTemplateOutlet="formulario() ?? null; context: { $implicit: item }" />
+    } @else {
+      <ng-container *ngTemplateOutlet="visualizacao() ?? null; context: { $implicit: item }" />
+      @if (confirmando() === item.id) {
+        <div class="confirmacao" role="group" [attr.aria-label]="'Remover ' + tituloDe()(item)">
+          <span>Remover {{ tituloDe()(item) }}?</span>
+          <button type="button" class="botao-perigo" [disabled]="salvando()" (click)="confirmar(item)">Sim, remover</button>
+          <button type="button" class="botao-neutro" (click)="confirmando.set(null)">Cancelar</button>
+        </div>
+      } @else {
+        <div class="acoes">
+          <button
+            type="button"
+            class="botao-neutro"
+            [attr.aria-label]="'Editar ' + tituloDe()(item)"
+            [disabled]="salvando()"
+            (click)="editar(item)"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            class="botao-perigo"
+            [attr.aria-label]="'Remover ' + tituloDe()(item)"
+            [disabled]="salvando()"
+            (click)="confirmando.set(item.id)"
+          >
+            Remover
+          </button>
+        </div>
+      }
+    }
+  </div>
+}

@@ -31,9 +31,11 @@ public class SistemaOrdem implements SistemaDeFicha {
 	private static final String NAO_EXISTE = "não existe em Ordem Paranormal";
 
 	private final FichaOrdemMapper mapper;
+	private final PartesComunsDaFicha partesComuns;
 
-	public SistemaOrdem(FichaOrdemMapper mapper) {
+	public SistemaOrdem(FichaOrdemMapper mapper, PartesComunsDaFicha partesComuns) {
 		this.mapper = mapper;
+		this.partesComuns = partesComuns;
 	}
 
 	@Override
@@ -57,7 +59,7 @@ public class SistemaOrdem implements SistemaDeFicha {
 
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
-		return mapper.resposta((FichaOrdem) ficha);
+		return mapper.resposta((FichaOrdem) ficha, partesComuns.de(ficha));
 	}
 
 	@Override

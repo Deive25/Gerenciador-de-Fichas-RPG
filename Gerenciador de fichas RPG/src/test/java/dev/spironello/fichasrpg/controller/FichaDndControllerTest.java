@@ -35,7 +35,9 @@ import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.PericiaDnd;
+import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /** Comportamento do CRUD /fichas com fichas de D&D (5e de 2014 e 2024): corpos, ida e volta pelo banco, 409. */
@@ -47,6 +49,9 @@ class FichaDndControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private FichaRepository repository;
+
+	@Autowired
+	private HabilidadeFichaRepository habilidades;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -179,6 +184,30 @@ class FichaDndControllerTest extends IntegrationTestBase {
 				.andExpect(jsonPath("$.salvaguardas", hasSize(0)))
 				.andExpect(jsonPath("$.recursos.PV.atual", nullValue()))
 				.andExpect(jsonPath("$.ca", nullValue()));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D não apaga a descrição nem as habilidades (ADR 0018)")
+	void atualizarPreservaDescricaoEHabilidades() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setAparencia("Meio-elfa");
+		ficha.setHistoria("Ex-soldado");
+		ficha.setAnotacoes("Dívida com a guilda");
+		ficha = repository.save(ficha);
+		habilidades.save(FichasDeTeste.habilidade(ficha, "Sentido de Perigo", TipoHabilidade.TALENTO, "Vantagem"));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.descricao.aparencia").value("Meio-elfa"))
+				.andExpect(jsonPath("$.descricao.historia").value("Ex-soldado"))
+				.andExpect(jsonPath("$.descricao.anotacoes").value("Dívida com a guilda"))
+				.andExpect(jsonPath("$.habilidades", hasSize(1)))
+				.andExpect(jsonPath("$.habilidades[0].nome").value("Sentido de Perigo"))
+				.andExpect(jsonPath("$.habilidades[0].tipo").value("TALENTO"));
 	}
 
 	@Test

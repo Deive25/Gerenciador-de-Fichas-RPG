@@ -23,7 +23,9 @@ import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.PericiaDnd;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
+import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 
 /**
  * Trava o contrato JSON que o frontend Angular consome: o conjunto de chaves da ficha de Ordem e o do
@@ -38,19 +40,24 @@ class ContratoJsonTest extends IntegrationTestBase {
 	@Autowired
 	private FichaRepository repository;
 
+	@Autowired
+	private HabilidadeFichaRepository habilidades;
+
 	@BeforeEach
 	void limparBanco() {
 		repository.deleteAll();
 	}
 
 	@Test
-	@DisplayName("GET /fichas/{id} devolve exatamente as 13 chaves da ficha de Ordem, com mapas por código")
+	@DisplayName("GET /fichas/{id} devolve exatamente as 15 chaves da ficha de Ordem, com mapas por código")
 	void chavesDaFicha() throws Exception {
 		FichaOrdem ficha = FichasDeTeste.ordem("Ana");
+		ficha.setAparencia("Alta");
 		ficha.setPvAtual(10);
 		ficha.getPericias().put(PericiaOrdem.ACROBACIA, GrauOrdem.TREINADO);
 		ficha.getPericias().put(PericiaOrdem.PERCEPCAO, GrauOrdem.TREINADO);
 		ficha = repository.save(ficha);
+		habilidades.save(FichasDeTeste.habilidade(ficha, "Ataque", TipoHabilidade.CLASSE, "Forte"));
 
 		String corpo = mockMvc.perform(get("/fichas/{id}", ficha.getId()))
 				.andExpect(status().isOk())
@@ -60,7 +67,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 
 		List<String> esperadas = List.of(
 				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao",
-				"classe", "origem", "nex", "atributos", "recursos", "pericias");
+				"descricao", "habilidades", "classe", "origem", "nex", "atributos", "recursos", "pericias");
 
 		assertThat(json.keySet()).containsExactlyInAnyOrderElementsOf(esperadas);
 		assertThat(json.get("sistema")).isEqualTo("ORDEM_PARANORMAL");
@@ -71,8 +78,18 @@ class ContratoJsonTest extends IntegrationTestBase {
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.recursos.PV").keySet())
 				.containsExactlyInAnyOrder("atual", "maximo");
 		// pericias é um objeto com só as treinadas, chaveado pelo código do enum
+		assertDescricaoEHabilidades(corpo);
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.pericias"))
 				.containsOnly(Map.entry("ACROBACIA", "TREINADO"), Map.entry("PERCEPCAO", "TREINADO"));
+	}
+
+	/** A descrição tem exatamente as três chaves e cada habilidade exatamente id, nome, tipo e descricao. */
+	private static void assertDescricaoEHabilidades(String corpo) {
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.descricao").keySet())
+				.containsExactlyInAnyOrder("aparencia", "historia", "anotacoes");
+		assertThat(JsonPath.<List<Object>>read(corpo, "$.habilidades")).hasSize(1);
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.habilidades[0]").keySet())
+				.containsExactlyInAnyOrder("id", "nome", "tipo", "descricao");
 	}
 
 	@Test
@@ -93,14 +110,16 @@ class ContratoJsonTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("GET /fichas/{id} de D&D devolve exatamente as 18 chaves, com mapas por código")
+	@DisplayName("GET /fichas/{id} de D&D devolve exatamente as 20 chaves, com mapas por código")
 	void chavesDaFichaDnd() throws Exception {
 		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setHistoria("Ex-soldado");
 		ficha.setPvAtual(10);
 		ficha.setSalvaguardas(Set.of(AtributoDnd.FOR));
 		ficha.getPericias().put(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE);
 		ficha.getPericias().put(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA);
 		ficha = repository.save(ficha);
+		habilidades.save(FichasDeTeste.habilidade(ficha, "Ataque", TipoHabilidade.TALENTO, "Forte"));
 
 		String corpo = mockMvc.perform(get("/fichas/{id}", ficha.getId()))
 				.andExpect(status().isOk())
@@ -110,7 +129,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 
 		assertThat(json.keySet()).containsExactlyInAnyOrder(
 				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao",
-				"edicao", "classe", "especie", "antecedente", "nivel", "atributos", "recursos", "ca",
+				"descricao", "habilidades", "edicao", "classe", "especie", "antecedente", "nivel", "atributos", "recursos", "ca",
 				"inspiracao", "salvaguardas", "pericias");
 		assertThat(json.get("sistema")).isEqualTo("DND");
 		assertThat(json.get("edicao")).isEqualTo("D2024");
@@ -121,6 +140,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.recursos.PV").keySet())
 				.containsExactlyInAnyOrder("atual", "maximo");
 		assertThat(JsonPath.<List<String>>read(corpo, "$.salvaguardas")).containsExactly("FOR");
+		assertDescricaoEHabilidades(corpo);
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.pericias"))
 				.containsOnly(Map.entry("ATLETISMO", "PROFICIENTE"), Map.entry("ARCANISMO", "ESPECIALISTA"));
 	}

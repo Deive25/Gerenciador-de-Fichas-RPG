@@ -1,6 +1,25 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ApiError } from '../../../core/api-error';
-import { INTEIRO, aplicarErrosDoServidor, caminhoDoCampo, faixa, focarPrimeiroInvalido } from './formulario-comum';
+import {
+  INTEIRO,
+  aplicarErrosDoServidor,
+  caminhoDoCampo,
+  faixa,
+  focarPrimeiroInvalido,
+  mensagemDoControle,
+} from './formulario-comum';
+
+describe('mensagemDoControle', () => {
+  it('maxlength usa o limite do proprio validador (255 e 4000)', () => {
+    const curto = new FormControl('a'.repeat(256), Validators.maxLength(255));
+    curto.markAsDirty();
+    expect(mensagemDoControle(curto)).toBe('Máximo de 255 caracteres');
+
+    const longo = new FormControl('a'.repeat(4001), Validators.maxLength(4000));
+    longo.markAsDirty();
+    expect(mensagemDoControle(longo)).toBe('Máximo de 4000 caracteres');
+  });
+});
 
 function erroApi(campos: Record<string, string>): ApiError {
   return { status: 400, titulo: 'Dados inválidos', detalhe: 'x', campos };

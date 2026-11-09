@@ -18,3 +18,5 @@ O `PUT /sheetPlayer/{id}` sempre copiou todos os campos do corpo: o que não vem
 - Contrato simples e previsível, igual ao que o front-end já faz.
 - Pior: um cliente que mande uma ficha parcial apaga os demais campos, sem aviso.
 - Pior: valores absurdos (idade negativa, atributo 9999) são aceitos; as regras de domínio podem entrar quando as perícias forem remodeladas (1.4/1.5).
+
+Atualização (2.1g): ver [ADR 0018](0018-listas-da-ficha-em-recursos-proprios.md).

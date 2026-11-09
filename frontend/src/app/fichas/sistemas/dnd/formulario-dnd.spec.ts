@@ -15,6 +15,8 @@ const FICHA: FichaDnd = {
   atributos: { FOR: 16, DES: 12, CON: 14, INT: 8, SAB: 10, CAR: 9 },
   recursos: { PV: { atual: 30, maximo: 44 }, PV_TEMP: { atual: 5, maximo: null } },
   ca: 18, inspiracao: true, salvaguardas: ['FOR', 'CON'], pericias: { ATLETISMO: 'PROFICIENTE', PERCEPCAO: 'ESPECIALISTA' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, opcoes: { edicao?: EdicaoDnd; ficha?: FichaDnd } = {}) {

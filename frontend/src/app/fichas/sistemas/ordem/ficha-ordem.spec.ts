@@ -12,6 +12,8 @@ const FICHA: FichaOrdem = {
     PE: { atual: 5, maximo: 10 },
   },
   pericias: { INVESTIGACAO: 'TREINADO', OCULTISMO: 'VETERANO', VONTADE: 'EXPERT' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 function montar(ficha: FichaOrdem = FICHA, rolando = false) {

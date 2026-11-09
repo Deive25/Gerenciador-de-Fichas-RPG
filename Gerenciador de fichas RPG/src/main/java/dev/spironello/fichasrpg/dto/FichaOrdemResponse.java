@@ -1,5 +1,6 @@
 package dev.spironello.fichasrpg.dto;
 
+import java.util.List;
 import java.util.Map;
 
 import dev.spironello.fichasrpg.model.AtributoOrdem;
@@ -22,6 +23,8 @@ public record FichaOrdemResponse(
 		String genero,
 		Integer idade,
 		Long retratoVersao,
+		DescricaoFicha descricao,
+		List<HabilidadeResponse> habilidades,
 		ClasseOrdem classe,
 		String origem,
 		int nex,
