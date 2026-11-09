@@ -15,6 +15,8 @@ const ORDEM: FichaOrdem = {
   atributos: { AGI: 1, FOR: 1, INT: 3, PRE: 2, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: 4, maximo: 5 } },
   pericias: { INVESTIGACAO: 'VETERANO' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 const DND: FichaDnd = {
@@ -23,6 +25,8 @@ const DND: FichaDnd = {
   atributos: { FOR: 16, DES: 12, CON: 14, INT: 8, SAB: 10, CAR: 9 },
   recursos: { PV: { atual: 30, maximo: 44 }, PV_TEMP: { atual: 0, maximo: null } },
   ca: 18, inspiracao: false, salvaguardas: ['FOR', 'CON'], pericias: { ATLETISMO: 'PROFICIENTE' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 function montar(buscarFicha: (id: number) => unknown, id = '7') {

@@ -16,6 +16,8 @@ const FICHA: FichaOrdem = {
     PE: { atual: 5, maximo: 10 },
   },
   pericias: { INVESTIGACAO: 'TREINADO' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 const FICHA_DND: FichaDnd = {
@@ -24,6 +26,8 @@ const FICHA_DND: FichaDnd = {
   atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },
   ca: 15, inspiracao: false, salvaguardas: [], pericias: {},
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 describe('aplicarAjuste', () => {

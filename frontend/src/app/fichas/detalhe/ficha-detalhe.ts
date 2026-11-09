@@ -1,9 +1,11 @@
-import { Component, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../core/api-error';
+import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
 import { RecursosFicha } from './recursos-ficha';
@@ -21,6 +23,7 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
   imports: [
     RouterLink,
     MatMenuModule,
+    MatTabsModule,
     Medalhao,
     RecursosFicha,
     ResultadoRolagem,
@@ -38,6 +41,23 @@ export class FichaDetalhe {
 
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
+
+  /** Vem do query param ?aba= (o mesmo binding de inputs): ficha, habilidades ou descricao. */
+  readonly aba = input<string>();
+
+  /** Abas do sistema da ficha carregada e o índice da aberta; aba ausente ou desconhecida é a Ficha (0). */
+  readonly abas = computed(() => {
+    const ficha = this.ficha();
+    return ficha ? ABAS_POR_SISTEMA[ficha.sistema] : [];
+  });
+  readonly indiceDaAba = computed(() => {
+    const ficha = this.ficha();
+    if (!ficha) {
+      return 0;
+    }
+    const codigo = abaValida(ficha.sistema, this.aba());
+    return Math.max(0, this.abas().findIndex((a) => a.codigo === codigo));
+  });
 
   readonly estado = signal<Estado>('carregando');
   readonly ficha = signal<Ficha | null>(null);
@@ -77,6 +97,15 @@ export class FichaDetalhe {
   /** "Arthur · 34 anos · F": jogador, idade (se houver) e gênero. */
   legenda(f: Ficha): string {
     return [f.jogador, f.idade === null ? null : `${f.idade} anos`, f.genero].filter((p) => p !== null).join(' · ');
+  }
+
+  /** Troca de aba só na URL (replaceUrl: não enche o histórico), preservando os outros parâmetros. */
+  trocarAba(indice: number): void {
+    const aba = this.abas()[indice];
+    if (!aba || indice === this.indiceDaAba()) {
+      return;
+    }
+    void this.router.navigate([], { queryParams: { aba: aba.codigo }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   /** Rola o que o corpo da ficha pediu: o servidor faz os d20 e devolve cada dado. */

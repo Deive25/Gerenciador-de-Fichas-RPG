@@ -54,9 +54,9 @@
   color: #f0a597;
 }
 
-// Celular: blocos empilhados. Computador: retrato à esquerda (três linhas) e, à direita, status e
-// os primeiros blocos do corpo (identidade etc.); o resto do corpo vem embaixo em largura total.
-// O corpo (FichaOrdemCorpo / FichaDndCorpo) tem `display: contents`: seus blocos são itens desta grade.
+// Celular: blocos empilhados. Computador: retrato à esquerda e, à direita, os anéis de status.
+// Embaixo ficam as abas; o corpo da aba Ficha (FichaOrdemCorpo / FichaDndCorpo, com `display: contents`)
+// usa a mesma grade, com seus blocos como itens e as perícias em largura total.
 // minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo (ex.: "Constituição ⓘ")
 // e a ficha passa da largura do celular.
 .bento {
@@ -66,11 +66,52 @@
 
   @media (min-width: 900px) {
     grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
-
-    .retrato {
-      grid-row: span 3;
-    }
   }
+}
+
+.corpo {
+  padding-top: 0.75rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Abas: rótulos nos tokens do app (--cor-acao na ativa, AA sobre #121019), alvo de 44 px e, se não
+// couberem em 375 px, o cabeçalho do Material pagina; a página não ganha rolagem horizontal.
+.abas {
+  --mat-tab-active-label-text-color: var(--cor-acao);
+  --mat-tab-active-hover-label-text-color: var(--cor-acao);
+  --mat-tab-active-focus-label-text-color: var(--cor-acao);
+  --mat-tab-inactive-label-text-color: var(--cor-texto-suave);
+  --mat-tab-inactive-hover-label-text-color: var(--cor-texto);
+  --mat-tab-inactive-focus-label-text-color: var(--cor-texto);
+  --mat-tab-active-indicator-color: var(--cor-acao);
+  --mat-tab-active-hover-indicator-color: var(--cor-acao);
+  --mat-tab-active-focus-indicator-color: var(--cor-acao);
+  --mat-tab-active-ripple-color: var(--cor-acao);
+  --mat-tab-inactive-ripple-color: var(--cor-acao);
+  --mat-tab-divider-color: var(--cor-borda);
+  --mat-tab-background-color: transparent;
+  --mat-tab-foreground-color: var(--cor-texto);
+  --mat-tab-pagination-icon-color: var(--cor-texto);
+  --mat-tab-label-text-font: var(--fonte-titulo);
+  --mat-tab-label-text-size: 1rem;
+  --mat-tab-container-height: 48px;
+  display: block;
+  margin-top: 0.75rem;
+  max-width: 100%;
+
+  ::ng-deep .mat-mdc-tab {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+.aba-provisoria {
+  margin: 0;
+  padding: 1rem 0;
+  color: var(--cor-texto-suave);
 }
 
 .retrato {
