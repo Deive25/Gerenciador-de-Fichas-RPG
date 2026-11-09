@@ -91,15 +91,19 @@ export class DescricaoAba implements OnInit {
     this.erroGeral.set(null);
     this.salvo.set(false);
     this.salvando.set(true);
+    // Bloqueia a digitação: o que fosse digitado agora seria apagado pelo reset do sucesso.
+    this.form.disable({ emitEvent: false });
     this.api.atualizarDescricao(this.ficha().id, entrada).subscribe({
       next: (gravada) => {
         this.salvando.set(false);
+        this.form.enable({ emitEvent: false });
         this.carregar(gravada);
         this.salvo.set(true);
         this.atualizada.emit(gravada);
       },
       error: (erro: ApiError) => {
         this.salvando.set(false);
+        this.form.enable({ emitEvent: false });
         if (aplicarErrosDoServidor(this.form, erro)) {
           focarPrimeiroInvalidoDepois(this.host.nativeElement, this.injector, this.cdr);
         } else {

@@ -15,9 +15,7 @@
   }
 
   <div class="acoes-form">
-    @if (salvo() && semMudanca()) {
-      <p class="salvo" role="status">Descrição salva.</p>
-    }
+    <p class="salvo" role="status">{{ salvo() && semMudanca() ? 'Descrição salva.' : '' }}</p>
     <button type="submit" class="botao" [disabled]="salvando() || semMudanca()">
       {{ salvando() ? 'Salvando…' : 'Salvar descrição' }}
     </button>
