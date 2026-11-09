@@ -96,7 +96,7 @@ describe('DescricaoAba', () => {
 
     expect(el.querySelector('[data-campo="historia"]')?.textContent).toContain('Muito longa para o servidor');
     expect(emitidas).toEqual([]);
-    expect(el.querySelector('[role="status"]')).toBeNull();
+    expect(el.querySelector('[role="status"]')?.textContent?.trim()).toBe('');
   });
 
   it('erro sem campo mostra o erro geral', async () => {
@@ -119,6 +119,51 @@ describe('DescricaoAba', () => {
     fixture.detectChanges();
 
     expect(atualizarDescricao).toHaveBeenCalledTimes(1);
+  });
+
+  function desabilitados(el: HTMLElement): boolean[] {
+    return ['aparencia', 'historia', 'anotacoes'].map((n) => campo(el, n).disabled);
+  }
+
+  it('enquanto salva os tres campos ficam desabilitados e voltam com o valor salvo no sucesso', async () => {
+    const envio = new Subject<DescricaoFicha>();
+    const { fixture, el } = montar({ atualizarDescricao: vi.fn(() => envio) });
+    digitar(fixture, el, 'historia', 'abc');
+    salvar(el).click();
+    fixture.detectChanges();
+    expect(desabilitados(el)).toEqual([true, true, true]);
+
+    envio.next({ aparencia: 'Alta e magra', historia: 'abc', anotacoes: null });
+    envio.complete();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(desabilitados(el)).toEqual([false, false, false]);
+    expect(campo(el, 'historia').value).toBe('abc');
+    expect(campo(el, 'aparencia').value).toBe('Alta e magra');
+  });
+
+  it('apos um erro os campos voltam habilitados e mantem o que foi digitado', async () => {
+    const erro: ApiError = { status: 0, titulo: 'Sem conexão', detalhe: 'Tente de novo.', campos: {} };
+    const { fixture, el } = montar({ atualizarDescricao: vi.fn(() => throwError(() => erro)) });
+    digitar(fixture, el, 'historia', 'texto digitado');
+    await clicar(fixture, salvar(el));
+
+    expect(desabilitados(el)).toEqual([false, false, false]);
+    expect(campo(el, 'historia').value).toBe('texto digitado');
+  });
+
+  it('o aviso de salvo existe vazio antes de salvar e ganha o texto depois', async () => {
+    const atualizarDescricao = vi.fn((_id: number, d: DescricaoFicha) => of(d));
+    const { fixture, el } = montar({ atualizarDescricao });
+    const status = el.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status!.textContent?.trim()).toBe('');
+
+    digitar(fixture, el, 'historia', 'abc');
+    await clicar(fixture, salvar(el));
+    expect(el.querySelector('[role="status"]')).toBe(status);
+    expect(status!.textContent).toContain('Descrição salva.');
   });
 
   it('o contador mostra N/4000', () => {
