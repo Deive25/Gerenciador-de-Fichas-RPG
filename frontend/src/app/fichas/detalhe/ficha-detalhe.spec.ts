@@ -421,7 +421,29 @@ describe('FichaDetalhe · abas', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(selecionada(el)).toBe('Habilidades');
-    expect(el.textContent).toContain('Habilidades em breve');
+    expect(el.querySelector('app-habilidades-aba')).not.toBeNull();
+  });
+
+  it('na aba Habilidades mostra as habilidades da ficha e uma nova aparece sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Ataque especial', tipo: 'CLASSE' as const, descricao: null };
+    const nova = { id: 4, nome: 'Faro paranormal', tipo: 'PARANORMAL' as const, descricao: null };
+    const buscarFicha = vi.fn(() => of({ ...FICHA, habilidades: [existente] }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'habilidades');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Ataque especial');
+
+    // A aba avisa a lista nova (depois de gravar na API); o detalhe a coloca na ficha sem recarregar.
+    const aba = fixture.debugElement.query((d) => d.name === 'app-habilidades-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Faro paranormal');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
   it('clicar em Descricao poe a aba na URL sem criar entrada no historico', async () => {

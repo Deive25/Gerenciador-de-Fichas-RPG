@@ -107,7 +107,7 @@
                 </div>
               }
               @case ('habilidades') {
-                <p class="aba-provisoria">Habilidades em breve.</p>
+                <app-habilidades-aba [ficha]="f" (atualizada)="atualizarHabilidades($event)" />
               }
               @case ('descricao') {
                 <p class="aba-provisoria">Descrição em breve.</p>
