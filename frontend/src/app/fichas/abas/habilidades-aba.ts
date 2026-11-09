@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, ElementRef, Injector, computed, inject, input, output, signal } from '@angular/core';
-import { AbstractControl, FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -98,12 +98,7 @@ export class HabilidadesAba {
     this.aoMudarEdicao(null);
   }
 
-  protected mensagem(controle: AbstractControl): string | null {
-    if (controle.errors?.['maxlength'] && !controle.errors['servidor'] && (controle.touched || controle.dirty)) {
-      return `Máximo de ${controle.errors['maxlength'].requiredLength} caracteres`;
-    }
-    return mensagemDoControle(controle);
-  }
+  protected readonly mensagem = mensagemDoControle;
 
   protected salvar(): void {
     const destino = this.editando();

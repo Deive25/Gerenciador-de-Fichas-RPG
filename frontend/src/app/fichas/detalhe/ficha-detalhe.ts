@@ -8,12 +8,13 @@ import { ApiError } from '../../core/api-error';
 import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
+import { DescricaoAba } from '../abas/descricao-aba';
 import { HabilidadesAba } from '../abas/habilidades-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { Ficha, Habilidade, PedidoTeste, TesteResultado } from '../ficha.model';
+import { DescricaoFicha, Ficha, Habilidade, PedidoTeste, TesteResultado } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
@@ -28,6 +29,7 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     Medalhao,
     RecursosFicha,
     HabilidadesAba,
+    DescricaoAba,
     ResultadoRolagem,
     FichaOrdemCorpo,
     FichaDndCorpo,
@@ -113,6 +115,11 @@ export class FichaDetalhe {
   /** A aba já gravou na API: só troca a lista na ficha, sem recarregar. */
   atualizarHabilidades(habilidades: Habilidade[]): void {
     this.ficha.update((f) => f && { ...f, habilidades });
+  }
+
+  /** Idem para a descrição: a aba já gravou, só troca na ficha. */
+  atualizarDescricao(descricao: DescricaoFicha): void {
+    this.ficha.update((f) => f && { ...f, descricao });
   }
 
   /** Rola o que o corpo da ficha pediu: o servidor faz os d20 e devolve cada dado. */

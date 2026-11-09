@@ -198,4 +198,16 @@ describe('HabilidadesAba', () => {
     expect(criarHabilidade).not.toHaveBeenCalled();
     expect(el.textContent).toContain('Obrigatório');
   });
+
+  it('descricao com 4001 caracteres mostra Maximo de 4000 caracteres e nao envia', async () => {
+    const criarHabilidade = vi.fn();
+    const { fixture, el } = montar(ORDEM, { criarHabilidade });
+    await clicar(fixture, botao(el, 'Adicionar habilidade'));
+    preencher(el, 'Golpe', 'a'.repeat(4001));
+    await escolherTipo(fixture, 'Classe');
+    await clicar(fixture, botao(el, 'Salvar'));
+
+    expect(criarHabilidade).not.toHaveBeenCalled();
+    expect(el.querySelector('[data-campo="descricao"]')?.textContent).toContain('Máximo de 4000 caracteres');
+  });
 });
