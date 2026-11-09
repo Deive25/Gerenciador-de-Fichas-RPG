@@ -72,7 +72,7 @@ export function mensagemDoControle(controle: AbstractControl): string | null {
     return 'Obrigatório';
   }
   if (erros['maxlength']) {
-    return 'Máximo de 255 caracteres';
+    return `Máximo de ${erros['maxlength'].requiredLength} caracteres`;
   }
   if (erros['pattern']) {
     return 'Use um número inteiro';

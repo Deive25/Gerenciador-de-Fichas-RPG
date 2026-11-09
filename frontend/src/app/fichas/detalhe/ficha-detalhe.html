@@ -110,7 +110,7 @@
                 <app-habilidades-aba [ficha]="f" (atualizada)="atualizarHabilidades($event)" />
               }
               @case ('descricao') {
-                <p class="aba-provisoria">Descrição em breve.</p>
+                <app-descricao-aba [ficha]="f" (atualizada)="atualizarDescricao($event)" />
               }
             }
           </mat-tab>

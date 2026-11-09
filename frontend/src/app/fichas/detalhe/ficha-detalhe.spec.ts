@@ -446,6 +446,25 @@ describe('FichaDetalhe · abas', () => {
     expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
+  it('na aba Descricao mostra a descricao da ficha e a nova fica na ficha sem recarregar', async () => {
+    const buscarFicha = vi.fn(() => of({ ...FICHA, descricao: { aparencia: 'Alta', historia: null, anotacoes: null } }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'descricao');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector<HTMLTextAreaElement>('[data-campo="aparencia"] textarea')?.value).toBe('Alta');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-descricao-aba').componentInstance as {
+      atualizada: { emit(d: unknown): void };
+    };
+    aba.atualizada.emit({ aparencia: 'Baixa', historia: null, anotacoes: null });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.ficha()?.descricao.aparencia).toBe('Baixa');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
   it('clicar em Descricao poe a aba na URL sem criar entrada no historico', async () => {
     const { fixture, el, navegar } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
     const aba = Array.from(el.querySelectorAll<HTMLElement>('[role=tab]')).find((t) => t.textContent?.includes('Descrição'))!;
