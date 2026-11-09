@@ -9,6 +9,8 @@ const FICHA: FichaDnd = {
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 0, maximo: null } },
   ca: 15, inspiracao: true, salvaguardas: ['DES', 'INT'],
   pericias: { FURTIVIDADE: 'ESPECIALISTA', PERCEPCAO: 'PROFICIENTE' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 function montar(ficha: FichaDnd = FICHA, rolando = false) {

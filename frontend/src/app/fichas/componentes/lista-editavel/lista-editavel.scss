@@ -1,0 +1,30 @@
+// Colunas minmax(0, 1fr) e quebra de palavra: nada passa da largura de 375 px.
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.adicionar {
+  justify-self: start;
+}
+
+.cartao {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  overflow-wrap: anywhere;
+}
+
+.acoes,
+.confirmacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.aviso {
+  margin: 0;
+}

@@ -3,7 +3,16 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { paraApiError } from '../core/api-error';
-import { Ficha, FichaEntrada, FichaResumo, PedidoTeste, TesteResultado } from './ficha.model';
+import {
+  DescricaoFicha,
+  Ficha,
+  FichaEntrada,
+  FichaResumo,
+  Habilidade,
+  HabilidadeEntrada,
+  PedidoTeste,
+  TesteResultado,
+} from './ficha.model';
 
 /** Único ponto de contato com a API de fichas. Todo erro sai como ApiError. */
 @Injectable({ providedIn: 'root' })
@@ -68,6 +77,24 @@ export class FichaApi {
   /** O servidor rola os d20 (ele é a fonte do aleatório); o navegador só mostra o resultado. */
   testar(id: number, teste: PedidoTeste): Observable<TesteResultado> {
     return this.tratar(this.http.post<TesteResultado>(`${this.base}/${id}/testes`, teste));
+  }
+
+  atualizarDescricao(id: number, descricao: DescricaoFicha): Observable<DescricaoFicha> {
+    return this.alterou(this.tratar(this.http.put<DescricaoFicha>(`${this.base}/${id}/descricao`, descricao)));
+  }
+
+  criarHabilidade(id: number, habilidade: HabilidadeEntrada): Observable<Habilidade> {
+    return this.alterou(this.tratar(this.http.post<Habilidade>(`${this.base}/${id}/habilidades`, habilidade)));
+  }
+
+  atualizarHabilidade(id: number, habilidadeId: number, habilidade: HabilidadeEntrada): Observable<Habilidade> {
+    return this.alterou(
+      this.tratar(this.http.put<Habilidade>(`${this.base}/${id}/habilidades/${habilidadeId}`, habilidade)),
+    );
+  }
+
+  excluirHabilidade(id: number, habilidadeId: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/habilidades/${habilidadeId}`)));
   }
 
   private alterou<T>(requisicao: Observable<T>): Observable<T> {

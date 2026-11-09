@@ -1,5 +1,6 @@
 package dev.spironello.fichasrpg.dto;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,6 +23,8 @@ public record FichaDndResponse(
 		String genero,
 		Integer idade,
 		Long retratoVersao,
+		DescricaoFicha descricao,
+		List<HabilidadeResponse> habilidades,
 		EdicaoDnd edicao,
 		String classe,
 		String especie,
