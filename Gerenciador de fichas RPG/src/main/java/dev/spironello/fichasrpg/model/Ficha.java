@@ -39,6 +39,16 @@ public abstract class Ficha {
 	@Column(nullable = true)
 	private Integer idade;
 
+	// Descrição (2.1g): texto livre e opcional, até 4000 caracteres cada. Quem converte vazio em null é a API.
+	@Column(length = 4000)
+	private String aparencia;
+
+	@Column(length = 4000)
+	private String historia;
+
+	@Column(length = 4000)
+	private String anotacoes;
+
 	/*
 	 * Versão do retrato (retrato_ficha.atualizado_em em milissegundos), ou null sem retrato (2.1c).
 	 * É uma subconsulta dentro do mesmo SELECT da ficha: a listagem continua com uma consulta só
@@ -82,6 +92,24 @@ public abstract class Ficha {
 	}
 	public void setIdade(Integer idade) {
 		this.idade = idade;
+	}
+	public String getAparencia() {
+		return aparencia;
+	}
+	public void setAparencia(String aparencia) {
+		this.aparencia = aparencia;
+	}
+	public String getHistoria() {
+		return historia;
+	}
+	public void setHistoria(String historia) {
+		this.historia = historia;
+	}
+	public String getAnotacoes() {
+		return anotacoes;
+	}
+	public void setAnotacoes(String anotacoes) {
+		this.anotacoes = anotacoes;
 	}
 	public Long getRetratoVersao() {
 		return retratoVersao;
