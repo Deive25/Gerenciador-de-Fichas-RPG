@@ -105,6 +105,50 @@ describe('FichaApi', () => {
     expect(resultado).toEqual(corpo);
   });
 
+  describe('descricao e habilidades', () => {
+    const HABILIDADE = { nome: 'Ataque Especial', tipo: 'CLASSE' as const, descricao: null };
+
+    it('atualizarDescricao faz PUT /fichas/7/descricao e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      const descricao = { aparencia: 'Alta', historia: null, anotacoes: null };
+      api.atualizarDescricao(7, descricao).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/descricao`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(descricao);
+      req.flush(descricao);
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('criarHabilidade faz POST /fichas/7/habilidades e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.criarHabilidade(7, HABILIDADE).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/habilidades`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(HABILIDADE);
+      req.flush({ id: 3, ...HABILIDADE });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('atualizarHabilidade faz PUT /fichas/7/habilidades/3 e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.atualizarHabilidade(7, 3, HABILIDADE).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/habilidades/3`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(HABILIDADE);
+      req.flush({ id: 3, ...HABILIDADE });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('excluirHabilidade faz DELETE /fichas/7/habilidades/3 e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.excluirHabilidade(7, 3).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/habilidades/3`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+  });
+
   it('buscarFicha devolve uma ficha de D&D sem mexer', () => {
     let ficha: unknown;
     api.buscarFicha(8).subscribe((f) => (ficha = f));

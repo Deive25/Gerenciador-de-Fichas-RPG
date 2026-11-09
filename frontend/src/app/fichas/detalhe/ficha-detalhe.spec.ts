@@ -20,6 +20,8 @@ const FICHA: FichaOrdem = {
     PE: { atual: 5, maximo: 10 },
   },
   pericias: { INVESTIGACAO: 'TREINADO', OCULTISMO: 'VETERANO', VONTADE: 'EXPERT' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 const RESULTADO: TesteResultado = {
@@ -33,6 +35,8 @@ const FICHA_DND: FichaDnd = {
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },
   ca: 15, inspiracao: true, salvaguardas: ['DES'],
   pericias: { FURTIVIDADE: 'ESPECIALISTA' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 const RESULTADO_DND: TesteResultado = {
@@ -383,5 +387,70 @@ describe('FichaDetalhe · D&D', () => {
 
     expect(testar).toHaveBeenCalledTimes(1);
     expect((el.querySelector('button[aria-label="Rolar Carisma, +3"]') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('FichaDetalhe · abas', () => {
+  const rotulos = (el: HTMLElement) => Array.from(el.querySelectorAll('[role=tab]')).map((t) => t.textContent?.trim());
+  const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
+
+  it.each([
+    ['Ordem', FICHA],
+    ['D&D', FICHA_DND],
+  ])('ficha de %s tem as abas Ficha, Habilidades e Descricao, nessa ordem', (_nome, ficha) => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
+    expect(rotulos(el)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
+  });
+
+  it('sem aba na URL abre a Ficha, com os botoes Rolar', () => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    expect(selecionada(el)).toBe('Ficha');
+    expect(botao(el, 'Rolar')).toBeDefined();
+  });
+
+  it('aba desconhecida abre a Ficha', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    fixture.componentRef.setInput('aba', 'xyz');
+    fixture.detectChanges();
+    expect(selecionada(el)).toBe('Ficha');
+  });
+
+  it('com aba=habilidades abre a aba Habilidades', async () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    fixture.componentRef.setInput('aba', 'habilidades');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Habilidades');
+    expect(el.textContent).toContain('Habilidades em breve');
+  });
+
+  it('clicar em Descricao poe a aba na URL sem criar entrada no historico', async () => {
+    const { fixture, el, navegar } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    const aba = Array.from(el.querySelectorAll<HTMLElement>('[role=tab]')).find((t) => t.textContent?.includes('Descrição'))!;
+    aba.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navegar).toHaveBeenCalledWith([], {
+      queryParams: { aba: 'descricao' },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  });
+
+  it('retrato, aneis e resultado da rolagem ficam fora das abas', async () => {
+    const { fixture, el } = montar({
+      buscarFicha: vi.fn(() => of(FICHA)),
+      testar: vi.fn(() => of(RESULTADO)),
+    });
+    botao(el, 'Rolar')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const grupo = el.querySelector('mat-tab-group')!;
+    expect(el.querySelector('app-medalhao')).not.toBeNull();
+    expect(el.querySelector('app-resultado-rolagem')).not.toBeNull();
+    expect(el.querySelectorAll('app-anel-status').length).toBe(3);
+    for (const seletor of ['app-medalhao', 'app-resultado-rolagem', 'app-anel-status']) {
+      expect(grupo.querySelector(seletor)).toBeNull();
+    }
   });
 });
