@@ -39,7 +39,7 @@ Mesmo fluxo da fase 2: TDD → verificador separado → documentação → PR co
 |---|---|---|
 | **2.1d** | O esqueleto novo e **Ordem Paranormal completa**: migração V4 (`ficha` + `ficha_ordem` e conversão das fichas antigas), API polimórfica, `PATCH` de recursos, rolagem com vários d20, escolha do sistema na criação (D&D aparece como "em breve"), formulário, ficha e painel de Ordem. **O d100 sai.** | Os testes de migração, API e regras ficam verdes. O fluxo completo de Ordem (criar → ficha → rolar → edição rápida → editar → excluir) funciona a 375 px e a 1280 px. As fichas antigas aparecem convertidas. |
 | **2.1e** | **D&D 5e e 2024** no mesmo esqueleto: `ficha_dnd`, regras com proficiência, especialização e vantagem/desvantagem, e formulário e ficha de D&D. | Testes das regras nas fronteiras (modificador, proficiência por nível, especialização, vantagem); fluxo completo de D&D nas duas larguras. |
-| **2.1f** | **Dado animado** (era o 2.1d da spec do redesign), já com d20: vários dados em Ordem, 2 com vantagem/desvantagem e o dado mantido destacado. | Revisto num design curto antes do plano. |
+| **2.1f** | **Dado animado** (era o 2.1d da spec do redesign), já com d20: vários dados em Ordem, 2 com vantagem/desvantagem e o dado mantido destacado. | Design curto aprovado em 2026-11-09: spec do redesign §5 (revista). |
 
 **Novos ADRs:**
 - **0015**, "uma tabela por sistema (herança JOINED)", com as alternativas de catálogo + tabelas genéricas e de JSONB;

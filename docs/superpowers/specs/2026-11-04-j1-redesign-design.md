@@ -20,12 +20,12 @@ O Arthur não gostou do 2.1 no computador, que mostra dois painéis lado a lado.
 **Sucesso:**
 - no computador e no celular, o painel mostra as fichas como cartões com retrato, e tocar num cartão abre a ficha numa tela própria;
 - o jogador troca o retrato em menos de 30 s, sem precisar editar a imagem fora do app;
-- ao rolar uma perícia, dois d10 caem na tela mostrando exatamente o número que o servidor sorteou;
+- ao rolar uma perícia, os d20 caem na tela mostrando exatamente os números que o servidor sorteou (revisto em 2026-11-09; o texto original era sobre dois d10 do d100);
 - o pacote inicial continua leve (a parte 3D só é baixada na primeira rolagem).
 
 **Fora do escopo:**
 - galeria de imagens prontas, imagens de fundo da ficha e geração de imagem;
-- outros dados além do d100 (o sistema só usa d100);
+- outros dados além do d20 (Ordem Paranormal e D&D só rolam d20 nos testes do núcleo jogável);
 - som da rolagem;
 - histórico de rolagens (continua no 2.4);
 - preferência de "animação ligada/desligada" no app (respeitamos a preferência de movimento reduzido do sistema).
@@ -40,7 +40,7 @@ Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet se
 | **2.1c** | Retrato (§4): migração V3, rotas do retrato, `retratoVersao` no JSON, recorte no navegador e medalhão com retrato ou iniciais. Mais a **edição rápida de vida e sanidade** na ficha (§4.6), pedida pelo Arthur depois de ver o 2.1b. | Os testes de integração da §4.5 ficam verdes, o recorte e a edição rápida têm testes unitários, e trocar e remover o retrato e ajustar vida e sanidade funcionam no navegador a 375 px e a 1280 px. |
 | **2.1d** | Dado 3D (§5): spike, sobreposição com dois d10 forçados, plano B automático e toque para pular. | A conversão e a escolha entre 3D e plano B têm testes. A rolagem é conferida a 375 px e a 1280 px com captura de tela, e o build mostra a biblioteca 3D num pedaço separado do pacote inicial. |
 
-**Ordem revista pelo Arthur em 2026-11-04**, depois de ver o 2.1b: 2.1c → **vários sistemas** (spec `2026-11-04-j1-sistemas-design.md`: 2.1d Ordem Paranormal, 2.1e D&D 5e e 2024; o d100 sai) → **2.1f dado animado**. O dado vem depois dos sistemas porque precisa do d20 (D&D) e de vários d20 (Ordem Paranormal). A §5 abaixo vale como histórico: o dado é revisto num design curto antes do 2.1f, já sem o d100.
+**Ordem revista pelo Arthur em 2026-11-04**, depois de ver o 2.1b: 2.1c → **vários sistemas** (spec `2026-11-04-j1-sistemas-design.md`: 2.1d Ordem Paranormal, 2.1e D&D 5e e 2024; o d100 sai) → **2.1f dado animado**. O dado vem depois dos sistemas porque precisa do d20 (D&D) e de vários d20 (Ordem Paranormal). A §5 abaixo foi **revista em 2026-11-09** para o d20 (design curto aprovado pelo Arthur) e vale para o 2.1f; a linha 2.1d da tabela acima fica como histórico.
 
 **Novos ADRs** (próximos números livres a partir de 0014):
 - retrato no PostgreSQL, numa tabela separada (alternativa: armazenamento de objetos, reavaliado no 2.6);
@@ -229,44 +229,44 @@ Pedido do Arthur ao ver o 2.1b: mudar a vida e a sanidade **atuais** sem abrir o
 - **Painel:** o `versaoFichas` muda depois do `PUT`, então o painel já mostra o valor novo ao voltar.
 - **Testes:** limites de 0 ao máximo; vários toques viram um `PUT` (com relógio simulado); erro volta o valor; toque durante o salvamento; digitar o valor; nomes acessíveis.
 
-## 5. Dado 3D (agora 2.1f; ver a spec dos sistemas)
+## 5. Dado 3D (incremento 2.1f; revisto em 2026-11-09 para o d20)
+
+**Status:** design curto aprovado pelo Arthur em 2026-11-09. Ele substitui a versão original desta seção, que tratava do d100 (dois d10). A spec dos sistemas (`2026-11-04-j1-sistemas-design.md` §2) renumerou o incremento para 2.1f e trocou o d100 pelo d20.
 
 ### 5.1 Biblioteca
 
 **Escolhida:** `open-dice-dnd`.
 - Licença MIT; usa `three` e `cannon-es` como dependências.
 - Permite **forçar o valor de cada dado**, que é o essencial: o servidor continua sendo quem sorteia (ADR 0011).
-- Representa o d100 como dois d10 (dezenas e unidades) e não exige arquivos públicos extras.
 
 **Descartadas** (pesquisa de 2026-11-04):
 - `@3d-dice/dice-box`: cerca de 11 MB e sem resultado forçado documentado;
 - `threejs-dice` e `dice-box-threejs`: sem manutenção;
 - `react-ttrpg-dice`: só funciona com React.
 
-**Spike** (primeira tarefa do 2.1d, com o código descartável). Confirma:
+**Teste rápido da biblioteca** (primeira tarefa do 2.1f, com o código descartável). Ele confirma:
 1. que a biblioteca compila com Angular 22 (builder com esbuild/Vite);
-2. que os dois d10 param nos valores forçados;
+2. que **até 5 d20** param nos valores forçados;
 3. o tamanho do pedaço carregado sob demanda;
-4. que funciona no Chrome com emulação de celular.
+4. que funciona no Chrome com emulação de celular;
+5. se dá para mudar a cor de um dado sem custo (usado em §5.2).
 
-**Se o spike falhar,** o Arthur é avisado e a proposta passa a ser dois d10 animados em 2D (SVG + CSS) no mesmo fluxo.
+**Se o teste falhar,** o trabalho para e o Arthur é avisado. A alternativa é uma animação 2D: d20 em SVG trocando de número com CSS, no mesmo fluxo e sem dependência nova.
 
 ### 5.2 Fluxo
 
-1. "Rolar" → o botão mostra "rolando…" e o app faz o `POST /fichas/{id}/testes-de-pericia` como hoje.
-2. Com a resposta, abre uma camada transparente sobre a ficha, e dois d10 são lançados com os valores forçados (cerca de 1,5 s).
-3. Quando os dados param, aparece o `resultado-rolagem` com perícia, valor, rolagem e faixa.
-4. Um toque na camada, ou a tecla Esc, pula a animação e mostra o resultado na hora.
-5. Se o `POST` falhar, nenhum dado é lançado e o erro aparece como hoje.
+1. "Rolar" leva o botão a "rolando…" e faz o `POST /fichas/{id}/testes` como hoje (com o `modo` em D&D).
+2. Com a resposta, abre uma camada transparente sobre a ficha e são lançados **tantos d20 quantos houver em `dados`**:
+   - em Ordem, de 1 a 5 (o valor do atributo), ou 2 com atributo 0;
+   - em D&D, 1, ou 2 com vantagem ou desvantagem.
 
-**Conversão (função pura):** a rolagem `n` (1–100) vira `dezena = ⌊(n mod 100)/10⌋ × 10` (mostrada como 00–90) e `unidade = n mod 10`.
+   Cada dado para no valor `dados[i]`, em cerca de 1,5 s.
+3. **Dado mantido:** se a biblioteca deixar (teste da §5.1, item 5), o dado `mantido` fica dourado na cena. Se não deixar, o destaque fica só no cartão do resultado, como hoje.
+4. Quando os dados param, aparece o `resultado-rolagem` de hoje, com cada dado, o mantido destacado, o bônus e o total ("Furtividade: 17 + 8 = 25"), mais o "20 natural"/"1 natural" em D&D. O seletor de modo do D&D volta a Normal, como já faz.
+5. Um toque na camada, ou a tecla Esc, pula a animação e mostra o resultado na hora.
+6. Se o `POST` falhar, nenhum dado é lançado e o erro aparece como hoje.
 
-| Rolagem | Dezena | Unidade |
-|---|---|---|
-| 1 | 00 | 1 |
-| 23 | 20 | 3 |
-| 70 | 70 | 0 |
-| 100 | 00 | 0 |
+Não há conversão de valores: o servidor já devolve cada dado de 1 a 20.
 
 **Carregamento:** a biblioteca e o `three` só são importados na **primeira rolagem** (`import()` dinâmico) e não entram no pacote inicial.
 
@@ -279,10 +279,17 @@ O app mostra o resultado direto, sem a camada 3D, quando:
 
 A falha vai só para o console, porque o jogador não precisa saber: a rolagem em si funcionou.
 
-### 5.4 Testes do 2.1d
+### 5.4 Testes do 2.1f
 
-- **Unitários:** a conversão (tabela acima, mais 10, 99 e 100); a escolha entre 3D e plano B nos três casos; o fluxo (o resultado só aparece depois de a animação terminar ou ser pulada; falha no `POST` não lança dados). A camada 3D fica atrás de uma interface (`LancadorDeDados`), então os testes usam uma versão falsa.
-- **Manual com evidência:** capturas a 375 px e a 1280 px com os dados parados no valor certo, e a saída do build mostrando o pedaço separado.
+- **Unitários:**
+  - a escolha entre 3D e plano B nos três casos;
+  - o fluxo: o resultado só aparece depois de a animação terminar ou ser pulada; falha no `POST` não lança dados; o lançador recebe exatamente `dados` e o índice do mantido;
+  - Ordem com 5 dados e com atributo 0, e D&D com vantagem.
+
+  A camada 3D fica atrás de uma interface (`LancadorDeDados`), então os testes usam uma versão falsa.
+- **Manual com evidência:**
+  - capturas a 375 px e a 1280 px com os dados parados no valor certo (Ordem com 3 dados e D&D com vantagem);
+  - a saída do build mostrando o pedaço separado e o tamanho dele.
 
 ## 6. Riscos
 
