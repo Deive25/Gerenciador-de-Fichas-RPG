@@ -43,6 +43,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problema;
 	}
 
+	/** Item de uma lista da ficha que não existe ou é de outra ficha (habilidade, ataque, item...). */
+	@ExceptionHandler(ItemDaFichaNaoEncontradoException.class)
+	public ProblemDetail handleItemNaoEncontrado(ItemDaFichaNaoEncontradoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
+				"Não existe " + ex.getLista() + " com id " + ex.getId() + " nesta ficha.");
+		problema.setTitle("Item não encontrado");
+		return problema;
+	}
+
 	@ExceptionHandler(RetratoNaoEncontradoException.class)
 	public ProblemDetail handleRetratoNaoEncontrado(RetratoNaoEncontradoException ex) {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
