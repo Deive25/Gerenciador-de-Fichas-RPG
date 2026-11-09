@@ -25,7 +25,9 @@ import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaDnd;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
+import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import dev.spironello.fichasrpg.service.FichaService;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -41,6 +43,8 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	@Autowired
 	private FichaRepository repository;
 	@Autowired
+	private HabilidadeFichaRepository habilidades;
+	@Autowired
 	private EntityManagerFactory entityManagerFactory;
 
 	private final List<Long> criadas = new ArrayList<>();
@@ -51,11 +55,15 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, executa 1 consulta, e não 1 + 4")
+	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias e habilidades, executa 1 consulta, e não 1 + 4")
 	void listarEmUmaConsulta() {
 		for (int i = 1; i <= 2; i++) {
 			criadas.add(service.criar(pedido("ficha" + i)).id());
 			criadas.add(service.criar(pedidoDnd("dnd" + i)).id());
+		}
+		// Habilidades em todas as fichas: o resumo não pode lê-las (nem a descrição) para continuar em 1 consulta.
+		for (Long id : criadas) {
+			habilidades.save(FichasDeTeste.habilidade(repository.getReferenceById(id), "Ataque", TipoHabilidade.CLASSE, null));
 		}
 		Statistics estatisticas = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
 		estatisticas.setStatisticsEnabled(true);
