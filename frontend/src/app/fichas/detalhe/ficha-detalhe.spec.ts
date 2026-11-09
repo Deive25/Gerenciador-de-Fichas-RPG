@@ -7,7 +7,7 @@ import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
-import { FichaOrdem, TesteResultado } from '../ficha.model';
+import { FichaDnd, FichaOrdem, TesteResultado } from '../ficha.model';
 import { FichaDetalhe } from './ficha-detalhe';
 
 const FICHA: FichaOrdem = {
@@ -24,6 +24,19 @@ const FICHA: FichaOrdem = {
 
 const RESULTADO: TesteResultado = {
   alvo: 'PERICIA', codigo: 'INVESTIGACAO', nome: 'Investigação', dados: [4, 19, 9], mantido: 19, bonus: 5, total: 24,
+};
+
+const FICHA_DND: FichaDnd = {
+  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+  edicao: 'D2024', classe: 'Ladino', especie: 'Halfling', antecedente: 'Criminoso', nivel: 5,
+  atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
+  recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },
+  ca: 15, inspiracao: true, salvaguardas: ['DES'],
+  pericias: { FURTIVIDADE: 'ESPECIALISTA' },
+};
+
+const RESULTADO_DND: TesteResultado = {
+  alvo: 'PERICIA', codigo: 'FURTIVIDADE', nome: 'Furtividade', dados: [17, 6], mantido: 17, bonus: 8, total: 25,
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[] = []) {
@@ -142,75 +155,11 @@ describe('FichaDetalhe', () => {
     expect(el.textContent).toContain('Arthur · 34 anos · F');
   });
 
-  it('mostra classe, NEX, origem e Defesa (10 + AGI)', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    const bloco = el.querySelector('.identidade') as HTMLElement;
-    expect(bloco.textContent).toContain('Ocultista');
-    expect(bloco.textContent).toContain('10%');
-    expect(bloco.textContent).toContain('Acadêmica');
-    expect(bloco.textContent).toContain('Defesa');
-    expect(bloco.textContent).toContain('13');
-  });
-
-  it('ficha convertida: classe nula vira A definir e origem vazia nao quebra', () => {
-    const convertida = { ...FICHA, classe: null, origem: null };
-    const { el } = montar({ buscarFicha: vi.fn(() => of(convertida)) });
-    expect((el.querySelector('.identidade') as HTMLElement).textContent).toContain('A definir');
-  });
-
   it('desenha os tres aneis de recursos', () => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
     expect(el.querySelectorAll('app-anel-status').length).toBe(3);
     expect(el.textContent).toContain('9/12');
     expect(el.textContent).toContain('5/10');
-  });
-
-  it('os 5 atributos tem valor e botao de rolar com nome acessivel', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    for (const nome of [
-      'Rolar Agilidade, 3', 'Rolar Força, 1', 'Rolar Intelecto, 4', 'Rolar Presença, 2', 'Rolar Vigor, 0',
-    ]) {
-      expect(el.querySelector(`button[aria-label="${nome}"]`)).not.toBeNull();
-    }
-  });
-
-  it('mostra as 28 pericias com selo do grau, bonus e botao de rolar', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    const rolarPericias = el.querySelectorAll('.lista-pericias button[aria-label^="Rolar "]');
-    expect(rolarPericias.length).toBe(28);
-    expect(el.querySelectorAll('button[aria-label^="Rolar "]').length).toBe(33);
-
-    const item = (nome: string) => el.querySelector(`button[aria-label^="Rolar ${nome}, +"]`)?.closest('.pericia') as HTMLElement;
-    expect(item('Investigação').querySelector('.selo')?.textContent?.trim()).toBe('T');
-    expect(item('Investigação').querySelector('.valor')?.textContent?.trim()).toBe('+5');
-    expect(item('Ocultismo').querySelector('.selo')?.textContent?.trim()).toBe('V');
-    expect(item('Ocultismo').querySelector('.valor')?.textContent?.trim()).toBe('+10');
-    expect(item('Vontade').querySelector('.selo')?.textContent?.trim()).toBe('E');
-    expect(item('Vontade').querySelector('.valor')?.textContent?.trim()).toBe('+15');
-    expect(el.querySelector('button[aria-label="Rolar Investigação, +5"]')).not.toBeNull();
-    expect(el.querySelector('button[aria-label="Rolar Vontade, +15"]')).not.toBeNull();
-  });
-
-  it('pericia destreinada fica esmaecida, sem selo, com +0, e continua rolavel', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    const rolar = el.querySelector('button[aria-label="Rolar Acrobacia, +0"]') as HTMLButtonElement;
-    const item = rolar.closest('.pericia') as HTMLElement;
-    expect(rolar.disabled).toBe(false);
-    expect(item.classList).toContain('sem-valor');
-    expect(item.querySelector('.selo')).toBeNull();
-    expect(item.querySelector('.valor')?.textContent?.trim()).toBe('+0');
-    expect(el.querySelector('button[aria-label="Rolar Investigação, +5"]')?.closest('.pericia')?.classList).not.toContain(
-      'sem-valor',
-    );
-  });
-
-  // Revisão final do 2.1b: com opacity .5 o texto ficava em 4,29:1, abaixo do AA (4,5:1).
-  // "Esmaecida" passa a ser a cor de texto suave (5,13:1), sem opacidade.
-  it('pericia destreinada fica esmaecida sem perder o contraste AA (sem opacidade)', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    const item = el.querySelector('button[aria-label="Rolar Acrobacia, +0"]')?.closest('.pericia') as HTMLElement;
-    expect(getComputedStyle(item.querySelector('.nome') as HTMLElement).opacity).not.toBe('0.5');
-    expect(getComputedStyle(item.querySelector('.valor') as HTMLElement).opacity).not.toBe('0.5');
   });
 
   it('o link de voltar tem alvo de toque de 44 px', () => {
@@ -225,17 +174,6 @@ describe('FichaDetalhe', () => {
     expect(editar.textContent).toContain('Editar');
     expect(editar.getAttribute('href')).toBe('/fichas/7/editar');
     expect(excluir.textContent).toContain('Excluir');
-  });
-
-  it('as dicas ficam em botoes pequenos, nunca no nome do item', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
-    const gatilhos = Array.from(el.querySelectorAll('.mat-mdc-tooltip-trigger'));
-    // 5 atributos + 28 perícias.
-    expect(gatilhos.length).toBe(33);
-    for (const gatilho of gatilhos) {
-      expect(gatilho.tagName).toBe('BUTTON');
-      expect(gatilho.getAttribute('aria-label')).toMatch(/^Sobre /);
-    }
   });
 
   it('rola a pericia e mostra o resultado com cada dado', () => {
@@ -364,5 +302,86 @@ describe('FichaDetalhe', () => {
     const { el } = montar({ buscarFicha: vi.fn(() => throwError(() => erro)) });
     expect(el.textContent).toContain('Ficha não encontrada');
     expect(el.querySelector('a[href="/fichas"]')?.textContent).toContain('Voltar para as fichas');
+  });
+
+  it('ficha de Ordem mostra o corpo de Ordem e nao o de D&D', () => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    expect(el.querySelector('app-ficha-ordem')).not.toBeNull();
+    expect(el.querySelector('app-ficha-dnd')).toBeNull();
+    expect(el.textContent).not.toContain('Sistema ainda sem tela');
+  });
+});
+
+describe('FichaDetalhe · D&D', () => {
+  const montarDnd = (api: Partial<Record<keyof FichaApi, unknown>> = {}) =>
+    montar({ buscarFicha: vi.fn(() => of(FICHA_DND)), ...api });
+
+  it('abre o corpo de D&D, com dois aneis (Vida e Temporario)', () => {
+    const { el } = montarDnd();
+    expect(el.querySelector('app-ficha-dnd')).not.toBeNull();
+    expect(el.querySelector('app-ficha-ordem')).toBeNull();
+    expect(el.querySelectorAll('app-anel-status').length).toBe(2);
+    expect(el.textContent).toContain('Kael');
+    expect(el.textContent).toContain('Arthur · 27 anos · M');
+  });
+
+  it('rolar Furtividade com Vantagem chama testar com o modo e mostra os 2 dados', () => {
+    const testar = vi.fn(() => of(RESULTADO_DND));
+    const { fixture, el } = montarDnd({ testar });
+
+    const botoesModo = Array.from(el.querySelectorAll<HTMLButtonElement>('.modo button'));
+    botoesModo.find((b) => b.textContent?.trim() === 'Vantagem')!.click();
+    fixture.detectChanges();
+    (el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(testar).toHaveBeenCalledWith(9, { alvo: 'PERICIA', codigo: 'FURTIVIDADE', modo: 'VANTAGEM' });
+    expect(el.textContent).toContain('Furtividade: 17 + 8 = 25');
+    expect(el.querySelectorAll('.dado').length).toBe(2);
+    expect(el.querySelectorAll('.mantido').length).toBe(1);
+  });
+
+  it('depois de rolar, o seletor volta a Normal', () => {
+    const { fixture, el } = montarDnd({ testar: vi.fn(() => of(RESULTADO_DND)) });
+    const modo = (nome: string) =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.modo button')).find((b) => b.textContent?.trim() === nome)!;
+
+    modo('Desvantagem').click();
+    fixture.detectChanges();
+    expect(modo('Desvantagem').getAttribute('aria-pressed')).toBe('true');
+    (el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(modo('Normal').getAttribute('aria-pressed')).toBe('true');
+    expect(modo('Desvantagem').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('20 natural aparece no resultado de D&D, mas nao no de Ordem', () => {
+    const vinte: TesteResultado = { ...RESULTADO_DND, dados: [20], mantido: 20, total: 28 };
+    const dnd = montarDnd({ testar: vi.fn(() => of(vinte)) });
+    (dnd.el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
+    dnd.fixture.detectChanges();
+    expect(dnd.el.textContent).toContain('20 natural');
+
+    TestBed.resetTestingModule();
+    const ordem = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar: vi.fn(() => of({ ...RESULTADO, mantido: 20, dados: [20] })) });
+    (ordem.el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).click();
+    ordem.fixture.detectChanges();
+    expect(ordem.el.textContent).not.toContain('natural');
+  });
+
+  it('nao envia duas rolagens com toque duplo em D&D', () => {
+    const resposta = new Subject<TesteResultado>();
+    const testar = vi.fn(() => resposta);
+    const { fixture, el } = montarDnd({ testar });
+    const rolar = el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement;
+
+    rolar.click();
+    fixture.detectChanges();
+    rolar.click();
+    fixture.detectChanges();
+
+    expect(testar).toHaveBeenCalledTimes(1);
+    expect((el.querySelector('button[aria-label="Rolar Carisma, +3"]') as HTMLButtonElement).disabled).toBe(true);
   });
 });

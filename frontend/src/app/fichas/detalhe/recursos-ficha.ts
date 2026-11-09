@@ -1,23 +1,42 @@
-import { Component, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { ApiError } from '../../core/api-error';
 import { AnelStatus } from '../componentes/anel-status';
 import { FichaApi } from '../ficha-api';
-import { CodigoRecurso, FichaOrdem } from '../ficha.model';
+import { Ficha, RecursoValor, Sistema } from '../ficha.model';
 
 /** Espera depois do último toque antes de salvar: vários toques seguidos viram um PATCH só. */
 export const ATRASO_SALVAMENTO_MS = 800;
 
-/** Os três anéis, na ordem em que aparecem. */
-export const ANEIS: readonly { codigo: CodigoRecurso; rotulo: string; tipo: 'vida' | 'sanidade' | 'esforco' }[] = [
-  { codigo: 'PV', rotulo: 'Vida', tipo: 'vida' },
-  { codigo: 'SAN', rotulo: 'Sanidade', tipo: 'sanidade' },
-  { codigo: 'PE', rotulo: 'Esforço', tipo: 'esforco' },
-];
+/** Um anel de recurso: o código é o que o PATCH leva (PV, SAN, PE, PV_TEMP). */
+export interface AnelDef {
+  codigo: string;
+  rotulo: string;
+  tipo: 'vida' | 'sanidade' | 'esforco' | 'temporario';
+}
 
-type Valores = Record<CodigoRecurso, number | null>;
+/** Os anéis de cada sistema, na ordem em que aparecem. */
+export const ANEIS_POR_SISTEMA: Record<Sistema, readonly AnelDef[]> = {
+  ORDEM_PARANORMAL: [
+    { codigo: 'PV', rotulo: 'Vida', tipo: 'vida' },
+    { codigo: 'SAN', rotulo: 'Sanidade', tipo: 'sanidade' },
+    { codigo: 'PE', rotulo: 'Esforço', tipo: 'esforco' },
+  ],
+  DND: [
+    { codigo: 'PV', rotulo: 'Vida', tipo: 'vida' },
+    { codigo: 'PV_TEMP', rotulo: 'Temporário', tipo: 'temporario' },
+  ],
+};
 
-function atuais(ficha: FichaOrdem): Valores {
-  return { PV: ficha.recursos.PV.atual, SAN: ficha.recursos.SAN.atual, PE: ficha.recursos.PE.atual };
+type Valores = Record<string, number | null>;
+
+/** Os recursos da ficha por código (a união Ficha tem recursos de formas diferentes). */
+function recursosDe(ficha: Ficha): Record<string, RecursoValor | undefined> {
+  return ficha.recursos;
+}
+
+function atuais(ficha: Ficha): Valores {
+  const recursos = recursosDe(ficha);
+  return Object.fromEntries(ANEIS_POR_SISTEMA[ficha.sistema].map((a) => [a.codigo, recursos[a.codigo]?.atual ?? null]));
 }
 
 /**
@@ -44,7 +63,7 @@ export function limitarDigitado(valor: number, maximo: number | null): number {
 }
 
 /**
- * Edição rápida de PV, SAN e PE atuais, direto na ficha (spec do redesign §4.6).
+ * Edição rápida dos recursos atuais (Ordem: PV, SAN e PE; D&D: PV e PV temporário), direto na ficha (spec do redesign §4.6).
  * A tela muda na hora; o PATCH sai 800 ms depois do último toque e leva só os códigos que mudaram
  * (ex.: `{ PV: 9 }`), então não há como sobrescrever o que não foi tocado. Se falhar, volta ao
  * último valor salvo. Um toque durante o salvamento agenda outro salvamento, e sair da tela com um
@@ -59,18 +78,18 @@ export function limitarDigitado(valor: number, maximo: number | null): number {
 export class RecursosFicha {
   private readonly api = inject(FichaApi);
 
-  readonly ficha = input.required<FichaOrdem>();
+  readonly ficha = input.required<Ficha>();
   /** A ficha como o servidor devolveu depois de salvar. */
-  readonly atualizada = output<FichaOrdem>();
+  readonly atualizada = output<Ficha>();
 
-  readonly aneis = ANEIS;
-  readonly valores = signal<Valores>({ PV: null, SAN: null, PE: null });
+  readonly aneis = computed(() => ANEIS_POR_SISTEMA[this.ficha().sistema]);
+  readonly valores = signal<Valores>({});
   readonly salvando = signal(false);
   readonly erro = signal<ApiError | null>(null);
 
-  private ultimoSalvo: Valores = { PV: null, SAN: null, PE: null };
+  private ultimoSalvo: Valores = {};
   /** Códigos tocados desde o último envio: só eles vão no PATCH. */
-  private pendentes = new Set<CodigoRecurso>();
+  private pendentes = new Set<string>();
   private temporizador: ReturnType<typeof setTimeout> | null = null;
   private salvarDepois = false;
   private destruido = false;
@@ -98,19 +117,19 @@ export class RecursosFicha {
     });
   }
 
-  ajustar(codigo: CodigoRecurso, delta: number): void {
+  ajustar(codigo: string, delta: number): void {
     this.mudar(codigo, aplicarAjuste(this.valores()[codigo], delta, this.maximo(codigo)));
   }
 
-  definir(codigo: CodigoRecurso, valor: number): void {
+  definir(codigo: string, valor: number): void {
     this.mudar(codigo, limitarDigitado(valor, this.maximo(codigo)));
   }
 
-  maximo(codigo: CodigoRecurso): number | null {
-    return this.ficha().recursos[codigo].maximo;
+  maximo(codigo: string): number | null {
+    return recursosDe(this.ficha())[codigo]?.maximo ?? null;
   }
 
-  private mudar(codigo: CodigoRecurso, valor: number): void {
+  private mudar(codigo: string, valor: number): void {
     this.valores.update((v) => ({ ...v, [codigo]: valor }));
     this.pendentes.add(codigo);
     this.erro.set(null);
@@ -131,7 +150,7 @@ export class RecursosFicha {
     if (this.pendentes.size === 0) {
       return;
     }
-    const corpo: Partial<Record<CodigoRecurso, number>> = {};
+    const corpo: Record<string, number> = {};
     for (const codigo of this.pendentes) {
       corpo[codigo] = this.valores()[codigo] ?? 0;
     }

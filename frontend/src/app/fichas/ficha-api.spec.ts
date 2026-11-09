@@ -105,6 +105,27 @@ describe('FichaApi', () => {
     expect(resultado).toEqual(corpo);
   });
 
+  it('buscarFicha devolve uma ficha de D&D sem mexer', () => {
+    let ficha: unknown;
+    api.buscarFicha(8).subscribe((f) => (ficha = f));
+    const corpo = {
+      id: 8, sistema: 'DND', jogador: 'A', personagem: 'B', genero: 'F', idade: null, retratoVersao: null,
+      edicao: 'D2024', classe: 'Mago', especie: 'Elfo', antecedente: null, nivel: 3,
+      atributos: { FOR: 8, DES: 14, CON: 12, INT: 16, SAB: 10, CAR: 9 },
+      recursos: { PV: { atual: 10, maximo: 18 }, PV_TEMP: { atual: 0, maximo: null } },
+      ca: 12, inspiracao: false, salvaguardas: ['INT', 'SAB'], pericias: { ARCANISMO: 'PROFICIENTE' },
+    };
+    http.expectOne(`${API}/fichas/8`).flush(corpo);
+    expect(ficha).toEqual(corpo);
+  });
+
+  it('testar manda o modo quando vier e aceita salvaguarda', () => {
+    api.testar(7, { alvo: 'SALVAGUARDA', codigo: 'DES', modo: 'VANTAGEM' }).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/testes`);
+    expect(req.request.body).toEqual({ alvo: 'SALVAGUARDA', codigo: 'DES', modo: 'VANTAGEM' });
+    req.flush({});
+  });
+
   it('testar nao conta como alteracao da ficha', () => {
     const antes = api.versaoFichas();
     api.testar(7, { alvo: 'ATRIBUTO', codigo: 'AGI' }).subscribe();

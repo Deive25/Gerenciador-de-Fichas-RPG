@@ -17,8 +17,8 @@ import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
 /**
- * Ficha de Ordem Paranormal. Perícia sem entrada no mapa é destreinada. O mapa é carregado sob demanda (lazy);
- * as leituras do repository usam @EntityGraph quando precisam dele, para evitar N+1.
+ * Ficha de Ordem Paranormal. Perícia sem entrada no mapa é destreinada. O mapa é carregado sob demanda (lazy). A listagem continua
+ * em 1 consulta porque o resumo nunca toca em pericias; o detalhe carrega o mapa dentro da transação do service.
  */
 @Entity
 @Table(name = "ficha_ordem")
