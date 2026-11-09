@@ -26,15 +26,16 @@ const CONVERTIDA: FichaOrdem = {
   pericias: {},
 };
 
-function montar(api: Partial<Record<keyof FichaApi, unknown>>, id?: string) {
+/** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */
+function montar(api: Partial<Record<keyof FichaApi, unknown>>, ficha?: FichaOrdem) {
   TestBed.configureTestingModule({
     imports: [FormularioOrdem],
     providers: [provideRouter([]), { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } }],
   });
   const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(FormularioOrdem);
-  if (id) {
-    fixture.componentRef.setInput('id', id);
+  if (ficha) {
+    fixture.componentRef.setInput('ficha', ficha);
   }
   fixture.detectChanges();
   const el = fixture.nativeElement as HTMLElement;
@@ -172,7 +173,7 @@ describe('FormularioOrdem', () => {
   it('baixar o NEX abaixo do grau ja escolhido mostra o erro do servidor na pericia', () => {
     const erro = erroApi({ 'pericias.INVESTIGACAO': 'Veterano exige NEX 35% ou mais' });
     const atualizar = vi.fn(() => throwError(() => erro));
-    const { el, salvar, componente } = montar({ buscarFicha: vi.fn(() => of(FICHA)), atualizar }, '7');
+    const { el, salvar, componente } = montar({ atualizar }, FICHA);
     componente.form.controls.nex.setValue('30');
     salvar();
     expect(el.querySelector('[data-campo="INVESTIGACAO"]')?.textContent).toContain('Veterano exige NEX 35% ou mais');
@@ -181,7 +182,7 @@ describe('FormularioOrdem', () => {
   it('corrigir o NEX limpa o erro do servidor das pericias, para o formulario poder ser enviado', () => {
     const erro = erroApi({ 'pericias.INVESTIGACAO': 'Veterano exige NEX 35% ou mais' });
     const atualizar = vi.fn().mockReturnValueOnce(throwError(() => erro)).mockReturnValueOnce(of(FICHA));
-    const { fixture, salvar, componente } = montar({ buscarFicha: vi.fn(() => of(FICHA)), atualizar }, '7');
+    const { fixture, salvar, componente } = montar({ atualizar }, FICHA);
     componente.form.controls.nex.setValue('30');
     salvar();
     expect(componente.form.controls.pericias.controls.INVESTIGACAO.errors?.['servidor']).toBeTruthy();
@@ -239,7 +240,7 @@ describe('FormularioOrdem', () => {
   });
 
   it('o select mostra so o nome do grau, sem a dica do NEX', async () => {
-    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) }, '7');
+    const { fixture, el } = montar({}, FICHA);
     fixture.componentInstance.form.controls.nex.setValue('30');
     await fixture.whenStable();
     fixture.detectChanges();
@@ -263,49 +264,6 @@ describe('FormularioOrdem', () => {
     salvar();
     salvar();
     expect(criar).toHaveBeenCalledTimes(1);
-  });
-
-  it('na edicao nao mostra o formulario enquanto a ficha carrega', () => {
-    const { el } = montar({ buscarFicha: vi.fn(() => new Subject<FichaOrdem>()) }, '7');
-    expect(el.textContent).toContain('Carregando ficha…');
-    expect(el.querySelector('form')).toBeNull();
-    expect(el.querySelector('button[type="submit"]')).toBeNull();
-  });
-
-  it('na edicao com 404 mostra ficha nao encontrada e nao deixa salvar', () => {
-    const erro: ApiError = { status: 404, titulo: 'Ficha não encontrada', detalhe: 'Não existe ficha com o id 7.', campos: {} };
-    const atualizar = vi.fn();
-    const { el } = montar({ buscarFicha: vi.fn(() => throwError(() => erro)), atualizar }, '7');
-    expect(el.textContent).toContain('Ficha não encontrada');
-    expect(el.querySelector('a[href="/fichas"]')?.textContent).toContain('Voltar para as fichas');
-    expect(el.querySelector('button[type="submit"]')).toBeNull();
-    expect(atualizar).not.toHaveBeenCalled();
-  });
-
-  it('na edicao com servidor indisponivel permite tentar de novo', () => {
-    const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
-    const buscarFicha = vi
-      .fn()
-      .mockReturnValueOnce(throwError(() => erro))
-      .mockReturnValueOnce(of(FICHA));
-    const { fixture, el, componente } = montar({ buscarFicha }, '7');
-    expect(el.querySelector('form')).toBeNull();
-
-    (Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Tentar de novo')) as HTMLButtonElement).click();
-    fixture.detectChanges();
-
-    expect(el.querySelector('form')).not.toBeNull();
-    expect(componente.form.controls.personagem.value).toBe('Detetive Lia');
-  });
-
-  it('se a ficha for de outro sistema, diz que ainda nao ha formulario e nao deixa salvar', () => {
-    const dnd = { ...FICHA, sistema: 'DND' };
-    const atualizar = vi.fn();
-    const { el } = montar({ buscarFicha: vi.fn(() => of(dnd)), atualizar }, '7');
-    expect(el.textContent).toContain('Este sistema ainda não tem formulário');
-    expect(el.querySelector('form')).toBeNull();
-    expect(el.querySelector('a[href="/fichas"]')).not.toBeNull();
-    expect(atualizar).not.toHaveBeenCalled();
   });
 
   it('foca o primeiro campo invalido ao salvar', () => {
@@ -358,7 +316,7 @@ describe('FormularioOrdem', () => {
 
   it('edita com a ficha carregada', () => {
     const atualizar = vi.fn(() => of(FICHA));
-    const { salvar, componente, navegar } = montar({ buscarFicha: vi.fn(() => of(FICHA)), atualizar }, '7');
+    const { salvar, componente, navegar } = montar({ atualizar }, FICHA);
     expect(componente.form.controls.personagem.value).toBe('Detetive Lia');
     expect(componente.form.controls.classe.value).toBe('OCULTISTA');
     expect(componente.form.controls.pericias.controls.INVESTIGACAO.value).toBe('VETERANO');
@@ -376,7 +334,7 @@ describe('FormularioOrdem', () => {
 
   it('edita uma ficha convertida (sem classe, PE vazio, sem pericias) sem exigir a classe', async () => {
     const atualizar = vi.fn(() => of(CONVERTIDA));
-    const { fixture, el, salvar, componente, navegar } = montar({ buscarFicha: vi.fn(() => of(CONVERTIDA)), atualizar }, '8');
+    const { fixture, el, salvar, componente, navegar } = montar({ atualizar }, CONVERTIDA);
     await fixture.whenStable();
     fixture.detectChanges();
     expect(el.querySelector('form')).not.toBeNull();

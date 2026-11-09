@@ -6,7 +6,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.jayway.jsonpath.JsonPath;
 
+import dev.spironello.fichasrpg.model.AtributoDnd;
+import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
+import dev.spironello.fichasrpg.model.GrauDnd;
+import dev.spironello.fichasrpg.model.PericiaDnd;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.repository.FichaRepository;
@@ -31,6 +37,11 @@ class ContratoJsonTest extends IntegrationTestBase {
 
 	@Autowired
 	private FichaRepository repository;
+
+	@BeforeEach
+	void limparBanco() {
+		repository.deleteAll();
+	}
 
 	@Test
 	@DisplayName("GET /fichas/{id} devolve exatamente as 13 chaves da ficha de Ordem, com mapas por código")
@@ -77,6 +88,59 @@ class ContratoJsonTest extends IntegrationTestBase {
 
 		assertThat(primeiro.keySet()).containsExactlyInAnyOrder(
 				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "recursos");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0].recursos[0]").keySet())
+				.containsExactlyInAnyOrder("codigo", "atual", "maximo");
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de D&D devolve exatamente as 18 chaves, com mapas por código")
+	void chavesDaFichaDnd() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setPvAtual(10);
+		ficha.setSalvaguardas(Set.of(AtributoDnd.FOR));
+		ficha.getPericias().put(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE);
+		ficha.getPericias().put(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA);
+		ficha = repository.save(ficha);
+
+		String corpo = mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+
+		Map<String, Object> json = JsonPath.read(corpo, "$");
+
+		assertThat(json.keySet()).containsExactlyInAnyOrder(
+				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao",
+				"edicao", "classe", "especie", "antecedente", "nivel", "atributos", "recursos", "ca",
+				"inspiracao", "salvaguardas", "pericias");
+		assertThat(json.get("sistema")).isEqualTo("DND");
+		assertThat(json.get("edicao")).isEqualTo("D2024");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.atributos").keySet())
+				.containsExactlyInAnyOrder("FOR", "DES", "CON", "INT", "SAB", "CAR");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.recursos").keySet())
+				.containsExactlyInAnyOrder("PV", "PV_TEMP");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.recursos.PV").keySet())
+				.containsExactlyInAnyOrder("atual", "maximo");
+		assertThat(JsonPath.<List<String>>read(corpo, "$.salvaguardas")).containsExactly("FOR");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.pericias"))
+				.containsOnly(Map.entry("ATLETISMO", "PROFICIENTE"), Map.entry("ARCANISMO", "ESPECIALISTA"));
+	}
+
+	@Test
+	@DisplayName("GET /fichas de D&D tem as 7 chaves do resumo e recursos só com PV")
+	void chavesDoResumoDnd() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setPvAtual(4);
+		ficha.setPvTemporario(2);
+		repository.save(ficha);
+
+		String corpo = mockMvc.perform(get("/fichas"))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0]").keySet()).containsExactlyInAnyOrder(
+				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "recursos");
+		assertThat(JsonPath.<List<Object>>read(corpo, "$[0].recursos")).hasSize(1);
+		assertThat(JsonPath.<String>read(corpo, "$[0].recursos[0].codigo")).isEqualTo("PV");
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0].recursos[0]").keySet())
 				.containsExactlyInAnyOrder("codigo", "atual", "maximo");
 	}

@@ -3,7 +3,10 @@ package dev.spironello.fichasrpg;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
+import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 
 /** Fichas válidas para os testes que só precisam de "uma ficha" no banco. */
@@ -25,6 +28,20 @@ public final class FichasDeTeste {
 		return ficha;
 	}
 
+	/** Ficha de D&D válida: edição 2024, nível 1, os seis atributos em 10, sem perícias, salvaguardas nem recursos. */
+	public static FichaDnd dnd(String personagem) {
+		FichaDnd ficha = new FichaDnd();
+		ficha.setJogador("Ana");
+		ficha.setPersonagem(personagem);
+		ficha.setGenero("F");
+		ficha.setEdicao(EdicaoDnd.D2024);
+		ficha.setNivel(1);
+		for (AtributoDnd atributo : AtributoDnd.values()) {
+			ficha.setAtributo(atributo, 10);
+		}
+		return ficha;
+	}
+
 	/**
 	 * Corpo JSON válido de uma ficha de Ordem, como mapa mutável: o teste troca ou remove a chave que quer
 	 * estragar e serializa com o ObjectMapper. NEX 5, os cinco atributos em 1, sem perícias nem recursos.
@@ -40,6 +57,26 @@ public final class FichasDeTeste {
 		corpo.put("personagem", "Ana");
 		corpo.put("genero", "F");
 		corpo.put("nex", 5);
+		corpo.put("atributos", atributos);
+		return corpo;
+	}
+
+	/**
+	 * Corpo JSON válido de uma ficha de D&D, como mapa mutável: edição 2024, nível 1, os seis atributos em 10,
+	 * sem recursos, salvaguardas nem perícias.
+	 */
+	public static Map<String, Object> corpoDnd() {
+		Map<String, Object> atributos = new LinkedHashMap<>();
+		for (AtributoDnd atributo : AtributoDnd.values()) {
+			atributos.put(atributo.name(), 10);
+		}
+		Map<String, Object> corpo = new LinkedHashMap<>();
+		corpo.put("sistema", "DND");
+		corpo.put("jogador", "Arthur");
+		corpo.put("personagem", "Ana");
+		corpo.put("genero", "F");
+		corpo.put("edicao", "D2024");
+		corpo.put("nivel", 1);
 		corpo.put("atributos", atributos);
 		return corpo;
 	}

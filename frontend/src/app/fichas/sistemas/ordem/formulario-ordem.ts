@@ -3,7 +3,6 @@ import {
   Component,
   ElementRef,
   Injector,
-  afterNextRender,
   computed,
   effect,
   inject,
@@ -18,7 +17,6 @@ import {
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
-  ValidationErrors,
   ValidatorFn,
   Validators,
 } from '@angular/forms';
@@ -34,18 +32,27 @@ import {
   AtributoOrdem,
   ClasseOrdem,
   CodigoRecurso,
+  Ficha,
   FichaOrdem,
   FichaOrdemEntrada,
   GrauOrdem,
   PericiaOrdem,
   RecursoValor,
 } from '../../ficha.model';
+import {
+  INTEIRO,
+  aplicarErrosDoServidor,
+  faixa,
+  focarPrimeiroInvalido,
+  focarPrimeiroInvalidoDepois,
+  mensagemDoControle,
+  paraNumero,
+  registro,
+  textoDe,
+} from '../comum/formulario-comum';
 import { ATRIBUTOS_ORDEM, PERICIAS_ORDEM, rotuloClasse } from './catalogo-ordem';
 
 type CampoTexto = 'jogador' | 'personagem' | 'genero';
-
-/** Na edição, o formulário só aparece com a ficha carregada (PUT é substituição completa). */
-type EstadoCarga = 'pronto' | 'carregando' | 'nao-encontrada' | 'erro' | 'outro-sistema';
 
 /** Valor bruto do formulário: tudo texto, como vem dos campos ('' = vazio / "A definir" / destreinado). */
 export interface ValorFormulario {
@@ -75,9 +82,6 @@ type FormularioOrdemGrupo = FormGroup<{
   pericias: FormGroup<Record<PericiaOrdem, Texto>>;
 }>;
 
-/** Inteiro com sinal opcional; vazio é permitido (vira null). */
-const INTEIRO = /^-?\d+$/;
-
 const CODIGOS_ATRIBUTO = ATRIBUTOS_ORDEM.map((a) => a.codigo);
 const CODIGOS_PERICIA = PERICIAS_ORDEM.map((p) => p.codigo);
 const RECURSOS: readonly { codigo: CodigoRecurso; nome: string }[] = [
@@ -95,10 +99,6 @@ const NEX_DO_GRAU: Record<GrauOrdem, number> = { TREINADO: 0, VETERANO: 35, EXPE
 
 const CLASSES: readonly ClasseOrdem[] = ['COMBATENTE', 'ESPECIALISTA', 'OCULTISTA'];
 
-function registro<K extends string, V>(chaves: readonly K[], fabrica: (chave: K) => V): Record<K, V> {
-  return Object.fromEntries(chaves.map((chave) => [chave, fabrica(chave)])) as Record<K, V>;
-}
-
 export function valorVazio(): ValorFormulario {
   return {
     jogador: '',
@@ -113,11 +113,6 @@ export function valorVazio(): ValorFormulario {
     recursos: registro(['PV', 'SAN', 'PE'] as const, () => ({ atual: '', maximo: '' })),
     pericias: registro(CODIGOS_PERICIA, () => ''),
   };
-}
-
-function paraNumero(texto: string): number | null {
-  const limpo = texto.trim();
-  return limpo === '' ? null : Number(limpo);
 }
 
 /** Converte o valor do formulário no corpo da API: vazio vira null e as perícias sem grau saem do objeto. */
@@ -147,10 +142,6 @@ export function paraEntrada(valor: ValorFormulario): FichaOrdemEntrada {
   };
 }
 
-function textoDe(numero: number | null): string {
-  return numero === null ? '' : String(numero);
-}
-
 function paraValor(ficha: FichaOrdem): ValorFormulario {
   const valor = valorVazio();
   valor.jogador = ficha.jogador;
@@ -175,27 +166,10 @@ function paraValor(ficha: FichaOrdem): ValorFormulario {
   return valor;
 }
 
-/** Inteiro entre `minimo` e `maximo` (sem teto se omitido). Vazio e não numérico ficam para os outros validadores. */
-function faixa(minimo: number, maximo = Infinity): ValidatorFn {
-  return (controle: AbstractControl): ValidationErrors | null => {
-    const texto = String(controle.value ?? '').trim();
-    if (!INTEIRO.test(texto)) {
-      return null;
-    }
-    const numero = Number(texto);
-    return numero < minimo || numero > maximo ? { faixa: maximo === Infinity ? `${minimo} ou mais` : `De ${minimo} a ${maximo}` } : null;
-  };
-}
-
 /** Tira só o erro do servidor, mantendo os do próprio formulário (obrigatório, faixa...). */
 function limparErroServidor(controle: AbstractControl): void {
   const { servidor: _servidor, ...resto } = controle.errors ?? {};
   controle.setErrors(Object.keys(resto).length > 0 ? resto : null);
-}
-
-/** "atributos[AGI]" (Bean Validation) e "atributos.AGI" (regra) apontam para o mesmo campo: "atributos.AGI". */
-function caminhoDoCampo(chave: string): string {
-  return chave.replace(/\[([^\]]+)\]/g, '.$1');
 }
 
 @Component({
@@ -212,9 +186,9 @@ export class FormularioOrdem {
   private readonly injector = inject(Injector);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  /** Presente no modo editar (rota /fichas/:id/editar). */
-  readonly id = input<string>();
-  readonly editando = computed(() => this.id() !== undefined);
+  /** A ficha a editar, já carregada pela EdicaoFicha; sem ela o formulário é de uma ficha nova. */
+  readonly ficha = input<FichaOrdem | undefined>();
+  readonly editando = computed(() => this.ficha() !== undefined);
 
   readonly atributos = ATRIBUTOS_ORDEM;
   readonly pericias = PERICIAS_ORDEM;
@@ -247,17 +221,14 @@ export class FormularioOrdem {
   });
 
   readonly salvando = signal(false);
-  readonly estado = signal<EstadoCarga>('pronto');
-  /** Erro ao carregar a ficha (modo editar). */
-  readonly erroCarga = signal<ApiError | null>(null);
   /** Erro ao salvar que não é de um campo específico (ex.: servidor indisponível). */
   readonly erroGeral = signal<ApiError | null>(null);
 
   constructor() {
     effect(() => {
-      const id = this.id();
-      if (id !== undefined) {
-        untracked(() => this.carregar(Number(id)));
+      const ficha = this.ficha();
+      if (ficha !== undefined) {
+        untracked(() => this.form.setValue(paraValor(ficha)));
       }
     });
     // Um erro "Veterano exige NEX 35%" colado numa perícia deixaria o formulário inválido
@@ -300,50 +271,7 @@ export class FormularioOrdem {
     });
   }
 
-  carregar(id: number): void {
-    this.estado.set('carregando');
-    this.erroCarga.set(null);
-    this.api.buscarFicha(id).subscribe({
-      next: (ficha) => {
-        // A rota é a mesma para qualquer sistema; só Ordem tem formulário por enquanto.
-        const sistema: string = ficha.sistema;
-        if (sistema !== 'ORDEM_PARANORMAL') {
-          this.estado.set('outro-sistema');
-          return;
-        }
-        this.form.setValue(paraValor(ficha));
-        this.estado.set('pronto');
-      },
-      error: (erro: ApiError) => {
-        this.erroCarga.set(erro);
-        this.estado.set(erro.status === 404 ? 'nao-encontrada' : 'erro');
-      },
-    });
-  }
-
-  /** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro, faixa. */
-  mensagem(controle: AbstractControl): string | null {
-    const erros = controle.errors;
-    if (!erros || !(controle.touched || controle.dirty)) {
-      return null;
-    }
-    if (erros['servidor']) {
-      return erros['servidor'] as string;
-    }
-    if (erros['required']) {
-      return 'Obrigatório';
-    }
-    if (erros['maxlength']) {
-      return 'Máximo de 255 caracteres';
-    }
-    if (erros['pattern']) {
-      return 'Use um número inteiro';
-    }
-    if (erros['faixa']) {
-      return erros['faixa'] as string;
-    }
-    return null;
-  }
+  readonly mensagem = mensagemDoControle;
 
   /** Só o nome do grau no select fechado (a dica "exige NEX" fica na lista de opções). */
   nomeDoGrau(valor: string): string {
@@ -362,15 +290,15 @@ export class FormularioOrdem {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       // No celular o formulário é longo: leva o usuário até o primeiro campo com problema.
-      this.focarPrimeiroInvalido();
+      focarPrimeiroInvalido(this.host.nativeElement);
       return;
     }
     this.erroGeral.set(null);
     this.salvando.set(true);
     const entrada = paraEntrada(this.form.getRawValue());
-    const id = this.id();
-    const requisicao: Observable<FichaOrdem> =
-      id === undefined ? this.api.criar(entrada) : this.api.atualizar(Number(id), entrada);
+    const ficha = this.ficha();
+    const requisicao: Observable<Ficha> =
+      ficha === undefined ? this.api.criar(entrada) : this.api.atualizar(ficha.id, entrada);
     // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
     // permitiria um segundo envio (ficha duplicada) enquanto a navegação termina.
     requisicao.subscribe({
@@ -383,26 +311,10 @@ export class FormularioOrdem {
   }
 
   private mostrarErro(erro: ApiError): void {
-    let algumNoCampo = false;
-    for (const [chave, texto] of Object.entries(erro.campos)) {
-      const controle = this.form.get(caminhoDoCampo(chave));
-      if (controle instanceof FormControl) {
-        controle.setErrors({ ...controle.errors, servidor: texto });
-        controle.markAsTouched();
-        algumNoCampo = true;
-      }
-    }
-    if (!algumNoCampo) {
+    if (aplicarErrosDoServidor(this.form, erro)) {
+      focarPrimeiroInvalidoDepois(this.host.nativeElement, this.injector, this.cdr);
+    } else {
       this.erroGeral.set(erro);
-      return;
     }
-    // O erro pode estar longe da tela (perícias ficam no fim do formulário): leva a pessoa até ele.
-    // Espera a próxima renderização para o campo já estar com .ng-invalid no DOM.
-    this.cdr.markForCheck();
-    afterNextRender(() => this.focarPrimeiroInvalido(), { injector: this.injector });
-  }
-
-  private focarPrimeiroInvalido(): void {
-    this.host.nativeElement.querySelector<HTMLElement>('input.ng-invalid, mat-select.ng-invalid')?.focus();
   }
 }
