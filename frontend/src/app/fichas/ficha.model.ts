@@ -24,6 +24,37 @@ export interface FichaResumo {
   recursos: RecursoResumo[];
 }
 
+// ---- Descrição e habilidades (2.1g), comuns aos dois sistemas ----
+
+/** Texto livre da ficha: cada campo pode faltar (a API guarda texto vazio como null). */
+export interface DescricaoFicha {
+  aparencia: string | null;
+  historia: string | null;
+  anotacoes: string | null;
+}
+
+/** Os tipos de cada sistema são um subconjunto destes; a API recusa (400) o de outro sistema. */
+export type TipoHabilidade =
+  | 'CLASSE'
+  | 'TRILHA'
+  | 'ORIGEM'
+  | 'PARANORMAL'
+  | 'SUBCLASSE'
+  | 'ESPECIE'
+  | 'ANTECEDENTE'
+  | 'TALENTO'
+  | 'OUTRA';
+
+export interface Habilidade {
+  id: number;
+  nome: string;
+  tipo: TipoHabilidade;
+  descricao: string | null;
+}
+
+/** Corpo do POST e do PUT de uma habilidade: o id vem da URL. */
+export type HabilidadeEntrada = Omit<Habilidade, 'id'>;
+
 // ---- Ordem Paranormal (2.1d) ----
 
 export type AtributoOrdem = 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
@@ -88,6 +119,8 @@ export interface FichaOrdem {
   recursos: Record<CodigoRecurso, RecursoValor>;
   /** Só as perícias treinadas. */
   pericias: Partial<Record<PericiaOrdem, GrauOrdem>>;
+  descricao: DescricaoFicha;
+  habilidades: Habilidade[];
 }
 
 // ---- D&D 5e (2014) e D&D 2024 (2.1e) ----
@@ -143,6 +176,8 @@ export interface FichaDnd {
   salvaguardas: AtributoDnd[];
   /** Só as perícias com proficiência ou especialização. */
   pericias: Partial<Record<PericiaDnd, GrauDnd>>;
+  descricao: DescricaoFicha;
+  habilidades: Habilidade[];
 }
 
 /** O que `GET /fichas/{id}` devolve: o campo `sistema` diz qual das fichas é. */
@@ -170,10 +205,12 @@ export interface TesteResultado {
 
 /**
  * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
- * `retratoVersao` (o retrato tem rota própria). O JSON estrito da API recusa chaves a mais.
+ * `retratoVersao` (o retrato tem rota própria) nem `descricao` e `habilidades` (rotas próprias, ADR 0018).
+ * O JSON estrito da API recusa chaves a mais.
  */
-export type FichaOrdemEntrada = Omit<FichaOrdem, 'id' | 'retratoVersao'>;
-export type FichaDndEntrada = Omit<FichaDnd, 'id' | 'retratoVersao'>;
+type SoDaLeitura = 'id' | 'retratoVersao' | 'descricao' | 'habilidades';
+export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura>;
+export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura>;
 export type FichaEntrada = FichaOrdemEntrada | FichaDndEntrada;
 
 /** Corpo do PUT a partir de uma ficha carregada, sem as chaves que a API recusa. */
@@ -182,7 +219,12 @@ export function paraEntradaDaFicha(ficha: FichaDnd): FichaDndEntrada;
 export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada;
 export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
   if (ficha.sistema === 'DND') {
-    const { id: _id, retratoVersao: _retratoVersao, atributos, recursos, salvaguardas, pericias, ...resto } = ficha;
+    const {
+      id: _id,
+      retratoVersao: _retratoVersao,
+      descricao: _descricao,
+      habilidades: _habilidades,
+      atributos, recursos, salvaguardas, pericias, ...resto } = ficha;
     return {
       ...resto,
       atributos: { ...atributos },
@@ -191,7 +233,12 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       pericias: { ...pericias },
     };
   }
-  const { id: _id, retratoVersao: _retratoVersao, atributos, recursos, pericias, ...resto } = ficha;
+  const {
+      id: _id,
+      retratoVersao: _retratoVersao,
+      descricao: _descricao,
+      habilidades: _habilidades,
+      atributos, recursos, pericias, ...resto } = ficha;
   return {
     ...resto,
     atributos: { ...atributos },

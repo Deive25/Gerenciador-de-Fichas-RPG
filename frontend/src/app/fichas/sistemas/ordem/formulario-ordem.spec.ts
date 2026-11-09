@@ -15,6 +15,8 @@ const FICHA: FichaOrdem = {
   atributos: { AGI: 1, FOR: 1, INT: 3, PRE: 2, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: 4, maximo: 5 } },
   pericias: { INVESTIGACAO: 'VETERANO', PERCEPCAO: 'TREINADO' },
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 /** Ficha vinda da conversão do d100: sem classe, PE vazio, sem perícias, NEX 5 e atributos 1. */
@@ -24,6 +26,8 @@ const CONVERTIDA: FichaOrdem = {
   atributos: { AGI: 1, FOR: 1, INT: 1, PRE: 1, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: null, maximo: null } },
   pericias: {},
+  descricao: { aparencia: null, historia: null, anotacoes: null },
+  habilidades: [],
 };
 
 /** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */

@@ -54,7 +54,7 @@ class FichaServiceTest {
 
 	@BeforeEach
 	void criarServico() {
-		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper()))));
+		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente()))));
 	}
 
 	/** Ficha de outro sistema, só para os testes: no 2.1d existe apenas Ordem, mas a regra do 409 já vale. */

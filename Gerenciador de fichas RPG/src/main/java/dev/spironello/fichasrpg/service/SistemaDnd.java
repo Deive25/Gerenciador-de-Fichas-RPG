@@ -31,9 +31,11 @@ public class SistemaDnd implements SistemaDeFicha {
 	private static final String NAO_EXISTE = "não existe em D&D";
 
 	private final FichaDndMapper mapper;
+	private final PartesComunsDaFicha partesComuns;
 
-	public SistemaDnd(FichaDndMapper mapper) {
+	public SistemaDnd(FichaDndMapper mapper, PartesComunsDaFicha partesComuns) {
 		this.mapper = mapper;
+		this.partesComuns = partesComuns;
 	}
 
 	@Override
@@ -57,7 +59,7 @@ public class SistemaDnd implements SistemaDeFicha {
 
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
-		return mapper.resposta((FichaDnd) ficha);
+		return mapper.resposta((FichaDnd) ficha, partesComuns.de(ficha));
 	}
 
 	@Override

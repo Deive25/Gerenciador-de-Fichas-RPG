@@ -1,0 +1,23 @@
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+  @for (campo of campos; track campo.nome) {
+    <mat-form-field appearance="outline" [attr.data-campo]="campo.nome" subscriptSizing="dynamic">
+      <mat-label>{{ campo.rotulo }}</mat-label>
+      <textarea matInput [formControlName]="campo.nome" rows="6" [attr.maxlength]="maximo"></textarea>
+      <mat-hint align="end">{{ tamanho(campo.nome) }}/{{ maximo }}</mat-hint>
+      @if (mensagem(form.controls[campo.nome]); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+  }
+
+  @if (erroGeral(); as erro) {
+    <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+  }
+
+  <div class="acoes-form">
+    <p class="salvo" role="status">{{ salvo() && semMudanca() ? 'Descrição salva.' : '' }}</p>
+    <button type="submit" class="botao" [disabled]="salvando() || semMudanca()">
+      {{ salvando() ? 'Salvando…' : 'Salvar descrição' }}
+    </button>
+  </div>
+</form>

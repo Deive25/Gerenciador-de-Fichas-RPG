@@ -33,7 +33,9 @@ import dev.spironello.fichasrpg.model.ClasseOrdem;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
+import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -50,6 +52,9 @@ class FichaControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private FichaRepository repository;
+
+	@Autowired
+	private HabilidadeFichaRepository habilidades;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -231,6 +236,30 @@ class FichaControllerTest extends IntegrationTestBase {
 		assertThat(noBanco.getIdade()).isEqualTo(31);
 		assertThat(noBanco.getNex()).isEqualTo(60);
 		assertThat(noBanco.getForca()).isEqualTo(4);
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} não apaga a descrição nem as habilidades (ADR 0018)")
+	void atualizarPreservaDescricaoEHabilidades() throws Exception {
+		FichaOrdem ficha = FichasDeTeste.ordem("Ana");
+		ficha.setAparencia("Alta");
+		ficha.setHistoria("Ex-policial");
+		ficha.setAnotacoes("Segredo");
+		ficha = repository.save(ficha);
+		habilidades.save(FichasDeTeste.habilidade(ficha, "Ataque Extra", TipoHabilidade.CLASSE, "Duas vezes"));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoOrdem())))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.descricao.aparencia").value("Alta"))
+				.andExpect(jsonPath("$.descricao.historia").value("Ex-policial"))
+				.andExpect(jsonPath("$.descricao.anotacoes").value("Segredo"))
+				.andExpect(jsonPath("$.habilidades", hasSize(1)))
+				.andExpect(jsonPath("$.habilidades[0].nome").value("Ataque Extra"))
+				.andExpect(jsonPath("$.habilidades[0].tipo").value("CLASSE"));
 	}
 
 	@Test
