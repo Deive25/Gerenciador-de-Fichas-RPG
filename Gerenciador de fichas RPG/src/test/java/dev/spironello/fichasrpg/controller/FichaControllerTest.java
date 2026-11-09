@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -32,10 +33,12 @@ import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.model.ClasseOrdem;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
+import dev.spironello.fichasrpg.model.ItemOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
+import dev.spironello.fichasrpg.repository.ItemOrdemRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -55,6 +58,9 @@ class FichaControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private HabilidadeFichaRepository habilidades;
+
+	@Autowired
+	private ItemOrdemRepository itens;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -260,6 +266,92 @@ class FichaControllerTest extends IntegrationTestBase {
 				.andExpect(jsonPath("$.habilidades", hasSize(1)))
 				.andExpect(jsonPath("$.habilidades[0].nome").value("Ataque Extra"))
 				.andExpect(jsonPath("$.habilidades[0].tipo").value("CLASSE"));
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de uma ficha nova traz itens vazios")
+	void fichaNovaTemItensVazios() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.itens", hasSize(0)));
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} traz os itens na ordem de criação")
+	void buscarTrazItensPelaOrdemDeCriacao() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		ItemOrdem primeiro = FichasDeTeste.itemOrdem(ficha, "Pistola");
+		primeiro.setCategoria(0);
+		primeiro.setEspacos(0);
+		primeiro.setQuantidade(3);
+		primeiro.setDescricao("Calibre 38");
+		itens.save(primeiro);
+		itens.save(FichasDeTeste.itemOrdem(ficha, "Kit médico"));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.itens", hasSize(2)))
+				.andExpect(jsonPath("$.itens[0].nome").value("Pistola"))
+				.andExpect(jsonPath("$.itens[0].categoria").value(0))
+				.andExpect(jsonPath("$.itens[0].espacos").value(0))
+				.andExpect(jsonPath("$.itens[0].quantidade").value(3))
+				.andExpect(jsonPath("$.itens[0].descricao").value("Calibre 38"))
+				.andExpect(jsonPath("$.itens[1].nome").value("Kit médico"));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} não apaga os itens (ADR 0018)")
+	void atualizarPreservaItens() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		itens.save(FichasDeTeste.itemOrdem(ficha, "Pistola"));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoOrdem())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.itens", hasSize(1)));
+
+		assertThat(itens.findByFichaIdOrderById(ficha.getId())).extracting(ItemOrdem::getNome)
+				.containsExactly("Pistola");
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} com itens no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComItensNoCorpoDa400() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		Map<String, Object> corpo = FichasDeTeste.corpoOrdem();
+		corpo.put("itens", List.of());
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} com moedas no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComMoedasNoCorpoDa400() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		Map<String, Object> corpo = FichasDeTeste.corpoOrdem();
+		corpo.put("moedas", Map.of("po", 1));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("DELETE /fichas/{id} de uma ficha com itens devolve 204 e os itens somem do banco")
+	void excluirFichaComItens() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		itens.save(FichasDeTeste.itemOrdem(ficha, "Pistola"));
+
+		mockMvc.perform(delete("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isNoContent());
+
+		assertThat(itens.count()).isZero();
 	}
 
 	@Test

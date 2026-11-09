@@ -36,7 +36,7 @@ class FichaOrdemMapperTest {
 			doPedido.put(p, p.ordinal() % 2 == 0 ? GrauOrdem.TREINADO : GrauOrdem.VETERANO);
 		}
 		FichaOrdem ficha = mapper.criar(pedido(doPedido));
-		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS);
+		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_ORDEM);
 
 		assertThat(ficha.getPericias()).hasSize(28);
 		for (PericiaOrdem p : PericiaOrdem.values()) {
@@ -59,7 +59,7 @@ class FichaOrdemMapperTest {
 		mapper.copiar(pedido(todasNulas), ficha);
 
 		assertThat(ficha.getPericias()).isEmpty();
-		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS).pericias()).isEmpty();
+		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_ORDEM).pericias()).isEmpty();
 	}
 
 	@Test
@@ -88,7 +88,7 @@ class FichaOrdemMapperTest {
 		assertThat(ficha.getSanMax()).isEqualTo(20);
 		assertThat(ficha.getPeAtual()).isNull();
 
-		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS);
+		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_ORDEM);
 		assertThat(resposta.atributos()).containsExactly(
 				Map.entry(AtributoOrdem.AGI, 1), Map.entry(AtributoOrdem.FOR, 2), Map.entry(AtributoOrdem.INT, 3),
 				Map.entry(AtributoOrdem.PRE, 4), Map.entry(AtributoOrdem.VIG, 5));
