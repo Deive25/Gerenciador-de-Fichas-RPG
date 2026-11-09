@@ -6,8 +6,11 @@ import java.util.Map;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
+import dev.spironello.fichasrpg.model.HabilidadeFicha;
+import dev.spironello.fichasrpg.model.TipoHabilidade;
 
 /** Fichas válidas para os testes que só precisam de "uma ficha" no banco. */
 public final class FichasDeTeste {
@@ -79,5 +82,16 @@ public final class FichasDeTeste {
 		corpo.put("nivel", 1);
 		corpo.put("atributos", atributos);
 		return corpo;
+	}
+
+	/** Habilidade pronta para salvar (a ficha já tem de estar no banco). */
+	public static HabilidadeFicha habilidade(Ficha ficha, String nome,
+			TipoHabilidade tipo, String descricao) {
+		HabilidadeFicha habilidade = new HabilidadeFicha();
+		habilidade.setFicha(ficha);
+		habilidade.setNome(nome);
+		habilidade.setTipo(tipo);
+		habilidade.setDescricao(descricao);
+		return habilidade;
 	}
 }
