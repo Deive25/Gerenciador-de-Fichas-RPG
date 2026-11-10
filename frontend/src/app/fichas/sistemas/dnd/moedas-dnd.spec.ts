@@ -63,7 +63,7 @@ describe('MoedasDnd', () => {
       'PC', 'PP', 'PE', 'PO', 'PL',
     ]);
     expect(NOMES.map((n) => campo(el, n).getAttribute('aria-label'))).toEqual([
-      'Peças de cobre', 'Peças de prata', 'Peças de electro', 'Peças de ouro', 'Peças de platina',
+      'PC, peças de cobre', 'PP, peças de prata', 'PE, peças de electro', 'PO, peças de ouro', 'PL, peças de platina',
     ]);
   });
 
@@ -104,6 +104,7 @@ describe('MoedasDnd', () => {
     ['decimal', '1.5'],
     ['texto', 'abc'],
     ['vazio', ''],
+    ['acima do inteiro do servidor', '2147483648'],
   ])('valor %s desabilita o botao', (_rotulo, valor) => {
     const { fixture, el } = montar();
     digitar(fixture, el, 'po', valor);
@@ -159,5 +160,13 @@ describe('MoedasDnd', () => {
     fixture.detectChanges();
 
     expect(atualizarMoedas).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('MoedasDnd · teto', () => {
+  it('2147483647, o maior inteiro do servidor, e aceito', () => {
+    const { fixture, el } = montar();
+    digitar(fixture, el, 'po', '2147483647');
+    expect(salvar(el).disabled).toBe(false);
   });
 });

@@ -454,6 +454,27 @@ describe('FichaDetalhe · abas', () => {
     expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
+  it('na aba Inventario de D&D as moedas emitidas trocam os campos sem recarregar a ficha', async () => {
+    const buscarFicha = vi.fn(() => of(FICHA_DND));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('0');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-dnd-aba').componentInstance as {
+      moedasAtualizadas: { emit(moedas: unknown): void };
+    };
+    aba.moedasAtualizadas.emit({ pc: 0, pp: 0, pe: 0, po: 25, pl: 1 });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('25');
+    expect(el.querySelector<HTMLInputElement>('[data-campo="pl"] input')!.value).toBe('1');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
   it('sem aba na URL abre a Ficha, com os botoes Rolar', () => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
     expect(selecionada(el)).toBe('Ficha');
