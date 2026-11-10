@@ -39,6 +39,12 @@ form {
   gap: 0.25rem;
 }
 
+// subscriptSizing="dynamic" não reserva a linha de baixo (erro/dica) do campo. Fora o último campo antes
+// dos botões, devolve o vão que os outros campos têm (23 px entre campos = 4 px da grade + 19 px reservados).
+form mat-form-field[subscriptsizing='dynamic']:not(:last-of-type) {
+  margin-bottom: 19px;
+}
+
 .acoes-form {
   display: flex;
   flex-wrap: wrap;
