@@ -30,7 +30,8 @@ class DocumentacaoApiTest extends IntegrationTestBase {
 				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/habilidades")))
 				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/habilidades/{habilidadeId}")))
 				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/itens")))
-				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/itens/{itemId}")));
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/itens/{itemId}")))
+				.andExpect(jsonPath("$.paths", hasKey("/fichas/{id}/moedas")));
 	}
 
 	@Test
