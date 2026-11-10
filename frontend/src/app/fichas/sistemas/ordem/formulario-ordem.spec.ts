@@ -17,6 +17,7 @@ const FICHA: FichaOrdem = {
   pericias: { INVESTIGACAO: 'VETERANO', PERCEPCAO: 'TREINADO' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 /** Ficha vinda da conversão do d100: sem classe, PE vazio, sem perícias, NEX 5 e atributos 1. */
@@ -28,6 +29,7 @@ const CONVERTIDA: FichaOrdem = {
   pericias: {},
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 /** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */
