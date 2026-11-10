@@ -170,3 +170,16 @@ describe('MoedasDnd · teto', () => {
     expect(salvar(el).disabled).toBe(false);
   });
 });
+
+describe('MoedasDnd · ficha trocada', () => {
+  it('moeda digitada e nao salva sobrevive a troca do objeto da ficha com as mesmas moedas', () => {
+    const { fixture, el } = montar();
+    digitar(fixture, el, 'po', '50');
+    const outroItem = { id: 1, nome: 'Corda', quantidade: 1, peso: 1, equipado: false, descricao: null };
+    fixture.componentRef.setInput('ficha', { ...FICHA, itens: [outroItem] });
+    fixture.detectChanges();
+
+    expect(campo(el, 'po').value).toBe('50');
+    expect(salvar(el).disabled).toBe(false);
+  });
+});

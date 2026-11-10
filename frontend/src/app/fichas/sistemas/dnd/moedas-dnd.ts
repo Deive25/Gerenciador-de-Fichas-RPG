@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Injector, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Injector, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -48,7 +48,7 @@ function valoresDe(m: Moedas): Valores {
   templateUrl: './moedas-dnd.html',
   styleUrl: './moedas-dnd.scss',
 })
-export class MoedasDnd {
+export class MoedasDnd implements OnInit {
   private readonly api = inject(FichaApi);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -87,12 +87,8 @@ export class MoedasDnd {
   });
   protected readonly confirmado = computed(() => this.salvo() && this.semMudanca());
 
-  constructor() {
-    // Os campos seguem as moedas da ficha: na carga inicial e quando o detalhe as troca.
-    effect(() => {
-      const moedas = this.ficha().moedas;
-      untracked(() => this.carregar(moedas));
-    });
+  ngOnInit(): void {
+    this.carregar(this.ficha().moedas);
   }
 
   protected salvar(): void {
