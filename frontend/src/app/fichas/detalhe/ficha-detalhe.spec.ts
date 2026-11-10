@@ -399,7 +399,7 @@ describe('FichaDetalhe · abas', () => {
 
   it.each([
     ['Ordem', FICHA, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
-    ['D&D', FICHA_DND, ['Ficha', 'Habilidades', 'Descrição']],
+    ['D&D', FICHA_DND, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
   ])('ficha de %s tem as abas na ordem certa', (_nome, ficha, esperadas) => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
     expect(rotulos(el)).toEqual(esperadas);
@@ -426,6 +426,31 @@ describe('FichaDetalhe · abas', () => {
 
     expect(el.textContent).toContain('Lanterna');
     expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Carga: 5/5 espaços');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('na aba Inventario de D&D mostra os itens e as moedas, e um item novo muda o peso total sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Espada', quantidade: 1, peso: 3, equipado: true, descricao: null };
+    const nova = { id: 4, nome: 'Corda', quantidade: 2, peso: 2.5, equipado: false, descricao: null };
+    const buscarFicha = vi.fn(() => of({ ...FICHA_DND, itens: [existente], moedas: { pc: 0, pp: 0, pe: 0, po: 12, pl: 0 } }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Inventário');
+    expect(el.textContent).toContain('Espada');
+    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('12');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Peso: 3/60 kg');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-dnd-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Corda');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Peso: 8/60 kg');
     expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
