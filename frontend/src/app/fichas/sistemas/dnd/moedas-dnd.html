@@ -5,7 +5,7 @@
       @for (campo of campos; track campo.nome) {
         <mat-form-field appearance="outline" [attr.data-campo]="campo.nome" subscriptSizing="dynamic">
           <mat-label>{{ campo.rotulo }}</mat-label>
-          <input matInput [formControlName]="campo.nome" inputmode="numeric" [attr.aria-label]="campo.nomeCompleto" />
+          <input matInput [formControlName]="campo.nome" inputmode="numeric" [attr.aria-label]="campo.rotulo + ', ' + campo.nomeCompleto" />
           @if (mensagem(form.controls[campo.nome]); as texto) {
             <mat-error>{{ texto }}</mat-error>
           }

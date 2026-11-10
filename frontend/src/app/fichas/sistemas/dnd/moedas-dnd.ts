@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Injector, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Injector, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,14 +20,16 @@ type Moeda = keyof Moedas;
 
 /** As cinco moedas, com a sigla no rótulo e o nome por extenso para o leitor de tela. */
 const CAMPOS: readonly { nome: Moeda; rotulo: string; nomeCompleto: string }[] = [
-  { nome: 'pc', rotulo: 'PC', nomeCompleto: 'Peças de cobre' },
-  { nome: 'pp', rotulo: 'PP', nomeCompleto: 'Peças de prata' },
-  { nome: 'pe', rotulo: 'PE', nomeCompleto: 'Peças de electro' },
-  { nome: 'po', rotulo: 'PO', nomeCompleto: 'Peças de ouro' },
-  { nome: 'pl', rotulo: 'PL', nomeCompleto: 'Peças de platina' },
+  { nome: 'pc', rotulo: 'PC', nomeCompleto: 'peças de cobre' },
+  { nome: 'pp', rotulo: 'PP', nomeCompleto: 'peças de prata' },
+  { nome: 'pe', rotulo: 'PE', nomeCompleto: 'peças de electro' },
+  { nome: 'po', rotulo: 'PO', nomeCompleto: 'peças de ouro' },
+  { nome: 'pl', rotulo: 'PL', nomeCompleto: 'peças de platina' },
 ];
 
-const VALIDADORES = [Validators.required, Validators.pattern(INTEIRO), faixa(0)];
+/** O maior inteiro que o servidor aceita (int de 32 bits). */
+const INTEIRO_MAXIMO = 2147483647;
+const VALIDADORES = [Validators.required, Validators.pattern(INTEIRO), faixa(0, INTEIRO_MAXIMO)];
 
 type Valores = Record<Moeda, string>;
 
@@ -46,7 +48,7 @@ function valoresDe(m: Moedas): Valores {
   templateUrl: './moedas-dnd.html',
   styleUrl: './moedas-dnd.scss',
 })
-export class MoedasDnd implements OnInit {
+export class MoedasDnd {
   private readonly api = inject(FichaApi);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -85,8 +87,12 @@ export class MoedasDnd implements OnInit {
   });
   protected readonly confirmado = computed(() => this.salvo() && this.semMudanca());
 
-  ngOnInit(): void {
-    this.carregar(this.ficha().moedas);
+  constructor() {
+    // Os campos seguem as moedas da ficha: na carga inicial e quando o detalhe as troca.
+    effect(() => {
+      const moedas = this.ficha().moedas;
+      untracked(() => this.carregar(moedas));
+    });
   }
 
   protected salvar(): void {
