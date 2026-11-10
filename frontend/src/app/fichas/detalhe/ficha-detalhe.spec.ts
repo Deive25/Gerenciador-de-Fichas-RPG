@@ -454,24 +454,25 @@ describe('FichaDetalhe · abas', () => {
     expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
-  it('na aba Inventario de D&D as moedas emitidas trocam os campos sem recarregar a ficha', async () => {
+  it('na aba Inventario de D&D as moedas emitidas passam a ficha da aba, sem recarregar a ficha', async () => {
     const buscarFicha = vi.fn(() => of(FICHA_DND));
-    const { fixture, el } = montar({ buscarFicha });
+    const { fixture } = montar({ buscarFicha });
     fixture.componentRef.setInput('aba', 'inventario');
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('0');
 
     const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-dnd-aba').componentInstance as {
       moedasAtualizadas: { emit(moedas: unknown): void };
+      ficha(): { moedas: unknown };
     };
-    aba.moedasAtualizadas.emit({ pc: 0, pp: 0, pe: 0, po: 25, pl: 1 });
+    expect(aba.ficha().moedas).toEqual({ pc: 0, pp: 0, pe: 0, po: 0, pl: 0 });
+    const novas = { pc: 0, pp: 0, pe: 0, po: 25, pl: 1 };
+    aba.moedasAtualizadas.emit(novas);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('25');
-    expect(el.querySelector<HTMLInputElement>('[data-campo="pl"] input')!.value).toBe('1');
+    expect(aba.ficha().moedas).toEqual(novas);
     expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
