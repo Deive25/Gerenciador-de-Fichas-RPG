@@ -23,6 +23,30 @@ export function faixa(minimo: number, maximo = Infinity): ValidatorFn {
   };
 }
 
+/** Texto com até 2 casas decimais, vírgula ou ponto, sem sinal. */
+const DECIMAL = /^\d+([.,]\d{1,2})?$/;
+
+/** Aceita vírgula ou ponto; vazio vira null. Texto que não é número vira NaN (o validador `decimal` cuida dele). */
+export function paraDecimal(texto: string): number | null {
+  const limpo = texto.trim();
+  return limpo === '' ? null : Number(limpo.replace(',', '.'));
+}
+
+/** Número ≥ 0 com até 2 casas e no máximo `maximo`. Vazio fica para o `required`. */
+export function decimal(maximo: number): ValidatorFn {
+  return (controle: AbstractControl): ValidationErrors | null => {
+    const texto = String(controle.value ?? '').trim();
+    if (texto === '') {
+      return null;
+    }
+    const mensagem = `Use um número de 0 a ${maximo.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}, com até 2 casas`;
+    if (!DECIMAL.test(texto)) {
+      return { decimal: mensagem };
+    }
+    return Number(texto.replace(',', '.')) > maximo ? { decimal: mensagem } : null;
+  };
+}
+
 /** "atributos[AGI]" (Bean Validation) e "atributos.AGI" (regra) apontam para o mesmo campo: "atributos.AGI". */
 export function caminhoDoCampo(chave: string): string {
   return chave.replace(/\[([^\]]+)\]/g, '.$1');
@@ -59,7 +83,7 @@ export function focarPrimeiroInvalidoDepois(host: HTMLElement, injector: Injecto
   afterNextRender(() => focarPrimeiroInvalido(host), { injector });
 }
 
-/** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro, faixa. */
+/** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro, faixa, decimal. */
 export function mensagemDoControle(controle: AbstractControl): string | null {
   const erros = controle.errors;
   if (!erros || !(controle.touched || controle.dirty)) {
@@ -79,6 +103,9 @@ export function mensagemDoControle(controle: AbstractControl): string | null {
   }
   if (erros['faixa']) {
     return erros['faixa'] as string;
+  }
+  if (erros['decimal']) {
+    return erros['decimal'] as string;
   }
   return null;
 }

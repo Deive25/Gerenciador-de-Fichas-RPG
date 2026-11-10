@@ -22,6 +22,7 @@ const FICHA: FichaOrdem = {
   pericias: { INVESTIGACAO: 'TREINADO', OCULTISMO: 'VETERANO', VONTADE: 'EXPERT' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 const RESULTADO: TesteResultado = {
@@ -37,6 +38,8 @@ const FICHA_DND: FichaDnd = {
   pericias: { FURTIVIDADE: 'ESPECIALISTA' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 const RESULTADO_DND: TesteResultado = {

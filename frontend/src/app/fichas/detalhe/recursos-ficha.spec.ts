@@ -18,6 +18,7 @@ const FICHA: FichaOrdem = {
   pericias: { INVESTIGACAO: 'TREINADO' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 const FICHA_DND: FichaDnd = {
@@ -28,6 +29,8 @@ const FICHA_DND: FichaDnd = {
   ca: 15, inspiracao: false, salvaguardas: [], pericias: {},
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 describe('aplicarAjuste', () => {
