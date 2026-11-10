@@ -12,10 +12,10 @@ const INVENTARIO: Aba = { codigo: 'inventario', rotulo: 'Inventário' };
 const HABILIDADES: Aba = { codigo: 'habilidades', rotulo: 'Habilidades' };
 const DESCRICAO: Aba = { codigo: 'descricao', rotulo: 'Descrição' };
 
-/** As abas de cada sistema. Por enquanto só Ordem tem o Inventário; o de D&D entra na tarefa seguinte. */
+/** As abas de cada sistema: as mesmas quatro, na mesma ordem. */
 export const ABAS_POR_SISTEMA: Record<Sistema, readonly Aba[]> = {
   ORDEM_PARANORMAL: [FICHA, INVENTARIO, HABILIDADES, DESCRICAO],
-  DND: [FICHA, HABILIDADES, DESCRICAO],
+  DND: [FICHA, INVENTARIO, HABILIDADES, DESCRICAO],
 };
 
 /** A aba pedida na URL; ausente ou desconhecida (ou de outro sistema) abre a Ficha. */

@@ -10,12 +10,13 @@ import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
 import { DescricaoAba } from '../abas/descricao-aba';
 import { HabilidadesAba } from '../abas/habilidades-aba';
+import { InventarioDndAba } from '../sistemas/dnd/inventario-dnd-aba';
 import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { DescricaoFicha, Ficha, Habilidade, ItemOrdem, PedidoTeste, TesteResultado } from '../ficha.model';
+import { DescricaoFicha, Ficha, Habilidade, ItemDnd, ItemOrdem, Moedas, PedidoTeste, TesteResultado } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
@@ -31,6 +32,7 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     RecursosFicha,
     HabilidadesAba,
     InventarioOrdemAba,
+    InventarioDndAba,
     DescricaoAba,
     ResultadoRolagem,
     FichaOrdemCorpo,
@@ -122,6 +124,16 @@ export class FichaDetalhe {
   /** Idem para os itens do inventário de Ordem. */
   atualizarItensOrdem(itens: ItemOrdem[]): void {
     this.ficha.update((f) => (f && f.sistema === 'ORDEM_PARANORMAL' ? { ...f, itens } : f));
+  }
+
+  /** Idem para os itens do inventário de D&D. */
+  atualizarItensDnd(itens: ItemDnd[]): void {
+    this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, itens } : f));
+  }
+
+  /** Idem para as moedas de D&D. */
+  atualizarMoedas(moedas: Moedas): void {
+    this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, moedas } : f));
   }
 
   /** Idem para a descrição: a aba já gravou, só troca na ficha. */

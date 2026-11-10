@@ -5,8 +5,8 @@ describe('abas da ficha', () => {
     expect(ABAS_POR_SISTEMA.ORDEM_PARANORMAL.map((a) => a.rotulo)).toEqual(['Ficha', 'Inventário', 'Habilidades', 'Descrição']);
   });
 
-  it('D&D segue com Ficha, Habilidades e Descricao ate a aba de inventario de D&D', () => {
-    expect(ABAS_POR_SISTEMA.DND.map((a) => a.rotulo)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
+  it('D&D tem as mesmas 4 abas, na mesma ordem', () => {
+    expect(ABAS_POR_SISTEMA.DND.map((a) => a.rotulo)).toEqual(['Ficha', 'Inventário', 'Habilidades', 'Descrição']);
   });
 
   it('abaValida aceita inventario em Ordem', () => {
