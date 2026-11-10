@@ -1,10 +1,16 @@
 import { ABAS_POR_SISTEMA, abaValida } from './abas-da-ficha';
 
 describe('abas da ficha', () => {
-  it('os dois sistemas tem Ficha, Habilidades e Descricao, nessa ordem', () => {
-    for (const sistema of ['ORDEM_PARANORMAL', 'DND'] as const) {
-      expect(ABAS_POR_SISTEMA[sistema].map((a) => a.rotulo)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
-    }
+  it('Ordem tem Ficha, Inventario, Habilidades e Descricao, nessa ordem', () => {
+    expect(ABAS_POR_SISTEMA.ORDEM_PARANORMAL.map((a) => a.rotulo)).toEqual(['Ficha', 'Inventário', 'Habilidades', 'Descrição']);
+  });
+
+  it('D&D segue com Ficha, Habilidades e Descricao ate a aba de inventario de D&D', () => {
+    expect(ABAS_POR_SISTEMA.DND.map((a) => a.rotulo)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
+  });
+
+  it('abaValida aceita inventario em Ordem', () => {
+    expect(abaValida('ORDEM_PARANORMAL', 'inventario')).toBe('inventario');
   });
 
   it('abaValida aceita um codigo conhecido', () => {

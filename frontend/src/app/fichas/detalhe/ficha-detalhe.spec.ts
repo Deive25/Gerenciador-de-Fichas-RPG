@@ -398,11 +398,35 @@ describe('FichaDetalhe · abas', () => {
   const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
 
   it.each([
-    ['Ordem', FICHA],
-    ['D&D', FICHA_DND],
-  ])('ficha de %s tem as abas Ficha, Habilidades e Descricao, nessa ordem', (_nome, ficha) => {
+    ['Ordem', FICHA, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
+    ['D&D', FICHA_DND, ['Ficha', 'Habilidades', 'Descrição']],
+  ])('ficha de %s tem as abas na ordem certa', (_nome, ficha, esperadas) => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
-    expect(rotulos(el)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
+    expect(rotulos(el)).toEqual(esperadas);
+  });
+
+  it('na aba Inventario de Ordem mostra os itens e um item novo aparece e muda a carga sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Pistola', categoria: 2, espacos: 1, quantidade: 3, descricao: null };
+    const nova = { id: 4, nome: 'Lanterna', categoria: 0, espacos: 1, quantidade: 2, descricao: null };
+    const buscarFicha = vi.fn(() => of({ ...FICHA, itens: [existente] }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Inventário');
+    expect(el.textContent).toContain('Pistola');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Carga: 3/5 espaços');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-ordem-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Lanterna');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Carga: 5/5 espaços');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
   it('sem aba na URL abre a Ficha, com os botoes Rolar', () => {

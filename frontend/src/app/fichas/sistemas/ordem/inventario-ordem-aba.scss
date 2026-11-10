@@ -1,0 +1,20 @@
+@use '../../abas/cartao-de-lista';
+
+:host {
+  display: block;
+}
+
+// A carga fica sempre na página. Acima do limite o texto "Acima do limite." avisa e a cor reforça
+// (#f0a597 sobre o fundo escuro do app passa de 4,5:1, AA).
+.carga {
+  margin: 0.75rem 0;
+  font-weight: 600;
+
+  &.acima {
+    color: #f0a597;
+  }
+}
+
+.conta {
+  margin: 0.5rem 0 0;
+}
