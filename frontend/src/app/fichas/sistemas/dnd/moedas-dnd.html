@@ -1,0 +1,27 @@
+<form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+  <fieldset class="bloco">
+    <legend>Moedas</legend>
+    <div class="grade">
+      @for (campo of campos; track campo.nome) {
+        <mat-form-field appearance="outline" [attr.data-campo]="campo.nome" subscriptSizing="dynamic">
+          <mat-label>{{ campo.rotulo }}</mat-label>
+          <input matInput [formControlName]="campo.nome" inputmode="numeric" [attr.aria-label]="campo.nomeCompleto" />
+          @if (mensagem(form.controls[campo.nome]); as texto) {
+            <mat-error>{{ texto }}</mat-error>
+          }
+        </mat-form-field>
+      }
+    </div>
+
+    @if (erroGeral(); as erro) {
+      <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+    }
+
+    <div class="acoes-form">
+      <p class="salvo" role="status">{{ confirmado() ? 'Moedas salvas.' : '' }}</p>
+      <button type="submit" class="botao" [disabled]="salvando() || botaoBloqueado()">
+        {{ salvando() ? 'Salvando…' : 'Salvar moedas' }}
+      </button>
+    </div>
+  </fieldset>
+</form>

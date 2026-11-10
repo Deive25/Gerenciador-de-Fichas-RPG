@@ -1,0 +1,27 @@
+@use '../../abas/cartao-de-lista';
+
+:host {
+  display: block;
+}
+
+// O peso fica sempre na página. Acima da capacidade o texto "Acima da capacidade." avisa e a cor reforça
+// (#f0a597 sobre o fundo escuro do app passa de 4,5:1, AA).
+.carga {
+  margin: 0.75rem 0;
+  font-weight: 600;
+
+  &.acima {
+    color: #f0a597;
+  }
+}
+
+.conta {
+  margin: 0.5rem 0 0;
+}
+
+// Caixa de marcar com 44 px de altura mínima (alvo de toque do 2.1b).
+.opcao {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
