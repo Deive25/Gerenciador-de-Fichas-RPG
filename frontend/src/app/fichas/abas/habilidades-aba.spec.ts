@@ -17,6 +17,7 @@ const ORDEM: FichaOrdem = {
   pericias: {},
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [EXISTENTE],
+  itens: [],
 };
 
 const DND: FichaDnd = {
@@ -27,6 +28,8 @@ const DND: FichaDnd = {
   ca: 15, inspiracao: false, salvaguardas: [], pericias: {},
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 function montar(ficha: Ficha, api: Partial<Record<keyof FichaApi, unknown>> = {}) {

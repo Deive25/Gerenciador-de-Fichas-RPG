@@ -13,6 +13,7 @@ const FICHA: FichaOrdem = {
   pericias: {},
   descricao: { aparencia: 'Alta e magra', historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>> = {}) {

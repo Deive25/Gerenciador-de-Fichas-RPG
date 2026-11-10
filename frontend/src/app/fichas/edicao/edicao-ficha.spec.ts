@@ -17,6 +17,7 @@ const ORDEM: FichaOrdem = {
   pericias: { INVESTIGACAO: 'VETERANO' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 const DND: FichaDnd = {
@@ -27,6 +28,8 @@ const DND: FichaDnd = {
   ca: 18, inspiracao: false, salvaguardas: ['FOR', 'CON'], pericias: { ATLETISMO: 'PROFICIENTE' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 function montar(buscarFicha: (id: number) => unknown, id = '7') {
