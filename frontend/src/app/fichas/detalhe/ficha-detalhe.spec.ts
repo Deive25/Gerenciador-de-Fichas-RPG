@@ -10,6 +10,8 @@ import { FichaApi } from '../ficha-api';
 import { FichaDnd, FichaOrdem, TesteResultado } from '../ficha.model';
 import { FichaDetalhe } from './ficha-detalhe';
 import { espacosZerados } from '../testes/espacos-zerados';
+import { DadoAnimado } from '../dado/dado-animado';
+import { LancadorDeDados } from '../dado/lancador-de-dados';
 
 const FICHA: FichaOrdem = {
   id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
@@ -54,7 +56,13 @@ const RESULTADO_DND: TesteResultado = {
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[] = []) {
   TestBed.configureTestingModule({
     imports: [FichaDetalhe],
-    providers: [provideRouter([]), { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } }, ...extras],
+    providers: [
+      provideRouter([]),
+      { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } },
+      // Por padrão, plano B (sem dado 3D): o cartão aparece direto, como antes do 2.1f.
+      { provide: DadoAnimado, useValue: { preparar: () => Promise.resolve(null) } },
+      ...extras,
+    ],
   });
   const router = TestBed.inject(Router);
   const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -62,6 +70,12 @@ function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[
   fixture.componentRef.setInput('id', '7');
   fixture.detectChanges();
   return { fixture, el: fixture.nativeElement as HTMLElement, navegar };
+}
+
+/** A rolagem agora passa por uma promessa (o preparar() do dado): espera ela e redesenha. */
+async function aguardar(fixture: ComponentFixture<FichaDetalhe>): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  fixture.detectChanges();
 }
 
 function botao(el: HTMLElement, texto: string): HTMLButtonElement {
@@ -188,12 +202,12 @@ describe('FichaDetalhe', () => {
     expect(excluir.textContent).toContain('Excluir');
   });
 
-  it('rola a pericia e mostra o resultado com cada dado', () => {
+  it('rola a pericia e mostra o resultado com cada dado', async () => {
     const testar = vi.fn(() => of(RESULTADO));
     const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar });
 
     (el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    await aguardar(fixture);
 
     expect(testar).toHaveBeenCalledWith(7, { alvo: 'PERICIA', codigo: 'INVESTIGACAO' });
     expect(el.textContent).toContain('Investigação: 19 + 5 = 24');
@@ -201,7 +215,7 @@ describe('FichaDetalhe', () => {
     expect(el.querySelectorAll('.mantido').length).toBe(1);
   });
 
-  it('rola o atributo', () => {
+  it('rola o atributo', async () => {
     const resultado: TesteResultado = {
       alvo: 'ATRIBUTO', codigo: 'AGI', nome: 'Agilidade', dados: [8, 15, 2], mantido: 15, bonus: 0, total: 15,
     };
@@ -209,13 +223,13 @@ describe('FichaDetalhe', () => {
     const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar });
 
     (el.querySelector('button[aria-label="Rolar Agilidade, 3"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    await aguardar(fixture);
 
     expect(testar).toHaveBeenCalledWith(7, { alvo: 'ATRIBUTO', codigo: 'AGI' });
     expect(el.textContent).toContain('Agilidade: 15 = 15');
   });
 
-  it('nao envia duas rolagens com toque duplo', () => {
+  it('nao envia duas rolagens com toque duplo', async () => {
     const resposta = new Subject<TesteResultado>();
     const testar = vi.fn(() => resposta);
     const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar });
@@ -233,7 +247,7 @@ describe('FichaDetalhe', () => {
 
     resposta.next(RESULTADO);
     resposta.complete();
-    fixture.detectChanges();
+    await aguardar(fixture);
     expect(rolar.disabled).toBe(false);
   });
 
@@ -272,21 +286,21 @@ describe('FichaDetalhe', () => {
     expect(el.textContent).not.toContain('Servidor indisponível');
   });
 
-  it('rolagem bem-sucedida limpa o erro da rolagem anterior', () => {
+  it('rolagem bem-sucedida limpa o erro da rolagem anterior', async () => {
     const indisponivel: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
     const testar = vi
       .fn()
       .mockReturnValueOnce(throwError(() => indisponivel))
       .mockReturnValueOnce(of(RESULTADO));
     const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar });
-    const rolar = () => {
+    const rolar = async () => {
       (el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).click();
-      fixture.detectChanges();
+      await aguardar(fixture);
     };
 
-    rolar();
+    await rolar();
     expect(el.textContent).toContain('Servidor indisponível');
-    rolar();
+    await rolar();
 
     expect(el.textContent).toContain('Investigação: 19 + 5 = 24');
     expect(el.textContent).not.toContain('Servidor indisponível');
@@ -337,7 +351,7 @@ describe('FichaDetalhe · D&D', () => {
     expect(el.textContent).toContain('Arthur · 27 anos · M');
   });
 
-  it('rolar Furtividade com Vantagem chama testar com o modo e mostra os 2 dados', () => {
+  it('rolar Furtividade com Vantagem chama testar com o modo e mostra os 2 dados', async () => {
     const testar = vi.fn(() => of(RESULTADO_DND));
     const { fixture, el } = montarDnd({ testar });
 
@@ -345,7 +359,7 @@ describe('FichaDetalhe · D&D', () => {
     botoesModo.find((b) => b.textContent?.trim() === 'Vantagem')!.click();
     fixture.detectChanges();
     (el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    await aguardar(fixture);
 
     expect(testar).toHaveBeenCalledWith(9, { alvo: 'PERICIA', codigo: 'FURTIVIDADE', modo: 'VANTAGEM' });
     expect(el.textContent).toContain('Furtividade: 17 + 8 = 25');
@@ -353,7 +367,7 @@ describe('FichaDetalhe · D&D', () => {
     expect(el.querySelectorAll('.mantido').length).toBe(1);
   });
 
-  it('depois de rolar, o seletor volta a Normal', () => {
+  it('depois de rolar, o seletor volta a Normal', async () => {
     const { fixture, el } = montarDnd({ testar: vi.fn(() => of(RESULTADO_DND)) });
     const modo = (nome: string) =>
       Array.from(el.querySelectorAll<HTMLButtonElement>('.modo button')).find((b) => b.textContent?.trim() === nome)!;
@@ -362,23 +376,23 @@ describe('FichaDetalhe · D&D', () => {
     fixture.detectChanges();
     expect(modo('Desvantagem').getAttribute('aria-pressed')).toBe('true');
     (el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    await aguardar(fixture);
 
     expect(modo('Normal').getAttribute('aria-pressed')).toBe('true');
     expect(modo('Desvantagem').getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('20 natural aparece no resultado de D&D, mas nao no de Ordem', () => {
+  it('20 natural aparece no resultado de D&D, mas nao no de Ordem', async () => {
     const vinte: TesteResultado = { ...RESULTADO_DND, dados: [20], mantido: 20, total: 28 };
     const dnd = montarDnd({ testar: vi.fn(() => of(vinte)) });
     (dnd.el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
-    dnd.fixture.detectChanges();
+    await aguardar(dnd.fixture);
     expect(dnd.el.textContent).toContain('20 natural');
 
     TestBed.resetTestingModule();
     const ordem = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar: vi.fn(() => of({ ...RESULTADO, mantido: 20, dados: [20] })) });
     (ordem.el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).click();
-    ordem.fixture.detectChanges();
+    await aguardar(ordem.fixture);
     expect(ordem.el.textContent).not.toContain('natural');
   });
 
@@ -628,7 +642,7 @@ describe('FichaDetalhe · abas', () => {
       testar: vi.fn(() => of(RESULTADO)),
     });
     botao(el, 'Rolar')?.click();
-    fixture.detectChanges();
+    await aguardar(fixture);
     await fixture.whenStable();
     const grupo = el.querySelector('mat-tab-group')!;
     expect(el.querySelector('app-medalhao')).not.toBeNull();
@@ -637,5 +651,169 @@ describe('FichaDetalhe · abas', () => {
     for (const seletor of ['app-medalhao', 'app-resultado-rolagem', 'app-anel-status']) {
       expect(grupo.querySelector(seletor)).toBeNull();
     }
+  });
+});
+
+describe('FichaDetalhe · dado animado', () => {
+  /** Lançador falso: o lancar fica pendente (os dados rolando) até o teste mandar parar. */
+  function lancadorFalso() {
+    let parar!: () => void;
+    const lancador: LancadorDeDados = {
+      lancar: vi.fn(() => new Promise<void>((resolve) => (parar = resolve))),
+      encerrar: vi.fn(),
+    };
+    return { lancador, parar: () => parar() };
+  }
+
+  function montarComDado(opcoes: { ficha?: FichaOrdem | FichaDnd; resultado?: TesteResultado; testar?: unknown } = {}) {
+    const { lancador, parar } = lancadorFalso();
+    const preparar = vi.fn(() => Promise.resolve<LancadorDeDados | null>(lancador));
+    const ficha = opcoes.ficha ?? FICHA;
+    const testar = opcoes.testar ?? vi.fn(() => of(opcoes.resultado ?? RESULTADO));
+    const montado = montar({ buscarFicha: vi.fn(() => of(ficha)), testar }, [
+      { provide: DadoAnimado, useValue: { preparar } },
+    ]);
+    return { ...montado, lancador, parar, preparar, testar };
+  }
+
+  const rolarInvestigacao = (el: HTMLElement) =>
+    (el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).click();
+
+  it('o cartao so aparece depois do terminou, e nao na resposta do POST', async () => {
+    const { fixture, el, lancador } = montarComDado();
+
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    expect(el.querySelector('app-camada-dos-dados')).not.toBeNull();
+    expect(el.querySelector('app-resultado-rolagem')).toBeNull();
+    expect(lancador.lancar).toHaveBeenCalledWith(expect.any(HTMLElement), [4, 19, 9], 1);
+
+    (el.querySelector('app-camada-dos-dados') as HTMLElement).click(); // toque: pula
+    fixture.detectChanges();
+
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.textContent).toContain('Investigação: 19 + 5 = 24');
+    expect(lancador.encerrar).toHaveBeenCalled();
+  });
+
+  it('o cartao aparece quando os dados param e passa a pausa', async () => {
+    const { fixture, el, parar } = montarComDado();
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    vi.useFakeTimers();
+    try {
+      parar();
+      await vi.advanceTimersByTimeAsync(600);
+      fixture.detectChanges();
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.querySelector('app-resultado-rolagem')).not.toBeNull();
+  });
+
+  it('Rolar fica desabilitado ate o cartao aparecer', async () => {
+    const { fixture, el } = montarComDado();
+    const rolar = el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement;
+
+    rolar.click();
+    await aguardar(fixture);
+    expect(rolar.disabled).toBe(true);
+
+    (el.querySelector('app-camada-dos-dados') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(rolar.disabled).toBe(false);
+  });
+
+  it('com o plano B (preparar devolve null) o cartao aparece direto e a camada nao abre', async () => {
+    const preparar = vi.fn(() => Promise.resolve(null));
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar: vi.fn(() => of(RESULTADO)) }, [
+      { provide: DadoAnimado, useValue: { preparar } },
+    ]);
+
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    expect(preparar).toHaveBeenCalledOnce();
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.textContent).toContain('Investigação: 19 + 5 = 24');
+  });
+
+  it('com o POST falhando, nao pede o lancador e o erro aparece como hoje', async () => {
+    const indisponivel: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Pode estar acordando.', campos: {} };
+    const { fixture, el, preparar } = montarComDado({ testar: vi.fn(() => throwError(() => indisponivel)) });
+
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    expect(preparar).not.toHaveBeenCalled();
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.textContent).toContain('Servidor indisponível');
+    expect((el.querySelector('button[aria-label="Rolar Investigação, +5"]') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('D&D com vantagem leva os 2 dados a camada, e o seletor volta a Normal', async () => {
+    const { fixture, el, lancador } = montarComDado({ ficha: FICHA_DND, resultado: RESULTADO_DND });
+
+    const modo = (nome: string) =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.modo button')).find((b) => b.textContent?.trim() === nome)!;
+    modo('Vantagem').click();
+    fixture.detectChanges();
+    (el.querySelector('button[aria-label="Rolar Furtividade, +8"]') as HTMLButtonElement).click();
+    await aguardar(fixture);
+
+    expect(lancador.lancar).toHaveBeenCalledWith(expect.any(HTMLElement), [17, 6], 0);
+    expect(modo('Normal').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('sair da ficha durante a animacao encerra a cena', async () => {
+    const { fixture, el, lancador } = montarComDado();
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    fixture.destroy();
+
+    expect(lancador.encerrar).toHaveBeenCalled();
+  });
+
+  it('trocar de ficha durante a animacao fecha a camada e o cartao da outra nao aparece', async () => {
+    const buscarFicha = vi.fn((id: number) => of(id === 7 ? FICHA : { ...FICHA, id: 8, personagem: 'Outro' }));
+    const { lancador } = lancadorFalso();
+    const preparar = vi.fn(() => Promise.resolve<LancadorDeDados | null>(lancador));
+    const { fixture, el } = montar({ buscarFicha, testar: vi.fn(() => of(RESULTADO)) }, [
+      { provide: DadoAnimado, useValue: { preparar } },
+    ]);
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    fixture.componentRef.setInput('id', '8');
+    fixture.detectChanges();
+    await aguardar(fixture);
+
+    expect(lancador.encerrar).toHaveBeenCalled();
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.querySelector('app-resultado-rolagem')).toBeNull();
+    expect(el.textContent).toContain('Outro');
+  });
+
+  it('se a ficha for deixada antes de o preparar() terminar, a camada nem abre', async () => {
+    let entregar!: (l: LancadorDeDados) => void;
+    const lancador: LancadorDeDados = { lancar: vi.fn(() => Promise.resolve()), encerrar: vi.fn() };
+    const preparar = vi.fn(() => new Promise<LancadorDeDados>((resolve) => (entregar = resolve)));
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), testar: vi.fn(() => of(RESULTADO)) }, [
+      { provide: DadoAnimado, useValue: { preparar } },
+    ]);
+    rolarInvestigacao(el);
+    await aguardar(fixture);
+
+    fixture.destroy();
+    entregar(lancador);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(lancador.lancar).not.toHaveBeenCalled();
+    expect(lancador.encerrar).toHaveBeenCalled();
   });
 });
