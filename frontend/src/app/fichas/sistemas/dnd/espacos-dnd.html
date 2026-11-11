@@ -1,0 +1,61 @@
+<section class="bloco" aria-labelledby="titulo-espacos">
+  <h3 id="titulo-espacos" class="titulo">Espaços de magia</h3>
+
+  @for (e of comEspacos(); track e.nivel) {
+    <div class="nivel" role="group" [attr.aria-label]="rotuloNivel(+e.nivel)" [attr.data-nivel]="e.nivel">
+      <span class="rotulo-nivel">{{ rotuloNivel(+e.nivel) }}</span>
+      <div class="marcadores">
+        @for (m of e.marcadores; track m.indice) {
+          <button
+            type="button"
+            class="marcador"
+            [class.usado]="m.usado"
+            [attr.aria-label]="m.rotulo"
+            [attr.aria-disabled]="salvando()"
+            (click)="alternar(e.nivel, m.indice)"
+          ></button>
+        }
+      </div>
+      <span class="contagem">{{ e.usados }}/{{ e.total }}</span>
+    </div>
+  } @empty {
+    <p class="aviso">Nenhum espaço de magia ainda. Defina os totais abaixo.</p>
+  }
+
+  <p class="status" role="status">{{ aviso() }}</p>
+
+  @if (erroGeral(); as erro) {
+    <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+  }
+
+  <button type="button" class="botao-neutro descanso" [disabled]="salvando() || !algumUsado()" (click)="descansar()">
+    Descanso longo
+  </button>
+
+  <form [formGroup]="form" (ngSubmit)="salvarTotais()" novalidate>
+    <fieldset class="totais">
+      <legend>Total de espaços por nível</legend>
+      <div class="grade">
+        @for (nivel of niveis; track nivel) {
+          <mat-form-field appearance="outline" [attr.data-campo]="'total-' + nivel" subscriptSizing="dynamic">
+            <mat-label>{{ nivel }}º</mat-label>
+            <input
+              matInput
+              [formControlName]="nivel"
+              inputmode="numeric"
+              [attr.aria-label]="'Total de espaços de ' + rotuloNivel(+nivel)"
+            />
+            @if (mensagem(form.controls[nivel]); as texto) {
+              <mat-error>{{ texto }}</mat-error>
+            }
+          </mat-form-field>
+        }
+      </div>
+      <div class="acoes-form">
+        <button type="submit" class="botao" [disabled]="salvando() || botaoBloqueado()">
+          {{ salvandoTotais() ? 'Salvando…' : 'Salvar totais' }}
+        </button>
+      </div>
+    </fieldset>
+  </form>
+</section>

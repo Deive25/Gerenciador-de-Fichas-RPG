@@ -18,6 +18,7 @@ const FICHA: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 /** Ficha vinda da conversão do d100: sem classe, PE vazio, sem perícias, NEX 5 e atributos 1. */
@@ -30,6 +31,7 @@ const CONVERTIDA: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 /** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */

@@ -1,4 +1,4 @@
-import { GrauDnd, ItemDnd } from '../../ficha.model';
+import { GrauDnd, ItemDnd, MagiaDnd } from '../../ficha.model';
 
 // As mesmas regras do backend (RegrasDnd). O front calcula para mostrar; quem rola é o servidor.
 
@@ -42,4 +42,24 @@ export function pesoTotal(itens: readonly ItemDnd[]): number {
 /** "112,5", "7" ou "0,25": pt-BR, até 2 casas e sem zeros à direita. */
 export function formatarPeso(kg: number): string {
   return kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+}
+
+/** CD das magias: 8 + proficiência + modificador do atributo de conjuração; sem atributo não há CD (null). */
+export function cdDeMagia(nivel: number, valorAtributo: number | null): number | null {
+  return valorAtributo === null ? null : 8 + proficiencia(nivel) + modificador(valorAtributo);
+}
+
+/** Ataque mágico: proficiência + modificador do atributo de conjuração; sem atributo, null. */
+export function ataqueMagico(nivel: number, valorAtributo: number | null): number | null {
+  return valorAtributo === null ? null : proficiencia(nivel) + modificador(valorAtributo);
+}
+
+/** "Truque" para o nível 0; senão "3º nível". */
+export function rotuloNivelMagia(nivel: number): string {
+  return nivel === 0 ? 'Truque' : `${nivel}º nível`;
+}
+
+/** Por nível e, no mesmo nível, por criação (id): a mesma ordem da API, para a lista não pular ao editar. */
+export function ordenarMagias(magias: readonly MagiaDnd[]): MagiaDnd[] {
+  return [...magias].sort((a, b) => a.nivel - b.nivel || a.id - b.id);
 }

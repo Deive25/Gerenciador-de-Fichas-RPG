@@ -7,12 +7,15 @@ import java.util.Map;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.ElementoRitual;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.HabilidadeFicha;
 import dev.spironello.fichasrpg.model.ItemDnd;
 import dev.spironello.fichasrpg.model.ItemOrdem;
+import dev.spironello.fichasrpg.model.MagiaDnd;
+import dev.spironello.fichasrpg.model.RitualOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 
 /** Fichas válidas para os testes que só precisam de "uma ficha" no banco. */
@@ -107,6 +110,25 @@ public final class FichasDeTeste {
 		item.setEspacos(1);
 		item.setQuantidade(1);
 		return item;
+	}
+
+	/** Magia de D&D válida no nível dado (0 = truque), sem textos opcionais, ainda não salva; a ficha já tem de estar no banco. */
+	public static MagiaDnd magiaDnd(FichaDnd ficha, String nome, int nivel) {
+		MagiaDnd magia = new MagiaDnd();
+		magia.setFicha(ficha);
+		magia.setNome(nome);
+		magia.setNivel(nivel);
+		return magia;
+	}
+
+	/** Ritual de Ordem válido (elemento SANGUE) no círculo dado, ainda não salvo; a ficha já tem de estar no banco. */
+	public static RitualOrdem ritualOrdem(FichaOrdem ficha, String nome, int circulo) {
+		RitualOrdem ritual = new RitualOrdem();
+		ritual.setFicha(ficha);
+		ritual.setNome(nome);
+		ritual.setCirculo(circulo);
+		ritual.setElemento(ElementoRitual.SANGUE);
+		return ritual;
 	}
 
 	/** Item de D&D válido (quantidade 1, peso 1 kg, não equipado), ainda não salvo; a ficha já tem de estar no banco. */

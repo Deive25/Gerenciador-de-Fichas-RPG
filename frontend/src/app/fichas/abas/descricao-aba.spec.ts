@@ -14,6 +14,7 @@ const FICHA: FichaOrdem = {
   descricao: { aparencia: 'Alta e magra', historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>> = {}) {

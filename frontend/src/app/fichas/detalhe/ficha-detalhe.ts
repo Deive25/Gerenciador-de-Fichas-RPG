@@ -11,12 +11,26 @@ import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
 import { DescricaoAba } from '../abas/descricao-aba';
 import { HabilidadesAba } from '../abas/habilidades-aba';
 import { InventarioDndAba } from '../sistemas/dnd/inventario-dnd-aba';
+import { MagiasDndAba } from '../sistemas/dnd/magias-dnd-aba';
 import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
+import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { FichaApi } from '../ficha-api';
-import { DescricaoFicha, Ficha, Habilidade, ItemDnd, ItemOrdem, Moedas, PedidoTeste, TesteResultado } from '../ficha.model';
+import {
+  DescricaoFicha,
+  Espacos,
+  Ficha,
+  Habilidade,
+  ItemDnd,
+  ItemOrdem,
+  MagiaDnd,
+  Moedas,
+  PedidoTeste,
+  RitualOrdem,
+  TesteResultado,
+} from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
@@ -33,6 +47,8 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     HabilidadesAba,
     InventarioOrdemAba,
     InventarioDndAba,
+    MagiasDndAba,
+    RituaisOrdemAba,
     DescricaoAba,
     ResultadoRolagem,
     FichaOrdemCorpo,
@@ -50,7 +66,7 @@ export class FichaDetalhe {
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
 
-  /** Vem do query param ?aba= (o mesmo binding de inputs): ficha, inventario, habilidades ou descricao. */
+  /** Vem do query param ?aba= (o mesmo binding de inputs): ficha, inventario, magias (D&D), rituais (Ordem), habilidades ou descricao. */
   readonly aba = input<string>();
 
   /** Abas do sistema da ficha carregada e o índice da aberta; aba ausente ou desconhecida é a Ficha (0). */
@@ -134,6 +150,21 @@ export class FichaDetalhe {
   /** Idem para as moedas de D&D. */
   atualizarMoedas(moedas: Moedas): void {
     this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, moedas } : f));
+  }
+
+  /** Idem para as magias de D&D. */
+  atualizarMagias(magias: MagiaDnd[]): void {
+    this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, magias } : f));
+  }
+
+  /** Idem para os espaços de magia de D&D (os 9 níveis). */
+  atualizarEspacos(espacos: Espacos): void {
+    this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, espacos } : f));
+  }
+
+  /** Idem para os rituais de Ordem. */
+  atualizarRituais(rituais: RitualOrdem[]): void {
+    this.ficha.update((f) => (f && f.sistema === 'ORDEM_PARANORMAL' ? { ...f, rituais } : f));
   }
 
   /** Idem para a descrição: a aba já gravou, só troca na ficha. */

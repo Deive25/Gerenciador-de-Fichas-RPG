@@ -51,6 +51,8 @@ public class FichaDndMapper {
 		ficha.setCa(request.ca());
 		ficha.setInspiracao(Boolean.TRUE.equals(request.inspiracao()));
 		ficha.setSalvaguardas(request.salvaguardas());
+		// Atributo de conjuração: ausente = nulo (o PUT substitui a ficha). Magias e espaços não são tocados aqui.
+		ficha.setAtributoConjuracao(request.atributoConjuracao());
 		// Substituição completa das perícias; grau null = sem proficiência (não gera entrada).
 		Map<PericiaDnd, GrauDnd> pericias = ficha.getPericias();
 		pericias.clear();
@@ -89,12 +91,15 @@ public class FichaDndMapper {
 				comuns.descricao(),
 				comuns.habilidades(),
 				listas.itens(),
+				listas.magias(),
+				listas.espacos(),
 				new MoedasDnd(ficha.getPc(), ficha.getPp(), ficha.getPe(), ficha.getPo(), ficha.getPl()),
 				ficha.getEdicao(),
 				ficha.getClasse(),
 				ficha.getEspecie(),
 				ficha.getAntecedente(),
 				ficha.getNivel(),
+				ficha.getAtributoConjuracao(),
 				atributos,
 				recursos,
 				ficha.getCa(),

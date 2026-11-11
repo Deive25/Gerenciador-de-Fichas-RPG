@@ -3,18 +3,22 @@ package dev.spironello.fichasrpg.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import dev.spironello.fichasrpg.dto.EspacoDnd;
 import dev.spironello.fichasrpg.dto.FichaDndRequest;
 import dev.spironello.fichasrpg.dto.FichaDndResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
+import dev.spironello.fichasrpg.dto.MagiaResponse;
 import dev.spironello.fichasrpg.dto.RecursoValor;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.EspacoMagia;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.PericiaDnd;
@@ -35,9 +39,14 @@ class FichaDndMapperTest {
 	}
 
 	private static FichaDndRequest pedido(Map<RecursoDnd, RecursoValor> recursos, Boolean inspiracao,
-			Set<AtributoDnd> salvaguardas, Map<PericiaDnd, GrauDnd> pericias) {
+			Set<AtributoDnd> salvaguardas, Map<PericiaDnd, GrauDnd> pericias, AtributoDnd atributoConjuracao) {
 		return new FichaDndRequest("Arthur", "Ana", "F", 30, EdicaoDnd.D2014, "Mago", "Elfo", "Sábio", 5,
-				atributos(), recursos, 13, inspiracao, salvaguardas, pericias);
+				atributos(), recursos, 13, inspiracao, salvaguardas, pericias, atributoConjuracao);
+	}
+
+	private static FichaDndRequest pedido(Map<RecursoDnd, RecursoValor> recursos, Boolean inspiracao,
+			Set<AtributoDnd> salvaguardas, Map<PericiaDnd, GrauDnd> pericias) {
+		return pedido(recursos, inspiracao, salvaguardas, pericias, null);
 	}
 
 	@Test
@@ -105,6 +114,61 @@ class FichaDndMapperTest {
 
 		mapper.copiar(pedido(null, null, null, Map.of(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA)), ficha);
 		assertThat(ficha.getPericias()).containsOnly(Map.entry(PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA));
+	}
+
+	@Test
+	@DisplayName("atributo de conjuração: vai para a ficha e volta na resposta; ausente no pedido vira nulo")
+	void atributoDeConjuracao() {
+		FichaDnd ficha = mapper.criar(pedido(null, null, null, null, AtributoDnd.SAB));
+
+		assertThat(ficha.getAtributoConjuracao()).isEqualTo(AtributoDnd.SAB);
+		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND).atributoConjuracao())
+				.isEqualTo(AtributoDnd.SAB);
+
+		mapper.copiar(pedido(null, null, null, null), ficha);
+		assertThat(ficha.getAtributoConjuracao()).isNull();
+		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_DND).atributoConjuracao())
+				.isNull();
+	}
+
+	@Test
+	@DisplayName("copiar não toca nos espaços de magia da ficha (só o PATCH de espaços grava neles)")
+	void copiarNaoTocaNosEspacos() {
+		FichaDnd ficha = mapper.criar(pedido(null, null, null, null));
+		ficha.getEspacos().put(2, new EspacoMagia(3, 1));
+
+		mapper.copiar(pedido(null, null, null, null, AtributoDnd.INT), ficha);
+
+		assertThat(ficha.getEspacos()).containsOnly(Map.entry(2, new EspacoMagia(3, 1)));
+	}
+
+	@Test
+	@DisplayName("a resposta leva adiante as magias e os espaços das listas")
+	void respostaLevaMagiasEEspacos() {
+		FichaDnd ficha = mapper.criar(pedido(null, null, null, null));
+		MagiaResponse luz = new MagiaResponse(1L, "Luz", 0, null, null, null, null, null, false, false, true, null);
+		Map<Integer, EspacoDnd> espacos = Map.of(1, new EspacoDnd(4, 1));
+
+		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS,
+				new ListasDnd(List.of(), List.of(luz), espacos));
+
+		assertThat(resposta.magias()).containsExactly(luz);
+		assertThat(resposta.espacos()).isEqualTo(espacos);
+	}
+
+	@Test
+	@DisplayName("EspacosDaFicha traz sempre os nove níveis na ordem; nível sem linha vale 0 de 0")
+	void espacosDaFichaTemNoveNiveis() {
+		FichaDnd ficha = new FichaDnd();
+		ficha.getEspacos().put(9, new EspacoMagia(1, 1));
+		ficha.getEspacos().put(3, new EspacoMagia(2, 0));
+
+		Map<Integer, EspacoDnd> espacos = EspacosDaFicha.de(ficha);
+
+		assertThat(espacos.keySet()).containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9);
+		assertThat(espacos.get(3)).isEqualTo(new EspacoDnd(2, 0));
+		assertThat(espacos.get(9)).isEqualTo(new EspacoDnd(1, 1));
+		assertThat(espacos.get(1)).isEqualTo(new EspacoDnd(0, 0));
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import { ApiError } from '../../../core/api-error';
 import { FichaApi } from '../../ficha-api';
 import { FichaDnd, Moedas } from '../../ficha.model';
 import { MoedasDnd } from './moedas-dnd';
+import { espacosZerados } from '../../testes/espacos-zerados';
 
 const MOEDAS: Moedas = { pc: 1, pp: 2, pe: 3, po: 4, pl: 5 };
 
@@ -18,6 +19,9 @@ const FICHA: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: MOEDAS,
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 const NOMES = ['pc', 'pp', 'pe', 'po', 'pl'];

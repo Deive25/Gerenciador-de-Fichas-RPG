@@ -1,12 +1,17 @@
-import { ItemOrdem } from '../../ficha.model';
+import { ItemOrdem, RitualOrdem } from '../../ficha.model';
 import {
   ATRIBUTOS_ORDEM,
   PERICIAS_ORDEM,
   ROTULO_CATEGORIA,
+  ELEMENTOS_RITUAL,
   bonusDoGrau,
+  custoEmPe,
   defesa,
+  dtDeRitual,
   espacosUsados,
   limiteDeCarga,
+  ordenarRituais,
+  rotuloCirculo,
   rotuloClasse,
   rotuloEspacos,
 } from './catalogo-ordem';
@@ -86,5 +91,41 @@ describe('carga de Ordem', () => {
     expect(rotuloEspacos(1)).toBe('1 espaço');
     expect(rotuloEspacos(0)).toBe('0 espaços');
     expect(rotuloEspacos(2)).toBe('2 espaços');
+  });
+});
+
+describe('rituais de Ordem', () => {
+  it.each([
+    [1, 1],
+    [2, 3],
+    [3, 6],
+    [4, 10],
+  ])('o %io circulo custa %i PE', (circulo, pe) => {
+    expect(custoEmPe(circulo)).toBe(pe);
+  });
+
+  it.each([
+    [5, 2, 13],
+    [35, 2, 19],
+    [99, 3, 32],
+  ])('DT com NEX %i e Presenca %i e %i (10 + NEX/5 arredondado para baixo + PRE)', (nex, pre, dt) => {
+    expect(dtDeRitual(nex, pre)).toBe(dt);
+  });
+
+  it('rotulos dos circulos e dos elementos', () => {
+    expect([1, 2, 3, 4].map(rotuloCirculo)).toEqual(['1º círculo', '2º círculo', '3º círculo', '4º círculo']);
+    expect(ELEMENTOS_RITUAL.map((e) => [e.codigo, e.nome])).toEqual([
+      ['SANGUE', 'Sangue'], ['MORTE', 'Morte'], ['CONHECIMENTO', 'Conhecimento'], ['ENERGIA', 'Energia'], ['MEDO', 'Medo'],
+    ]);
+  });
+
+  it('ordenarRituais ordena por circulo e depois por id, sem mudar a lista original', () => {
+    const r = (id: number, circulo: number): RitualOrdem => ({
+      id, nome: `R${id}`, circulo, elemento: 'SANGUE', execucao: null, alcance: null, alvo: null,
+      duracao: null, resistencia: null, descricao: null,
+    });
+    const original = [r(4, 2), r(1, 3), r(2, 2), r(3, 1)];
+    expect(ordenarRituais(original).map((x) => x.id)).toEqual([3, 2, 4, 1]);
+    expect(original.map((x) => x.id)).toEqual([4, 1, 2, 3]);
   });
 });
