@@ -35,6 +35,15 @@
         </section>
       }
 
+      @if (animacao(); as a) {
+        <app-camada-dos-dados
+          [lancador]="a.lancador"
+          [dados]="a.resultado.dados"
+          [indiceMantido]="a.indiceMantido"
+          (terminou)="aoTerminarAnimacao()"
+        />
+      }
+
       @if (ultimoResultado(); as resultado) {
         <app-resultado-rolagem class="resultado" [resultado]="resultado" [natural]="f.sistema === 'DND'" />
       }
