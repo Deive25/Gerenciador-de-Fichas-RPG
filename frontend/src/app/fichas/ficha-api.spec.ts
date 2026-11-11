@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ApiError } from '../core/api-error';
 import { FichaApi } from './ficha-api';
-import { FichaOrdemEntrada, FichaResumo } from './ficha.model';
+import { FichaOrdemEntrada, FichaResumo, ItemOrdem } from './ficha.model';
 
 const API = 'http://localhost:8080';
 
@@ -145,6 +145,52 @@ describe('FichaApi', () => {
       const req = http.expectOne(`${API}/fichas/7/habilidades/3`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+  });
+
+  describe('inventario', () => {
+    const ITEM = { nome: 'Faca', categoria: 0, espacos: 1, quantidade: 2, descricao: null };
+
+    it('criarItem faz POST /fichas/7/itens e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.criarItem<ItemOrdem>(7, ITEM).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/itens`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(ITEM);
+      req.flush({ id: 3, ...ITEM });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('atualizarItem faz PUT /fichas/7/itens/3 e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.atualizarItem<ItemOrdem>(7, 3, ITEM).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/itens/3`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(ITEM);
+      req.flush({ id: 3, ...ITEM });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('excluirItem faz DELETE /fichas/7/itens/3 e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.excluirItem(7, 3).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/itens/3`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('atualizarMoedas faz PATCH /fichas/7/moedas com o corpo enviado e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      let devolvidas: unknown;
+      api.atualizarMoedas(7, { po: 10 }).subscribe((m) => (devolvidas = m));
+      const req = http.expectOne(`${API}/fichas/7/moedas`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ po: 10 });
+      const todas = { pc: 0, pp: 0, pe: 0, po: 10, pl: 0 };
+      req.flush(todas);
+      expect(devolvidas).toEqual(todas);
       expect(api.versaoFichas()).toBe(antes + 1);
     });
   });

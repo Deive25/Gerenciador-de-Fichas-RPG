@@ -13,6 +13,7 @@ import dev.spironello.fichasrpg.model.Sistema;
 /**
  * Ficha de Ordem Paranormal completa. Os mapas são EnumMap (ordem estável, a do enum); "recursos" traz
  * sempre PV, SAN e PE (com valores nulos quando não preenchidos) e "pericias" só as treinadas.
+ * As chaves "habilidades" e "itens" são listas à parte da ficha (não vêm no PUT, ADR 0018).
  * Não leva anotação de tipo: "sistema" já é um componente do record e sai no JSON como os outros.
  */
 public record FichaOrdemResponse(
@@ -25,6 +26,7 @@ public record FichaOrdemResponse(
 		Long retratoVersao,
 		DescricaoFicha descricao,
 		List<HabilidadeResponse> habilidades,
+		List<ItemOrdemResponse> itens,
 		ClasseOrdem classe,
 		String origem,
 		int nex,

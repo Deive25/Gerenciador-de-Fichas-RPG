@@ -22,6 +22,7 @@ const FICHA: FichaOrdem = {
   pericias: { INVESTIGACAO: 'TREINADO', OCULTISMO: 'VETERANO', VONTADE: 'EXPERT' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
 };
 
 const RESULTADO: TesteResultado = {
@@ -37,6 +38,8 @@ const FICHA_DND: FichaDnd = {
   pericias: { FURTIVIDADE: 'ESPECIALISTA' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 const RESULTADO_DND: TesteResultado = {
@@ -395,11 +398,82 @@ describe('FichaDetalhe · abas', () => {
   const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
 
   it.each([
-    ['Ordem', FICHA],
-    ['D&D', FICHA_DND],
-  ])('ficha de %s tem as abas Ficha, Habilidades e Descricao, nessa ordem', (_nome, ficha) => {
+    ['Ordem', FICHA, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
+    ['D&D', FICHA_DND, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
+  ])('ficha de %s tem as abas na ordem certa', (_nome, ficha, esperadas) => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
-    expect(rotulos(el)).toEqual(['Ficha', 'Habilidades', 'Descrição']);
+    expect(rotulos(el)).toEqual(esperadas);
+  });
+
+  it('na aba Inventario de Ordem mostra os itens e um item novo aparece e muda a carga sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Pistola', categoria: 2, espacos: 1, quantidade: 3, descricao: null };
+    const nova = { id: 4, nome: 'Lanterna', categoria: 0, espacos: 1, quantidade: 2, descricao: null };
+    const buscarFicha = vi.fn(() => of({ ...FICHA, itens: [existente] }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Inventário');
+    expect(el.textContent).toContain('Pistola');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Carga: 3/5 espaços');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-ordem-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Lanterna');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Carga: 5/5 espaços');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('na aba Inventario de D&D mostra os itens e as moedas, e um item novo muda o peso total sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Espada', quantidade: 1, peso: 3, equipado: true, descricao: null };
+    const nova = { id: 4, nome: 'Corda', quantidade: 2, peso: 2.5, equipado: false, descricao: null };
+    const buscarFicha = vi.fn(() => of({ ...FICHA_DND, itens: [existente], moedas: { pc: 0, pp: 0, pe: 0, po: 12, pl: 0 } }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Inventário');
+    expect(el.textContent).toContain('Espada');
+    expect(el.querySelector<HTMLInputElement>('[data-campo="po"] input')!.value).toBe('12');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Peso: 3/60 kg');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-dnd-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Corda');
+    expect(el.querySelector('p.carga')?.textContent?.trim()).toBe('Peso: 8/60 kg');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('na aba Inventario de D&D as moedas emitidas passam a ficha da aba, sem recarregar a ficha', async () => {
+    const buscarFicha = vi.fn(() => of(FICHA_DND));
+    const { fixture } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'inventario');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-inventario-dnd-aba').componentInstance as {
+      moedasAtualizadas: { emit(moedas: unknown): void };
+      ficha(): { moedas: unknown };
+    };
+    expect(aba.ficha().moedas).toEqual({ pc: 0, pp: 0, pe: 0, po: 0, pl: 0 });
+    const novas = { pc: 0, pp: 0, pe: 0, po: 25, pl: 1 };
+    aba.moedasAtualizadas.emit(novas);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(aba.ficha().moedas).toEqual(novas);
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 
   it('sem aba na URL abre a Ficha, com os botoes Rolar', () => {

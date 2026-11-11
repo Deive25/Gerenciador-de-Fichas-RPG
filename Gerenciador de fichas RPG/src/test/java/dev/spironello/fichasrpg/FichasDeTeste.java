@@ -1,5 +1,6 @@
 package dev.spironello.fichasrpg;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -10,6 +11,8 @@ import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.HabilidadeFicha;
+import dev.spironello.fichasrpg.model.ItemDnd;
+import dev.spironello.fichasrpg.model.ItemOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 
 /** Fichas válidas para os testes que só precisam de "uma ficha" no banco. */
@@ -93,5 +96,26 @@ public final class FichasDeTeste {
 		habilidade.setTipo(tipo);
 		habilidade.setDescricao(descricao);
 		return habilidade;
+	}
+
+	/** Item de Ordem válido (categoria 0, 1 espaço, quantidade 1), ainda não salvo; a ficha já tem de estar no banco. */
+	public static ItemOrdem itemOrdem(FichaOrdem ficha, String nome) {
+		ItemOrdem item = new ItemOrdem();
+		item.setFicha(ficha);
+		item.setNome(nome);
+		item.setCategoria(0);
+		item.setEspacos(1);
+		item.setQuantidade(1);
+		return item;
+	}
+
+	/** Item de D&D válido (quantidade 1, peso 1 kg, não equipado), ainda não salvo; a ficha já tem de estar no banco. */
+	public static ItemDnd itemDnd(FichaDnd ficha, String nome) {
+		ItemDnd item = new ItemDnd();
+		item.setFicha(ficha);
+		item.setNome(nome);
+		item.setQuantidade(1);
+		item.setPeso(new BigDecimal("1.00"));
+		return item;
 	}
 }

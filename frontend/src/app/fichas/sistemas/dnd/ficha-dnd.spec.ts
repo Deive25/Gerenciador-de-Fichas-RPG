@@ -11,6 +11,8 @@ const FICHA: FichaDnd = {
   pericias: { FURTIVIDADE: 'ESPECIALISTA', PERCEPCAO: 'PROFICIENTE' },
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
+  itens: [],
+  moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
 };
 
 function montar(ficha: FichaDnd = FICHA, rolando = false) {

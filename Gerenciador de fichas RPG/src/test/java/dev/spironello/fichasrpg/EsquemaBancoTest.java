@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha e ficha_habilidade), que vem das migrações
+ * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item e ficha_dnd_item), que vem das migrações
  * Flyway e não do Hibernate: com ddl-auto=validate ele só confere.
  * O teste protege os nomes de coluna e a nulabilidade que as entidades esperam, e também mostra que
- * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 6 aplicadas).
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 7 aplicadas).
  */
 @DisplayName("Esquema do banco (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
@@ -31,7 +31,7 @@ class EsquemaBancoTest extends IntegrationTestBase {
 				"select table_name from information_schema.tables where table_schema = current_schema()");
 		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder(
 				"ficha", "ficha_ordem", "ficha_ordem_pericia", "ficha_dnd", "ficha_dnd_pericia", "retrato_ficha",
-				"ficha_habilidade", "flyway_schema_history");
+				"ficha_habilidade", "ficha_ordem_item", "ficha_dnd_item", "flyway_schema_history");
 	}
 
 	@Test
@@ -101,6 +101,9 @@ class EsquemaBancoTest extends IntegrationTestBase {
 				"salva_sabedoria", "salva_carisma")) {
 			esperado.put(c, "boolean/NO");
 		}
+		for (String c : List.of("pc", "pp", "pe", "po", "pl")) {
+			esperado.put(c, "integer/NO");
+		}
 
 		assertThat(colunas("ficha_dnd")).containsExactlyInAnyOrderEntriesOf(esperado);
 	}
@@ -141,11 +144,41 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5 e V6 com sucesso")
+	@DisplayName("a tabela ficha_ordem_item tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDosItensDeOrdem() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("id", "bigint/NO");
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("nome", "character varying/NO");
+		for (String c : List.of("categoria", "espacos", "quantidade")) {
+			esperado.put(c, "integer/NO");
+		}
+		esperado.put("descricao", "character varying/YES");
+
+		assertThat(colunas("ficha_ordem_item")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("a tabela ficha_dnd_item tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDosItensDnd() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("id", "bigint/NO");
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("nome", "character varying/NO");
+		esperado.put("quantidade", "integer/NO");
+		esperado.put("peso", "numeric/NO");
+		esperado.put("equipado", "boolean/NO");
+		esperado.put("descricao", "character varying/YES");
+
+		assertThat(colunas("ficha_dnd_item")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6 e V7 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(6);
+		assertThat(historico).hasSize(7);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
@@ -169,6 +202,10 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(historico.get(5))
 				.containsEntry("version", "6")
 				.containsEntry("description", "descricao e habilidades da ficha")
+				.containsEntry("success", true);
+		assertThat(historico.get(6))
+				.containsEntry("version", "7")
+				.containsEntry("description", "inventario da ficha")
 				.containsEntry("success", true);
 	}
 

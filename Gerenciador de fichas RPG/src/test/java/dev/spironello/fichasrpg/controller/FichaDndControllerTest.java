@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,12 +34,14 @@ import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
 import dev.spironello.fichasrpg.model.FichaDnd;
+import dev.spironello.fichasrpg.model.ItemDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauDnd;
 import dev.spironello.fichasrpg.model.PericiaDnd;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
+import dev.spironello.fichasrpg.repository.ItemDndRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /** Comportamento do CRUD /fichas com fichas de D&D (5e de 2014 e 2024): corpos, ida e volta pelo banco, 409. */
@@ -52,6 +56,9 @@ class FichaDndControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private HabilidadeFichaRepository habilidades;
+
+	@Autowired
+	private ItemDndRepository itens;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -208,6 +215,114 @@ class FichaDndControllerTest extends IntegrationTestBase {
 				.andExpect(jsonPath("$.habilidades", hasSize(1)))
 				.andExpect(jsonPath("$.habilidades[0].nome").value("Sentido de Perigo"))
 				.andExpect(jsonPath("$.habilidades[0].tipo").value("TALENTO"));
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de uma ficha de D&D nova traz itens vazios e as cinco moedas em 0")
+	void fichaNovaTemItensVaziosEMoedasZeradas() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.itens", hasSize(0)))
+				.andExpect(jsonPath("$.moedas.pc").value(0))
+				.andExpect(jsonPath("$.moedas.pp").value(0))
+				.andExpect(jsonPath("$.moedas.pe").value(0))
+				.andExpect(jsonPath("$.moedas.po").value(0))
+				.andExpect(jsonPath("$.moedas.pl").value(0));
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de D&D traz os itens (peso, equipado) na ordem de criação e as moedas da ficha")
+	void buscarTrazItensEMoedas() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setPc(1);
+		ficha.setPp(2);
+		ficha.setPe(3);
+		ficha.setPo(4);
+		ficha.setPl(5);
+		ficha = repository.save(ficha);
+		ItemDnd primeiro = FichasDeTeste.itemDnd(ficha, "Espada");
+		primeiro.setQuantidade(2);
+		primeiro.setPeso(new BigDecimal("1.50"));
+		primeiro.setEquipado(true);
+		primeiro.setDescricao("Longa");
+		itens.save(primeiro);
+		ItemDnd segundo = FichasDeTeste.itemDnd(ficha, "Pluma");
+		segundo.setPeso(BigDecimal.ZERO);
+		itens.save(segundo);
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.itens", hasSize(2)))
+				.andExpect(jsonPath("$.itens[0].nome").value("Espada"))
+				.andExpect(jsonPath("$.itens[0].quantidade").value(2))
+				.andExpect(jsonPath("$.itens[0].peso").value(1.5))
+				.andExpect(jsonPath("$.itens[0].equipado").value(true))
+				.andExpect(jsonPath("$.itens[0].descricao").value("Longa"))
+				.andExpect(jsonPath("$.itens[1].nome").value("Pluma"))
+				.andExpect(jsonPath("$.itens[1].peso").value(0))
+				.andExpect(jsonPath("$.itens[1].equipado").value(false))
+				.andExpect(jsonPath("$.moedas.pc").value(1))
+				.andExpect(jsonPath("$.moedas.pp").value(2))
+				.andExpect(jsonPath("$.moedas.pe").value(3))
+				.andExpect(jsonPath("$.moedas.po").value(4))
+				.andExpect(jsonPath("$.moedas.pl").value(5));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D não apaga os itens nem zera as moedas (ADR 0018)")
+	void atualizarPreservaItensEMoedas() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setPo(42);
+		ficha = repository.save(ficha);
+		itens.save(FichasDeTeste.itemDnd(ficha, "Corda"));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.itens", hasSize(1)))
+				.andExpect(jsonPath("$.moedas.po").value(42));
+
+		assertThat(itens.findByFichaIdOrderById(ficha.getId())).extracting(ItemDnd::getNome).containsExactly("Corda");
+		assertThat(((FichaDnd) repository.findById(ficha.getId()).orElseThrow()).getPo()).isEqualTo(42);
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D com itens no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComItensNoCorpoDa400() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+		corpo.put("itens", List.of());
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D com moedas no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComMoedasNoCorpoDa400() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+		corpo.put("moedas", Map.of("po", 1));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("DELETE /fichas/{id} de D&D com itens devolve 204 e os itens somem do banco")
+	void excluirFichaComItens() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		itens.save(FichasDeTeste.itemDnd(ficha, "Corda"));
+
+		mockMvc.perform(delete("/fichas/{id}", ficha.getId())).andExpect(status().isNoContent());
+
+		assertThat(itens.count()).isZero();
 	}
 
 	@Test
