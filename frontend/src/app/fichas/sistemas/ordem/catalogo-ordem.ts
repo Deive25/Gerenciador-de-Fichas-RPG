@@ -1,4 +1,4 @@
-import { AtributoOrdem, ClasseOrdem, GrauOrdem, ItemOrdem, PericiaOrdem } from '../../ficha.model';
+import { AtributoOrdem, ClasseOrdem, ElementoRitual, GrauOrdem, ItemOrdem, PericiaOrdem, RitualOrdem } from '../../ficha.model';
 
 export interface AtributoCatalogo {
   codigo: AtributoOrdem;
@@ -96,4 +96,41 @@ export function espacosUsados(itens: readonly ItemOrdem[]): number {
 
 export function rotuloEspacos(n: number): string {
   return n === 1 ? '1 espaço' : `${n} espaços`;
+}
+
+/** Os cinco elementos, na ordem do livro, para o select e o cartão do ritual. */
+export const ELEMENTOS_RITUAL: readonly { codigo: ElementoRitual; nome: string }[] = [
+  { codigo: 'SANGUE', nome: 'Sangue' },
+  { codigo: 'MORTE', nome: 'Morte' },
+  { codigo: 'CONHECIMENTO', nome: 'Conhecimento' },
+  { codigo: 'ENERGIA', nome: 'Energia' },
+  { codigo: 'MEDO', nome: 'Medo' },
+];
+
+export function rotuloElemento(elemento: ElementoRitual): string {
+  return ELEMENTOS_RITUAL.find((e) => e.codigo === elemento)?.nome ?? elemento;
+}
+
+const CUSTO_POR_CIRCULO: readonly number[] = [1, 3, 6, 10];
+
+/** Círculos de 1 a 4. */
+export const CIRCULOS_RITUAL: readonly number[] = [1, 2, 3, 4];
+
+export function rotuloCirculo(circulo: number): string {
+  return `${circulo}º círculo`;
+}
+
+/** Custo em PE: 1, 3, 6 ou 10 conforme o círculo. */
+export function custoEmPe(circulo: number): number {
+  return CUSTO_POR_CIRCULO[circulo - 1];
+}
+
+/** DT para resistir ao ritual: 10 + NEX/5 (para baixo) + Presença. */
+export function dtDeRitual(nex: number, presenca: number): number {
+  return 10 + Math.floor(nex / 5) + presenca;
+}
+
+/** Por círculo e, no mesmo círculo, por criação (id): a mesma ordem da API. */
+export function ordenarRituais(rituais: readonly RitualOrdem[]): RitualOrdem[] {
+  return [...rituais].sort((a, b) => a.circulo - b.circulo || a.id - b.id);
 }
