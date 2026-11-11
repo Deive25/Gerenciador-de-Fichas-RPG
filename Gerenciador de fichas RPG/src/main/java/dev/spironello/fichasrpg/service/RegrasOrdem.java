@@ -40,4 +40,9 @@ public final class RegrasOrdem {
 		int bonus = bonus(grauOuNulo);
 		return new TesteRolado(List.copyOf(dados), mantido, bonus, mantido + bonus);
 	}
+
+	/** Ataque crítico: o d20 mantido chegou à margem de ameaça do ataque (20 por padrão). */
+	public static boolean critico(int mantido, int margem) {
+		return mantido >= margem;
+	}
 }
