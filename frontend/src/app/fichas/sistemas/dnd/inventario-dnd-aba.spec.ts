@@ -4,6 +4,7 @@ import { ApiError } from '../../../core/api-error';
 import { FichaApi } from '../../ficha-api';
 import { FichaDnd, ItemDnd, Moedas } from '../../ficha.model';
 import { InventarioDndAba } from './inventario-dnd-aba';
+import { espacosZerados } from '../../testes/espacos-zerados';
 
 const EXISTENTE: ItemDnd = { id: 3, nome: 'Corda', quantidade: 2, peso: 1.5, equipado: false, descricao: 'Seda élfica.\nDez metros.' };
 
@@ -19,6 +20,9 @@ function fichaCom(itens: ItemDnd[], forca = 10): FichaDnd {
     habilidades: [],
     itens,
     moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+    atributoConjuracao: null,
+    magias: [],
+    espacos: espacosZerados(),
   };
 }
 

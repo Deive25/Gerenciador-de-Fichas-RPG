@@ -5,6 +5,7 @@ import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
 import { FichaDnd, FichaOrdem } from '../ficha.model';
 import { RecursosFicha, aplicarAjuste, limitarDigitado } from './recursos-ficha';
+import { espacosZerados } from '../testes/espacos-zerados';
 
 const FICHA: FichaOrdem = {
   id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: 34, retratoVersao: 123,
@@ -19,6 +20,7 @@ const FICHA: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 const FICHA_DND: FichaDnd = {
@@ -31,6 +33,9 @@ const FICHA_DND: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 describe('aplicarAjuste', () => {

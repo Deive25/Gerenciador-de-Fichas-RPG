@@ -8,6 +8,7 @@ import { Ficha, FichaDnd, FichaOrdem } from '../ficha.model';
 import { FormularioDnd } from '../sistemas/dnd/formulario-dnd';
 import { FormularioOrdem } from '../sistemas/ordem/formulario-ordem';
 import { EdicaoFicha } from './edicao-ficha';
+import { espacosZerados } from '../testes/espacos-zerados';
 
 const ORDEM: FichaOrdem = {
   id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
@@ -18,6 +19,7 @@ const ORDEM: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 const DND: FichaDnd = {
@@ -30,6 +32,9 @@ const DND: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 function montar(buscarFicha: (id: number) => unknown, id = '7') {

@@ -56,6 +56,17 @@
           <mat-error>{{ texto }}</mat-error>
         }
       </mat-form-field>
+      <mat-form-field appearance="outline" data-campo="atributoConjuracao">
+        <mat-label>Atributo de conjuração</mat-label>
+        <mat-select formControlName="atributoConjuracao">
+          @for (opcao of conjuracao; track opcao.valor) {
+            <mat-option [value]="opcao.valor">{{ opcao.nome }}</mat-option>
+          }
+        </mat-select>
+        @if (mensagem(form.controls.atributoConjuracao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
     </div>
   </fieldset>
 

@@ -90,9 +90,62 @@ export interface Moedas {
   pl: number;
 }
 
+// ---- Magias (2.1j) ----
+
+/** Magia de D&D: nível 0 é truque; os textos curtos e a descrição podem faltar. */
+export interface MagiaDnd {
+  id: number;
+  nome: string;
+  nivel: number;
+  escola: string | null;
+  tempo: string | null;
+  alcance: string | null;
+  componentes: string | null;
+  duracao: string | null;
+  concentracao: boolean;
+  ritual: boolean;
+  preparada: boolean;
+  descricao: string | null;
+}
+
+export type MagiaDndEntrada = Omit<MagiaDnd, 'id'>;
+
+/** Espaços de magia de um nível: o total e quantos já foram usados. */
+export interface Espaco {
+  total: number;
+  usados: number;
+}
+
+/** Os 9 níveis, sempre presentes na resposta (nível sem espaços vem {0, 0}). */
+export type Espacos = Record<'1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9', Espaco>;
+
+/** O nível do espaço, '1' a '9'. */
+export type NivelEspaco = keyof Espacos;
+
+/** Atributo de conjuração: só os três de lançador; sem ele a ficha não tem CD nem ataque mágico. */
+export type AtributoConjuracao = 'INT' | 'SAB' | 'CAR';
+
 // ---- Ordem Paranormal (2.1d) ----
 
 export type AtributoOrdem = 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
+
+export type ElementoRitual = 'SANGUE' | 'MORTE' | 'CONHECIMENTO' | 'ENERGIA' | 'MEDO';
+
+/** Ritual de Ordem (2.1j): círculo de 1 a 4. */
+export interface RitualOrdem {
+  id: number;
+  nome: string;
+  circulo: number;
+  elemento: ElementoRitual;
+  execucao: string | null;
+  alcance: string | null;
+  alvo: string | null;
+  duracao: string | null;
+  resistencia: string | null;
+  descricao: string | null;
+}
+
+export type RitualOrdemEntrada = Omit<RitualOrdem, 'id'>;
 
 export type ClasseOrdem = 'COMBATENTE' | 'ESPECIALISTA' | 'OCULTISTA';
 
@@ -157,6 +210,7 @@ export interface FichaOrdem {
   descricao: DescricaoFicha;
   habilidades: Habilidade[];
   itens: ItemOrdem[];
+  rituais: RitualOrdem[];
 }
 
 // ---- D&D 5e (2014) e D&D 2024 (2.1e) ----
@@ -208,6 +262,8 @@ export interface FichaDnd {
   recursos: Record<'PV' | 'PV_TEMP', RecursoValor>;
   ca: number | null;
   inspiracao: boolean;
+  /** Atributo da CD e do ataque mágico; null = a ficha não conjura. */
+  atributoConjuracao: AtributoConjuracao | null;
   /** Atributos em que a ficha é proficiente na salvaguarda. */
   salvaguardas: AtributoDnd[];
   /** Só as perícias com proficiência ou especialização. */
@@ -216,6 +272,8 @@ export interface FichaDnd {
   habilidades: Habilidade[];
   itens: ItemDnd[];
   moedas: Moedas;
+  magias: MagiaDnd[];
+  espacos: Espacos;
 }
 
 /** O que `GET /fichas/{id}` devolve: o campo `sistema` diz qual das fichas é. */
@@ -243,10 +301,19 @@ export interface TesteResultado {
 
 /**
  * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
- * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens` e `moedas` (rotas próprias, ADR 0018).
+ * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens`, `moedas`, `magias`, `espacos` e `rituais` (rotas próprias, ADR 0018).
  * O JSON estrito da API recusa chaves a mais.
  */
-type SoDaLeitura = 'id' | 'retratoVersao' | 'descricao' | 'habilidades' | 'itens' | 'moedas';
+type SoDaLeitura =
+  | 'id'
+  | 'retratoVersao'
+  | 'descricao'
+  | 'habilidades'
+  | 'itens'
+  | 'moedas'
+  | 'magias'
+  | 'espacos'
+  | 'rituais';
 export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura>;
 export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura>;
 export type FichaEntrada = FichaOrdemEntrada | FichaDndEntrada;
@@ -264,6 +331,8 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       habilidades: _habilidades,
       itens: _itens,
       moedas: _moedas,
+      magias: _magias,
+      espacos: _espacos,
       atributos, recursos, salvaguardas, pericias, ...resto } = ficha;
     return {
       ...resto,
@@ -279,6 +348,7 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       descricao: _descricao,
       habilidades: _habilidades,
       itens: _itens,
+      rituais: _rituais,
       atributos, recursos, pericias, ...resto } = ficha;
   return {
     ...resto,

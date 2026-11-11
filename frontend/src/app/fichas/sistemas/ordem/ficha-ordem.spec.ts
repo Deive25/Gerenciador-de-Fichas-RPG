@@ -15,6 +15,7 @@ const FICHA: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 function montar(ficha: FichaOrdem = FICHA, rolando = false) {

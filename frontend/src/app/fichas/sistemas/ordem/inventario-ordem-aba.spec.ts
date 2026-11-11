@@ -19,6 +19,7 @@ function fichaCom(itens: ItemOrdem[], forca = 2): FichaOrdem {
     descricao: { aparencia: null, historia: null, anotacoes: null },
     habilidades: [],
     itens,
+    rituais: [],
   };
 }
 

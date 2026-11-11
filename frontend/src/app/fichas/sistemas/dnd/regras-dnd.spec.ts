@@ -1,13 +1,17 @@
-import { ItemDnd } from '../../ficha.model';
+import { ItemDnd, MagiaDnd } from '../../ficha.model';
 import {
   bonusPericia,
   bonusSalvaguarda,
+  ataqueMagico,
   capacidadeDeCarga,
+  cdDeMagia,
   comSinal,
   formatarPeso,
   modificador,
+  ordenarMagias,
   pesoTotal,
   proficiencia,
+  rotuloNivelMagia,
 } from './regras-dnd';
 
 describe('regras de D&D', () => {
@@ -78,5 +82,43 @@ describe('carga de D&D', () => {
     expect(formatarPeso(112.5)).toBe('112,5');
     expect(formatarPeso(7)).toBe('7');
     expect(formatarPeso(0.25)).toBe('0,25');
+  });
+});
+
+describe('magias de D&D', () => {
+  // Atributo 16 = modificador +3.
+  it.each([
+    [1, 13, 5],
+    [5, 14, 6],
+    [17, 17, 9],
+  ])('nivel %i com atributo 16: CD %i e ataque +%i', (nivel, cd, ataque) => {
+    expect(cdDeMagia(nivel, 16)).toBe(cd);
+    expect(ataqueMagico(nivel, 16)).toBe(ataque);
+  });
+
+  it('sem atributo de conjuracao nao ha CD nem ataque', () => {
+    expect(cdDeMagia(5, null)).toBeNull();
+    expect(ataqueMagico(5, null)).toBeNull();
+  });
+
+  it('modificador negativo reduz a CD e o ataque', () => {
+    expect(cdDeMagia(1, 8)).toBe(9);
+    expect(ataqueMagico(1, 8)).toBe(1);
+  });
+
+  it('rotuloNivelMagia: 0 e Truque, os outros n-esimo nivel', () => {
+    expect(rotuloNivelMagia(0)).toBe('Truque');
+    expect(rotuloNivelMagia(1)).toBe('1º nível');
+    expect(rotuloNivelMagia(9)).toBe('9º nível');
+  });
+
+  it('ordenarMagias ordena por nivel e depois por id, sem mudar a lista original', () => {
+    const m = (id: number, nivel: number): MagiaDnd => ({
+      id, nome: `M${id}`, nivel, escola: null, tempo: null, alcance: null, componentes: null, duracao: null,
+      concentracao: false, ritual: false, preparada: false, descricao: null,
+    });
+    const original = [m(5, 3), m(2, 3), m(9, 0), m(1, 1)];
+    expect(ordenarMagias(original).map((x) => x.id)).toEqual([9, 1, 2, 5]);
+    expect(original.map((x) => x.id)).toEqual([5, 2, 9, 1]);
   });
 });
