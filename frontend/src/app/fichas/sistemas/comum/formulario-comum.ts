@@ -121,6 +121,12 @@ export function paraNumero(texto: string): number | null {
   return limpo === '' ? null : Number(limpo);
 }
 
+/** Texto curto: sem espaços nas pontas, e vazio vira null (a API guarda texto vazio como nulo). */
+export function textoOuNulo(texto: string): string | null {
+  const limpo = texto.trim();
+  return limpo === '' ? null : limpo;
+}
+
 export function textoDe(numero: number | null): string {
   return numero === null ? '' : String(numero);
 }
