@@ -892,7 +892,7 @@ A biblioteca (`open-dice-dnd`) recebe o valor de cada dado. Ela simula o lançam
 Não testo a cena; testo tudo ao redor dela. A tela conversa com uma interface pequena, `LancadorDeDados` (`lancar` e `encerrar`), e só um arquivo importa a biblioteca. Nos testes, um lançador falso me deixa conferir o fluxo: o cartão só aparece depois que os dados param, o toque e o Esc pulam a animação, há um limite de 5 s e o plano B entra com movimento reduzido, sem WebGL ou com falha no carregamento. As cores são uma função pura. A cena real eu confiro no navegador, a 375 e a 1280 px.
 
 **O dado 3D não deixa o site pesado?**
-O motor 3D tem cerca de 900 kB, ou 213 kB comprimidos, e por isso só é baixado na primeira rolagem, por um `import()` dinâmico. O pacote inicial não mudou. A cena é criada a cada rolagem e destruída no fim, para não deixar um contexto WebGL aberto. Quem pede movimento reduzido no sistema nem baixa a biblioteca.
+O motor 3D tem cerca de 850 kB, ou 198 kB comprimidos, e por isso só é baixado na primeira rolagem, por um `import()` dinâmico. O pacote inicial não ganhou o `three`. A cena é criada a cada rolagem e destruída no fim, para não deixar um contexto WebGL aberto. Quem pede movimento reduzido no sistema nem baixa a biblioteca.
 
 ## Próximos passos
 
