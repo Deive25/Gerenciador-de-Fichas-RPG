@@ -65,7 +65,7 @@ public class FichaOrdemMapper {
 	}
 
 	/** Lê as perícias da ficha: chame dentro da transação (a coleção é lazy). */
-	public FichaOrdemResponse resposta(FichaOrdem ficha, PartesComuns comuns) {
+	public FichaOrdemResponse resposta(FichaOrdem ficha, PartesComuns comuns, ListasOrdem listas) {
 		// Cópias em EnumMap: ordem estável (a do enum) e sem expor a coleção gerenciada pelo Hibernate.
 		Map<AtributoOrdem, Integer> atributos = new EnumMap<>(AtributoOrdem.class);
 		for (AtributoOrdem atributo : AtributoOrdem.values()) {
@@ -87,6 +87,7 @@ public class FichaOrdemMapper {
 				ficha.getRetratoVersao(),
 				comuns.descricao(),
 				comuns.habilidades(),
+				listas.itens(),
 				ficha.getClasse(),
 				ficha.getOrigem(),
 				ficha.getNex(),

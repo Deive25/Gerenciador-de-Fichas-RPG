@@ -1,4 +1,4 @@
-import { AtributoOrdem, ClasseOrdem, GrauOrdem, PericiaOrdem } from '../../ficha.model';
+import { AtributoOrdem, ClasseOrdem, GrauOrdem, ItemOrdem, PericiaOrdem } from '../../ficha.model';
 
 export interface AtributoCatalogo {
   codigo: AtributoOrdem;
@@ -79,4 +79,21 @@ export function defesa(agilidade: number): number {
 
 export function rotuloClasse(classe: ClasseOrdem | null): string {
   return classe === null ? 'A definir' : NOMES_CLASSE[classe];
+}
+
+/** Categoria do item (0 a 4), como o livro mostra. */
+export const ROTULO_CATEGORIA: readonly string[] = ['0', 'I', 'II', 'III', 'IV'];
+
+/** Limite de carga: 5 x Força; com Força 0 o limite é 2. */
+export function limiteDeCarga(forca: number): number {
+  return forca === 0 ? 2 : 5 * forca;
+}
+
+/** Espaços ocupados: espaços x quantidade de cada item. */
+export function espacosUsados(itens: readonly ItemOrdem[]): number {
+  return itens.reduce((soma, item) => soma + item.espacos * item.quantidade, 0);
+}
+
+export function rotuloEspacos(n: number): string {
+  return n === 1 ? '1 espaço' : `${n} espaços`;
 }

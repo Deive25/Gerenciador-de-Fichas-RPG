@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import dev.spironello.fichasrpg.dto.FichaDndRequest;
 import dev.spironello.fichasrpg.dto.FichaDndResponse;
+import dev.spironello.fichasrpg.dto.MoedasDnd;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
 import dev.spironello.fichasrpg.dto.RecursoResumo;
 import dev.spironello.fichasrpg.dto.RecursoValor;
@@ -63,7 +64,7 @@ public class FichaDndMapper {
 	}
 
 	/** Lê as perícias da ficha: chame dentro da transação (a coleção é lazy). */
-	public FichaDndResponse resposta(FichaDnd ficha, PartesComuns comuns) {
+	public FichaDndResponse resposta(FichaDnd ficha, PartesComuns comuns, ListasDnd listas) {
 		Map<AtributoDnd, Integer> atributos = new EnumMap<>(AtributoDnd.class);
 		Set<AtributoDnd> salvaguardas = EnumSet.noneOf(AtributoDnd.class);
 		for (AtributoDnd atributo : AtributoDnd.values()) {
@@ -87,6 +88,8 @@ public class FichaDndMapper {
 				ficha.getRetratoVersao(),
 				comuns.descricao(),
 				comuns.habilidades(),
+				listas.itens(),
+				new MoedasDnd(ficha.getPc(), ficha.getPp(), ficha.getPe(), ficha.getPo(), ficha.getPl()),
 				ficha.getEdicao(),
 				ficha.getClasse(),
 				ficha.getEspecie(),

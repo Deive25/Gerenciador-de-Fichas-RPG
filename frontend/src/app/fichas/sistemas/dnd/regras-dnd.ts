@@ -1,4 +1,4 @@
-import { GrauDnd } from '../../ficha.model';
+import { GrauDnd, ItemDnd } from '../../ficha.model';
 
 // As mesmas regras do backend (RegrasDnd). O front calcula para mostrar; quem rola é o servidor.
 
@@ -26,4 +26,20 @@ export function bonusSalvaguarda(valorAtributo: number, nivel: number, proficien
 /** "+2", "+0" ou "−1" (sinal de menos U+2212, não o hífen). */
 export function comSinal(n: number): string {
   return n < 0 ? `−${-n}` : `+${n}`;
+}
+
+/** Capacidade de carga: Força x 7,5 kg. */
+export function capacidadeDeCarga(forca: number): number {
+  return forca * 7.5;
+}
+
+/** Peso de tudo o que a ficha carrega (peso x quantidade), arredondado a 2 casas para não mostrar ruído de ponto flutuante. As moedas não pesam. */
+export function pesoTotal(itens: readonly ItemDnd[]): number {
+  const soma = itens.reduce((total, item) => total + item.peso * item.quantidade, 0);
+  return Math.round(soma * 100) / 100;
+}
+
+/** "112,5", "7" ou "0,25": pt-BR, até 2 casas e sem zeros à direita. */
+export function formatarPeso(kg: number): string {
+  return kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 }

@@ -32,10 +32,12 @@ public class SistemaDnd implements SistemaDeFicha {
 
 	private final FichaDndMapper mapper;
 	private final PartesComunsDaFicha partesComuns;
+	private final ItensDnd itens;
 
-	public SistemaDnd(FichaDndMapper mapper, PartesComunsDaFicha partesComuns) {
+	public SistemaDnd(FichaDndMapper mapper, PartesComunsDaFicha partesComuns, ItensDnd itens) {
 		this.mapper = mapper;
 		this.partesComuns = partesComuns;
+		this.itens = itens;
 	}
 
 	@Override
@@ -59,7 +61,7 @@ public class SistemaDnd implements SistemaDeFicha {
 
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
-		return mapper.resposta((FichaDnd) ficha, partesComuns.de(ficha));
+		return mapper.resposta((FichaDnd) ficha, partesComuns.de(ficha), new ListasDnd(itens.listar(ficha.getId())));
 	}
 
 	@Override

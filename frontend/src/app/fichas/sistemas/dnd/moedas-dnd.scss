@@ -1,0 +1,45 @@
+:host {
+  display: block;
+}
+
+fieldset {
+  margin: 0.75rem 0;
+  padding: 0.85rem 1rem 0.5rem;
+  min-width: 0;
+}
+
+// legend flutuante, como no formulário de D&D: o título fica dentro do bloco.
+legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+// A legend flutua: sem clear, a grade logo depois dela fica com largura zero.
+// min(100%, …) e minmax(0, …): os cinco campos quebram de linha e nunca passam da tela (375 px).
+.grade {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 90px), 1fr));
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.erro-acao {
+  margin: 0 0 0.5rem;
+  color: #f0a597;
+}
+
+.acoes-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.salvo {
+  margin: 0;
+  color: var(--cor-texto-suave);
+}

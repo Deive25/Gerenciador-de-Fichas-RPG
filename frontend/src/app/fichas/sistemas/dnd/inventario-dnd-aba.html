@@ -1,0 +1,74 @@
+<p class="carga" role="status" [class.acima]="acima()">Peso: {{ formatarPeso(total()) }}/{{ formatarPeso(capacidade()) }} kg@if (acima()) { Acima da capacidade.}</p>
+
+<app-moedas-dnd [ficha]="ficha()" (atualizadas)="moedasAtualizadas.emit($event)" />
+
+@if (erroGeral(); as erro) {
+  <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+}
+
+<app-lista-editavel
+  [itens]="ficha().itens"
+  nomeDoItem="item"
+  vazio="Nenhum item ainda."
+  [tituloDe]="tituloDe"
+  [salvando]="salvando()"
+  [editando]="editando()"
+  (editandoChange)="aoMudarEdicao($event)"
+  (remover)="remover($event)"
+>
+  <ng-template #visualizacao let-item>
+    <div class="cabeca">
+      <h3 class="nome">{{ item.nome }}</h3>
+      @if (item.equipado) {
+        <span class="selo">Equipado</span>
+      }
+    </div>
+    <p class="conta">{{ item.quantidade }} × {{ formatarPeso(item.peso) }} kg</p>
+    @if (item.descricao) {
+      <p class="descricao">{{ item.descricao }}</p>
+    }
+  </ng-template>
+
+  <ng-template #formulario>
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <mat-form-field appearance="outline" data-campo="nome">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+        @if (mensagem(form.controls.nome); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="quantidade">
+        <mat-label>Quantidade</mat-label>
+        <input matInput formControlName="quantidade" inputmode="numeric" />
+        @if (mensagem(form.controls.quantidade); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="peso">
+        <mat-label>Peso (kg)</mat-label>
+        <input matInput formControlName="peso" inputmode="decimal" />
+        @if (mensagem(form.controls.peso); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-checkbox class="opcao" formControlName="equipado" data-campo="equipado">Equipado</mat-checkbox>
+
+      <mat-form-field appearance="outline" data-campo="descricao" subscriptSizing="dynamic">
+        <mat-label>Descrição</mat-label>
+        <textarea matInput formControlName="descricao" rows="4"></textarea>
+        @if (mensagem(form.controls.descricao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="acoes-form">
+        <button type="button" class="botao-neutro" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+  </ng-template>
+</app-lista-editavel>

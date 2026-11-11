@@ -10,6 +10,9 @@ import {
   FichaResumo,
   Habilidade,
   HabilidadeEntrada,
+  ItemDnd,
+  ItemOrdem,
+  Moedas,
   PedidoTeste,
   TesteResultado,
 } from './ficha.model';
@@ -95,6 +98,24 @@ export class FichaApi {
 
   excluirHabilidade(id: number, habilidadeId: number): Observable<void> {
     return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/habilidades/${habilidadeId}`)));
+  }
+
+  /** O mesmo pedido serve aos dois sistemas; a API confere quais campos valem no sistema da ficha. */
+  criarItem<T extends ItemOrdem | ItemDnd>(id: number, item: Omit<T, 'id'>): Observable<T> {
+    return this.alterou(this.tratar(this.http.post<T>(`${this.base}/${id}/itens`, item)));
+  }
+
+  atualizarItem<T extends ItemOrdem | ItemDnd>(id: number, itemId: number, item: Omit<T, 'id'>): Observable<T> {
+    return this.alterou(this.tratar(this.http.put<T>(`${this.base}/${id}/itens/${itemId}`, item)));
+  }
+
+  excluirItem(id: number, itemId: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/itens/${itemId}`)));
+  }
+
+  /** Só D&D. Só mudam as moedas enviadas; a resposta traz as cinco. */
+  atualizarMoedas(id: number, moedas: Partial<Moedas>): Observable<Moedas> {
+    return this.alterou(this.tratar(this.http.patch<Moedas>(`${this.base}/${id}/moedas`, moedas)));
   }
 
   private alterou<T>(requisicao: Observable<T>): Observable<T> {

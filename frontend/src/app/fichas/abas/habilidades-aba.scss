@@ -1,50 +1,5 @@
+@use './cartao-de-lista';
+
 :host {
   display: block;
-}
-
-.erro-acao {
-  margin: 0.75rem 0 0;
-  color: #f0a597;
-}
-
-.cabeca {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nome {
-  margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: 1.15rem;
-  color: var(--cor-titulo);
-}
-
-// Selo do tipo: texto em --cor-acao sobre a superfície (AA sobre #121019).
-.selo {
-  padding: 0.1rem 0.6rem;
-  border: 1px solid var(--cor-borda-dourada);
-  border-radius: 999px;
-  font-size: 0.8rem;
-  color: var(--cor-acao);
-}
-
-// Preserva as quebras de linha digitadas.
-.descricao {
-  margin: 0.5rem 0 0;
-  white-space: pre-line;
-}
-
-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.25rem;
-}
-
-.acoes-form {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }

@@ -4,9 +4,11 @@ import {
   INTEIRO,
   aplicarErrosDoServidor,
   caminhoDoCampo,
+  decimal,
   faixa,
   focarPrimeiroInvalido,
   mensagemDoControle,
+  paraDecimal,
 } from './formulario-comum';
 
 describe('mensagemDoControle', () => {
@@ -83,5 +85,47 @@ describe('focarPrimeiroInvalido', () => {
     focarPrimeiroInvalido(host);
     expect(document.activeElement?.id).toBe('b');
     host.remove();
+  });
+});
+
+describe('paraDecimal', () => {
+  it('aceita virgula ou ponto, ignora espacos e devolve null para vazio', () => {
+    expect(paraDecimal('1,5')).toBe(1.5);
+    expect(paraDecimal('1.50')).toBe(1.5);
+    expect(paraDecimal('')).toBeNull();
+    expect(paraDecimal('   ')).toBeNull();
+    expect(paraDecimal(' 4 ')).toBe(4);
+  });
+
+  it('devolve NaN para o que nao e numero', () => {
+    expect(paraDecimal('abc')).toBeNaN();
+  });
+});
+
+describe('decimal', () => {
+  const validar = (texto: string) => decimal(99999.99)(new FormControl(texto));
+
+  it('aceita 0, virgula, ponto e o maximo', () => {
+    for (const texto of ['0', '1,5', '1.25', '99999,99']) {
+      expect(validar(texto), texto).toBeNull();
+    }
+  });
+
+  it('recusa mais de 2 casas, texto, negativo e acima do maximo', () => {
+    for (const texto of ['1,555', 'abc', '-1', '100000']) {
+      expect(validar(texto), texto).toEqual({ decimal: expect.any(String) });
+    }
+  });
+
+  it('deixa o vazio para o required', () => {
+    expect(validar('')).toBeNull();
+    expect(validar('  ')).toBeNull();
+  });
+
+  it('mensagemDoControle mostra o erro decimal', () => {
+    const controle = new FormControl('1,555', decimal(99999.99));
+    controle.markAsTouched();
+    expect(mensagemDoControle(controle)).toBe(controle.errors?.['decimal']);
+    expect(mensagemDoControle(controle)).toContain('99.999,99');
   });
 });

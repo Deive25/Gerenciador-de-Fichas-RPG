@@ -9,6 +9,7 @@ describe('paraEntradaDaFicha', () => {
     pericias: { INVESTIGACAO: 'TREINADO' },
     descricao: { aparencia: 'Alta', historia: null, anotacoes: null },
     habilidades: [{ id: 1, nome: 'Ataque Especial', tipo: 'CLASSE', descricao: null }],
+    itens: [{ id: 4, nome: 'Faca', categoria: 0, espacos: 1, quantidade: 1, descricao: null }],
   };
 
   it('tira id, retratoVersao, descricao e habilidades (o JSON estrito da API recusaria) e mantem o resto', () => {
@@ -18,6 +19,8 @@ describe('paraEntradaDaFicha', () => {
     expect('retratoVersao' in entrada).toBe(false);
     expect('descricao' in entrada).toBe(false);
     expect('habilidades' in entrada).toBe(false);
+    expect('itens' in entrada).toBe(false);
+    expect('moedas' in entrada).toBe(false);
     expect(entrada.sistema).toBe('ORDEM_PARANORMAL');
     expect(entrada.personagem).toBe('Lia');
     expect(entrada.classe).toBeNull();
@@ -42,12 +45,16 @@ describe('paraEntradaDaFicha', () => {
       ca: 14, inspiracao: true, salvaguardas: ['FOR'], pericias: { ATLETISMO: 'ESPECIALISTA' },
       descricao: { aparencia: null, historia: 'Órfão', anotacoes: null },
       habilidades: [{ id: 2, nome: 'Ataque Furtivo', tipo: 'CLASSE', descricao: null }],
+      itens: [{ id: 5, nome: 'Corda', quantidade: 1, peso: 5, equipado: false, descricao: null }],
+      moedas: { pc: 0, pp: 0, pe: 0, po: 10, pl: 0 },
     };
     const entrada = paraEntradaDaFicha(dnd);
     expect('id' in entrada).toBe(false);
     expect('retratoVersao' in entrada).toBe(false);
     expect('descricao' in entrada).toBe(false);
     expect('habilidades' in entrada).toBe(false);
+    expect('itens' in entrada).toBe(false);
+    expect('moedas' in entrada).toBe(false);
     expect(entrada.sistema).toBe('DND');
     if (entrada.sistema !== 'DND') return;
     expect(entrada.edicao).toBe('D2014');
