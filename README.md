@@ -41,8 +41,8 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 2.1e | D&D 5e e D&D 2024 no mesmo esqueleto: tabelas `ficha_dnd` e `ficha_dnd_pericia` (migração V5), proficiência, especialização, salvaguardas, vantagem e desvantagem, e as regras de cada sistema atrás da interface `SistemaDeFicha` ([spec](docs/superpowers/specs/2026-11-04-j1-sistemas-design.md), [plano](docs/superpowers/plans/2026-11-05-j1-2.1e-dnd.md), [ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)) | Concluído (PR #12) |
 | 2.1g | Abas na ficha (Ficha, Habilidades e Descrição), com a descrição e as habilidades em rotas próprias (migração V6) e um componente de lista editável que as próximas abas reaproveitam ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-09-j1-2.1g-abas-descricao-habilidades.md), [ADR 0018](docs/decisoes/0018-listas-da-ficha-em-recursos-proprios.md)) | Concluído (PR #13) |
 | 2.1h | Inventário (aba nova nos dois sistemas): itens, moedas em D&D e a carga usada contra o limite, com migração V7 e rotas próprias ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-09-j1-2.1h-inventario.md), [ADR 0019](docs/decisoes/0019-totais-de-exibicao-calculados-no-front.md)) | Concluído (PR #14) |
+| 2.1j | Magias (D&D) e rituais (Ordem), cada um numa aba nova: lista, espaços de magia com descanso longo, atributo de conjuração, CD, ataque mágico, custo em PE e DT, com migração V8 e rotas próprias ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1j-magias-rituais.md)) | Em revisão (PR) |
 | 2.1i | Ataques (aba nova) | Planejado |
-| 2.1j | Magias e rituais (aba nova) | Planejado |
 | 2.1f | Dado animado, já com d20 (vários dados em Ordem, 2 com vantagem ou desvantagem) | Planejado |
 | 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
 | 2.3 | Campanhas, convite por link, papéis Mestre/Jogador | Planejado |
@@ -104,6 +104,16 @@ O inventário também tem rotas próprias, no `ItemController` e no `MoedasContr
 | PATCH | `/fichas/{id}/moedas` | Mudar as moedas (só D&D): só as chaves enviadas mudam, por exemplo `{"po": 30}` | 200 com as cinco moedas; 400 por chave; 404 "Ficha não encontrada" |
 
 Um item que não existe, que é de outra ficha ou que é de outro sistema responde 404 "Item não encontrado". Nos erros 400, a chave de `errors` é o campo (`nome`, `categoria`, `peso`...).
+
+As magias, os espaços de magia e os rituais (incremento 2.1j) seguem o mesmo padrão, cada um no seu controller (`MagiaController`, `EspacosController` e `RitualController`). Cada lista existe num sistema só:
+
+| Método | Rota | Finalidade | Respostas |
+| --- | --- | --- | --- |
+| POST | `/fichas/{id}/magias` | Acrescentar uma magia (só D&D) | 201 com `Location`; 400 por campo; 400 em `errors.lista` numa ficha de Ordem; 404 "Ficha não encontrada" |
+| PUT · DELETE | `/fichas/{id}/magias/{magiaId}` | Substituir ou remover uma magia | 200 ou 204; 400 por campo; 404 "Ficha não encontrada" ou "Item não encontrado" |
+| PATCH | `/fichas/{id}/espacos` | Mudar os espaços de magia (só D&D): só os níveis enviados mudam, por exemplo `{"1": {"total": 4, "usados": 1}}` | 200 com os 9 níveis; 400 por chave (`"10"`, `"3.total"`, `"3.usados"`); 400 em `errors.lista` numa ficha de Ordem |
+| POST | `/fichas/{id}/rituais` | Acrescentar um ritual (só Ordem) | 201 com `Location`; 400 por campo; 400 em `errors.lista` numa ficha de D&D; 404 "Ficha não encontrada" |
+| PUT · DELETE | `/fichas/{id}/rituais/{ritualId}` | Substituir ou remover um ritual | 200 ou 204; 400 por campo; 404 "Ficha não encontrada" ou "Item não encontrado" |
 
 Qualquer falha inesperada responde 500 com uma mensagem genérica; o detalhe fica só no log do servidor.
 
@@ -179,6 +189,18 @@ Um campo do outro sistema dá 400 no próprio campo (`errors.peso`: "não existe
 | D&D | soma de `peso × quantidade`, arredondada a 2 casas | Força × 7,5 kg |
 
 O app só avisa quando o usado passa do limite (estritamente acima). Nada é bloqueado, e a penalidade por excesso fica fora do escopo.
+
+**Magias e rituais (2.1j).** A ficha de D&D traz `atributoConjuracao` (`INT`, `SAB`, `CAR` ou `null`; vai no `PUT /fichas/{id}`, e `FOR`, `DES` ou `CON` dão 400), `magias` (por nível e depois pela ordem de criação) e `espacos`, sempre com os 9 níveis (um nível que nunca foi salvo aparece como `{"total": 0, "usados": 0}`). A ficha de Ordem traz `rituais` (por círculo e depois pela ordem de criação):
+
+```json
+"magias": [ { "id": 1, "nome": "Bola de Fogo", "nivel": 3, "escola": "Evocação", "tempo": null, "alcance": null, "componentes": null, "duracao": null, "concentracao": false, "ritual": false, "preparada": true, "descricao": null } ],
+"espacos": { "1": { "total": 4, "usados": 1 }, "2": { "total": 3, "usados": 0 }, "…": "…", "9": { "total": 0, "usados": 0 } },
+"rituais": [ { "id": 2, "nome": "Ritual de exemplo", "circulo": 2, "elemento": "SANGUE", "execucao": null, "alcance": null, "alvo": null, "duracao": null, "resistencia": null, "descricao": null } ]
+```
+
+Magia: `nome` (obrigatório), `nivel` (0 a 9; 0 é truque), os textos curtos opcionais (até 255), os três marcadores (nulo vira `false`) e a `descricao` (até 4000). Ritual: `nome`, `circulo` (1 a 4) e `elemento` (`SANGUE`, `MORTE`, `CONHECIMENTO`, `ENERGIA` ou `MEDO`) obrigatórios, mais os textos opcionais. Nos espaços, `usados` nunca passa de `total` (a API responde 400 e o banco tem `check`). Como as outras listas, `magias`, `espacos` e `rituais` ficam fora do `PUT /fichas/{id}`.
+
+**Contas de magia e ritual** (no front, como a carga, [ADR 0019](docs/decisoes/0019-totais-de-exibicao-calculados-no-front.md)): CD das magias = 8 + proficiência + modificador do atributo de conjuração; ataque mágico = proficiência + modificador; sem atributo, os dois aparecem como "—". Em Ordem, o custo em PE pelo círculo é 1, 3, 6 e 10, e a DT = 10 + ⌊NEX / 5⌋ + Presença.
 
 `retratoVersao` só existe na **resposta**: é o instante do último envio do retrato em milissegundos (ou `null` sem retrato), e a interface o usa na URL da imagem (`/retrato?v=…`) para o cache do navegador nunca mostrar uma foto velha. Enviado no corpo do `POST` ou `PUT`, ele é recusado como chave desconhecida.
 
@@ -388,6 +410,8 @@ A descrição e as habilidades ficam fora desse fluxo ([ADR 0018](docs/decisoes/
 
 O inventário (2.1h) segue o mesmo padrão, com uma diferença: os itens de cada sistema têm campos diferentes, então cada sistema tem a sua tabela e a sua entidade (`ItemOrdem` em `ficha_ordem_item` e `ItemDnd` em `ficha_dnd_item`), lidas pelo `ItemOrdemRepository` e pelo `ItemDndRepository`. A rota de itens, porém, é uma só: o `ItemController` recebe um `ItemRequest` com os campos dos dois sistemas, e o `ItemService` escolhe o sistema da ficha com um `switch` **sem `default`** e delega ao `ItensOrdem` ou ao `ItensDnd`. Cada um confere os campos do seu sistema (um campo do outro sistema dá 400 no próprio campo) e converte DTO e entidade. Como o `switch` é exaustivo, um sistema novo sem inventário é erro de compilação, e não um bug descoberto em execução. As moedas de D&D são cinco colunas de `ficha_dnd`, e o `MoedasController` e o `MoedasService` aplicam o `PATCH`: só as chaves enviadas mudam, e numa ficha de Ordem a resposta é 400. A `Ficha` continua sem coleção de itens, e a listagem segue em 1 consulta. A carga usada contra o limite **não** é calculada na API: ela é conta do front ([ADR 0019](docs/decisoes/0019-totais-de-exibicao-calculados-no-front.md)).
 
+As magias e os rituais (2.1j) repetem o padrão, com uma diferença: cada lista existe num sistema só. Cada uma tem a sua entidade (`MagiaDnd` em `ficha_dnd_magia`, `RitualOrdem` em `ficha_ordem_ritual`), o seu pedido (`MagiaRequest`, `RitualRequest`) e o seu serviço (`MagiaService`, `RitualService`), que mantém o `switch` sem `default`: o caso do sistema certo delega ao `MagiasDnd` ou ao `RituaisOrdem`, e o do outro sistema responde 400 em `errors.lista`. Os espaços de magia são diferentes: não são uma lista, e sim um mapa nível → {total, usados} dentro da `FichaDnd` (`@ElementCollection` em `ficha_dnd_espaco`, como as perícias). O `EspacosService` aplica o `PATCH` só nos níveis enviados, no molde do `MoedasService`. O `atributoConjuracao` é um campo comum da ficha de D&D e vai no `PUT`.
+
 O teste tem camadas próprias, para o CRUD ficar intacto: o `TesteService` busca a ficha (404 com a mesma `FichaNaoEncontradaException`), delega a rolagem ao `SistemaDeFicha` da ficha, que valida o pedido, pede os d20 ao `Dado` e aplica a regra pura do sistema: a `RegrasOrdem` (quantos dados, qual se mantém, bônus do grau) ou a `RegrasDnd` (modificador, proficiência, vantagem e desvantagem). A interface `Dado` isola a sorte: `DadoAleatorio` (`RandomGenerator`) em produção, uma sequência fixa nos testes.
 
 Modelo de dados (esquema criado pelas migrações V1 a V7):
@@ -400,6 +424,9 @@ erDiagram
     ficha ||--o{ ficha_habilidade : "tem (0 ou mais)"
     ficha_ordem ||--o{ ficha_ordem_item : "tem itens (0 ou mais)"
     ficha_dnd ||--o{ ficha_dnd_item : "tem itens (0 ou mais)"
+    ficha_dnd ||--o{ ficha_dnd_magia : "tem magias (0 ou mais)"
+    ficha_dnd ||--o{ ficha_dnd_espaco : "tem espacos (0 a 9)"
+    ficha_ordem ||--o{ ficha_ordem_ritual : "tem rituais (0 ou mais)"
     ficha {
         bigint id PK
         varchar jogador "obrigatório"
@@ -481,6 +508,8 @@ A V6 acrescentou a descrição e as habilidades, para os dois sistemas. `aparenc
 
 A V7 acrescentou o inventário. Como os campos mudam de um sistema para outro, cada sistema ganhou a sua tabela de itens: `ficha_ordem_item` (`categoria` de 0 a 4, `espacos` ≥ 0 e `quantidade` ≥ 1, com `check`) e `ficha_dnd_item` (`quantidade` ≥ 1, `peso` em `numeric(7,2)` ≥ 0 e `equipado`). A chave estrangeira de cada uma aponta para a tabela do próprio sistema (`ficha_ordem` ou `ficha_dnd`), com `on delete cascade` e um índice em `ficha_id`. As cinco moedas (`pc`, `pp`, `pe`, `po` e `pl`) são colunas novas de `ficha_dnd`, `not null` com padrão 0 e `check` ≥ 0, então as fichas de D&D que já existiam ficam com as moedas zeradas. A V1 a V6 não foram editadas.
 
+A V8 acrescentou as magias e os rituais: `ficha_dnd_magia` (`nivel` de 0 a 9), `ficha_dnd_espaco` (chave primária `(ficha_id, nivel)`, `nivel` de 1 a 9, `total` ≥ 0 e `usados` entre 0 e `total`, tudo com `check`), `ficha_ordem_ritual` (`circulo` de 1 a 4 e `elemento` entre os cinco) e a coluna `atributo_conjuracao` de `ficha_dnd` (`INT`, `SAB`, `CAR` ou nula). As três tabelas têm `on delete cascade` para a tabela do sistema. As fichas que já existiam ficam sem atributo de conjuração e sem espaços. A V1 a V7 não foram editadas.
+
 ### Perícias
 
 As 28 perícias de Ordem Paranormal. O código é a constante do enum `PericiaOrdem`, a chave do objeto `pericias` e o `codigo` do teste; o atributo é o dado que a perícia rola:
@@ -517,16 +546,16 @@ As 28 perícias de Ordem Paranormal. O código é a constante do enum `PericiaOr
 
 Estrutura de pastas:
 - `Gerenciador de fichas RPG/`: aplicação Spring Boot.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST (`FichaController`, `TesteController`, `RetratoController`, `DescricaoController`, `HabilidadeController`, `ItemController`, `MoedasController`).
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API (a `FichaRequest` e a `FichaResponse` são interfaces seladas; `FichaOrdemRequest` e `FichaOrdemResponse` são os de Ordem, e `FichaDndRequest` e `FichaDndResponse`, os de D&D). Os do inventário são o `ItemRequest` (um só, com os campos dos dois sistemas), o `ItemResponse` selado com `ItemOrdemResponse` e `ItemDndResponse`, e `MoedasRequest` e `MoedasDnd`.
-- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, `FichaService`, a interface `SistemaDeFicha` com o registro `SistemasDeFicha` e as implementações `SistemaOrdem` e `SistemaDnd`, os mappers `FichaOrdemMapper` e `FichaDndMapper`, as validações `ValidacaoFichaOrdem` e `ValidacaoFichaDnd`, o teste (`TesteService`, `RegrasOrdem`, `RegrasDnd` e o `Dado`), o retrato (`RetratoService` e `ValidadorRetrato`) a descrição e as habilidades (`DescricaoService`, `HabilidadeService` e o `PartesComunsDaFicha`) e o inventário (`ItemService`, com `ItensOrdem` e `ItensDnd`, e o `MoedasService`).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/controller/`: endpoints REST (`FichaController`, `TesteController`, `RetratoController`, `DescricaoController`, `HabilidadeController`, `ItemController`, `MoedasController`, `MagiaController`, `EspacosController`, `RitualController`).
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/dto/`: records de entrada e saída da API (a `FichaRequest` e a `FichaResponse` são interfaces seladas; `FichaOrdemRequest` e `FichaOrdemResponse` são os de Ordem, e `FichaDndRequest` e `FichaDndResponse`, os de D&D). Os do inventário são o `ItemRequest` (um só, com os campos dos dois sistemas), o `ItemResponse` selado com `ItemOrdemResponse` e `ItemDndResponse`, e `MoedasRequest` e `MoedasDnd`. Os do 2.1j são `MagiaRequest`/`MagiaResponse`, `RitualRequest`/`RitualResponse` e `EspacoRequest`/`EspacoDnd`.
+- `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/service/`: regras, transações, logs, `FichaService`, a interface `SistemaDeFicha` com o registro `SistemasDeFicha` e as implementações `SistemaOrdem` e `SistemaDnd`, os mappers `FichaOrdemMapper` e `FichaDndMapper`, as validações `ValidacaoFichaOrdem` e `ValidacaoFichaDnd`, o teste (`TesteService`, `RegrasOrdem`, `RegrasDnd` e o `Dado`), o retrato (`RetratoService` e `ValidadorRetrato`) a descrição e as habilidades (`DescricaoService`, `HabilidadeService` e o `PartesComunsDaFicha`) o inventário (`ItemService`, com `ItensOrdem` e `ItensDnd`, e o `MoedasService`) e as magias e os rituais (`MagiaService` com `MagiasDnd`, `RitualService` com `RituaisOrdem`, e o `EspacosService` com o `EspacosDaFicha`).
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/config/`: o `Clock` da aplicação (`RelogioConfig`), injetável como o `Dado` para os testes escolherem o instante.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/exception/`: exceções e tratamento de erros.
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/model/`: entidades JPA (`Ficha`, `FichaOrdem`, `FichaDnd`, `RetratoFicha`, `HabilidadeFicha`, `ItemOrdem`, `ItemDnd`) e os enums (`Sistema`, `TipoHabilidade`, os de Ordem: `AtributoOrdem`, `PericiaOrdem`, `GrauOrdem`, `ClasseOrdem`, `RecursoOrdem`, e os de D&D: `EdicaoDnd`, `AtributoDnd`, `PericiaDnd`, `GrauDnd`, `RecursoDnd`).
 - `Gerenciador de fichas RPG/src/main/java/dev/spironello/fichasrpg/repository/`: persistência.
 - `Gerenciador de fichas RPG/src/test/java/dev/spironello/fichasrpg/`: testes.
 - `docs/decisoes/`: registros de decisões (ADRs).
-- `frontend/`: aplicação Angular. Cada sistema fica em `frontend/src/app/fichas/sistemas/<sistema>/` (`ordem/` e `dnd/`, cada um com o catálogo, a ficha e o formulário; `comum/` guarda o que os formulários repartem); a escolha do sistema fica em `fichas/criacao/`. As abas da ficha ficam em `fichas/abas/` (`abas-da-ficha`, `aba-de-lista`, `habilidades-aba` e `descricao-aba`) e o `ListaEditavel` genérico, em `fichas/componentes/lista-editavel/`. O inventário de cada sistema fica na pasta do sistema (`inventario-ordem-aba` em `ordem/`; `inventario-dnd-aba` e `moedas-dnd` em `dnd/`).
+- `frontend/`: aplicação Angular. Cada sistema fica em `frontend/src/app/fichas/sistemas/<sistema>/` (`ordem/` e `dnd/`, cada um com o catálogo, a ficha e o formulário; `comum/` guarda o que os formulários repartem); a escolha do sistema fica em `fichas/criacao/`. As abas da ficha ficam em `fichas/abas/` (`abas-da-ficha`, `aba-de-lista`, `habilidades-aba` e `descricao-aba`) e o `ListaEditavel` genérico, em `fichas/componentes/lista-editavel/`. O inventário de cada sistema fica na pasta do sistema (`inventario-ordem-aba` em `ordem/`; `inventario-dnd-aba` e `moedas-dnd` em `dnd/`), assim como as magias (`magias-dnd-aba` e `espacos-dnd` em `dnd/`) e os rituais (`rituais-ordem-aba` em `ordem/`).
 
 ## Como rodar
 
@@ -579,9 +608,11 @@ A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma
 - **Painel (`/fichas`):** contadores (investigadores, feridos e sanidade baixa), busca por personagem ou jogador sem diferenciar acentos, filtros "Feridos" e "Sanidade baixa" (PV ou SAN atual ≤ metade do máximo) e um cartão por ficha, com medalhão, o **selo do sistema** e uma barra para cada recurso (PV, SAN e PE). O painel lê o resumo da API, igual para qualquer sistema.
 - **Nova ficha (`/fichas/nova`):** primeiro a **escolha do sistema**, com 3 links: Ordem Paranormal (`/fichas/nova/ordem-paranormal`), D&D 5e (`/fichas/nova/dnd-2014`) e D&D 2024 (`/fichas/nova/dnd-2024`). As duas edições de D&D usam a mesma tela, que recebe a edição pela rota. O sistema não muda depois.
 - **Formulário de Ordem (criar e editar):** as mesmas regras da API, com o erro do servidor mostrado no campo certo (a interface normaliza `atributos[AGI]` para `atributos.AGI`). Os graus de cada perícia ficam **limitados pelo NEX** (Veterano a partir de 35, Expert a partir de 70). Uma ficha nova começa em NEX 5 com os atributos em 1.
-- **Abas da ficha (2.1g):** a ficha de qualquer sistema tem as abas **Ficha**, **Inventário** (2.1h), **Habilidades** e **Descrição**. A aba aberta fica na URL (`/fichas/:id?aba=habilidades`), então atualizar a página ou mandar o link abre a mesma aba; aba ausente ou desconhecida abre a Ficha. Trocar de aba usa `replaceUrl`, que substitui a entrada do histórico em vez de empilhar outra, e o botão voltar não passa por todas as abas visitadas. O topo (retrato, anéis e resultado da rolagem) fica sempre acima das abas. No computador, o layout da ficha mudou com as abas.
+- **Abas da ficha (2.1g):** a ficha de D&D tem as abas **Ficha**, **Inventário** (2.1h), **Magias** (2.1j), **Habilidades** e **Descrição**; a de Ordem troca Magias por **Rituais** (2.1j). Uma aba de outro sistema na URL (`?aba=rituais` em D&D) abre a Ficha. A aba aberta fica na URL (`/fichas/:id?aba=habilidades`), então atualizar a página ou mandar o link abre a mesma aba; aba ausente ou desconhecida abre a Ficha. Trocar de aba usa `replaceUrl`, que substitui a entrada do histórico em vez de empilhar outra, e o botão voltar não passa por todas as abas visitadas. O topo (retrato, anéis e resultado da rolagem) fica sempre acima das abas. No computador, o layout da ficha mudou com as abas.
 - **Aba Habilidades:** usa o `ListaEditavel`, um componente genérico (adicionar, editar na própria linha e remover com confirmação) que o inventário (2.1h) já reaproveita e o 2.1i e o 2.1j vão reaproveitar. O salvar e o remover das abas de lista (habilidades e os dois inventários) ficam na classe base `AbaDeLista`: foi uma refatoração sem mudança de comportamento, protegida pelos testes da aba de habilidades que já existiam, feita antes de o código ser copiado para o inventário. O seletor de tipo mostra só os tipos do sistema da ficha.
 - **Aba Inventário (2.1h):** a de cada sistema tem a **linha da carga**, a lista de itens (o `ListaEditavel`) e, em D&D, o **bloco das moedas**. Em Ordem, a linha mostra "Carga: N/limite espaços" e o item tem categoria (0, I, II, III ou IV), espaços e quantidade. Em D&D, mostra o peso total contra a capacidade em kg, e o item tem peso, quantidade e a marca de equipado. O campo de peso aceita **vírgula ou ponto** ("1,5" e "1.5" valem o mesmo). Quando o usado passa do limite, a linha avisa; no limite exato, não. As moedas (PC, PP, PE, PO e PL) são salvas por um botão próprio, pelo `PATCH`.
+- **Aba Magias (D&D, 2.1j):** no topo, o atributo de conjuração (escolhido em **Editar ficha**), a **CD das magias** e o **ataque mágico** ("—" e uma dica quando não há atributo). Depois, o bloco dos **espaços de magia**: cada espaço é um marcador de 44 px (cheio = usado, vazado = disponível), e cada clique já grava só aquele nível. Os totais por nível se editam num formulário com "Salvar totais"; se um total cair abaixo dos usados, os usados caem junto. O botão **Descanso longo** zera os usados. Por último, a lista de magias, em ordem de nível, com o cartão "Truque · Evocação" ou "3º nível · …" e selos de concentração, ritual e preparada. A tela limita o total a 99 por nível, porque cada espaço vira um botão (a API não tem esse teto).
+- **Aba Rituais (Ordem, 2.1j):** a lista de rituais, em ordem de círculo, com o formulário (nome, círculo, elemento, execução, alcance, alvo, duração, resistência e descrição) e o cartão "2º círculo · Sangue · 3 PE · DT 20", com o custo em PE e a DT calculados no front.
 - **Aba Descrição:** três campos (aparência, história e anotações) com contador N/4000 e um botão "Salvar descrição" que só habilita quando há mudança. Os campos ficam bloqueados enquanto salva, e o aviso de salvo é anunciado para leitores de tela.
 - **Ficha de Ordem (`/fichas/:id`), em blocos:** retrato com nome, classe e NEX, anéis de PV, SAN e PE, a Defesa (10 + Agilidade), os 5 atributos e as 28 perícias, com **33 botões "Rolar"** (5 atributos + 28 perícias) e 33 dicas curtas, escritas com palavras próprias. O resultado mostra **cada dado** rolado, destaca o mantido e soma o bônus do grau (selo T, V ou E). Editar e Excluir ficam no menu ⋮, e excluir pede confirmação.
 - **Formulário de D&D (criar e editar):** os mesmos cuidados do de Ordem, com o erro do servidor no campo certo. O campo do texto livre se chama **"Raça" em 2014 e "Espécie" em 2024** (é o mesmo campo `especie` da API), e as 6 salvaguardas com proficiência e as 18 perícias (nenhuma, proficiente ou especialista) ficam em blocos próprios.
@@ -632,7 +663,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 384 testes unitários em 36 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.1h (eram 309 em 33 arquivos no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
+**Front-end:** 462 testes unitários em 39 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.1j (eram 384 em 36 arquivos no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
@@ -646,9 +677,10 @@ cd "Gerenciador de fichas RPG"
 - o retrato: a conta do recorte 4:5, o diálogo (salvar, cancelar, imagem que não abre), o cache de URLs locais e trocar e remover na ficha.
 - Abas, descrição e habilidades (2.1g): `lista-editavel.spec` (lista vazia, adicionar, editar um item por vez, remover só depois da confirmação), `habilidades-aba.spec` (os tipos de cada sistema, criar, editar e excluir pela API, erro do servidor no campo, clique duplo, limite de 4000), `descricao-aba.spec` (contador N/4000, botão desabilitado sem mudança, campos bloqueados enquanto salva, aviso de salvo, quebras de linha) e `abas-da-ficha.spec` (a aba pedida na URL e a aba desconhecida), além dos casos novos de `ficha-detalhe.spec` (troca de aba) e `ficha-api.spec` (as rotas novas).
 - Inventário (2.1h): `inventario-ordem-aba.spec` (carga e limite, aviso só acima do limite, categoria, criar, editar e remover pela API, erro do servidor no campo), `inventario-dnd-aba.spec` (peso total contra a capacidade, vírgula e ponto no peso, equipado, o zero como valor válido) e `moedas-dnd.spec` (as cinco moedas, salvar só o que mudou, o que foi digitado não se perde quando a ficha muda). Os casos novos de `catalogo-ordem.spec` (limite com Força 0, 1 e 5; espaços usados por quantidade), `regras-dnd.spec` (capacidade de 7,5 kg por ponto de Força; peso total sem ruído de ponto flutuante) e `formulario-comum.spec` (a conversão de vírgula e ponto em número) cobrem as contas e o campo de peso.
+- Magias e rituais (2.1j): `magias-dnd-aba.spec` (CD e ataque mágico, "—" sem atributo, criar, editar e remover, ordem por nível), `espacos-dnd.spec` (marcar e desmarcar, salvar totais cortando os usados, descanso longo, erro do servidor no campo do nível) e `rituais-ordem-aba.spec` (custo em PE e DT no cartão, criar, editar e remover, ordem por círculo). Os casos novos de `regras-dnd.spec` (CD e ataque mágico nos níveis 1, 5 e 17 e sem atributo), `catalogo-ordem.spec` (custo nos 4 círculos; DT com NEX 5, 35 e 99), `formulario-dnd.spec` (o seletor do atributo de conjuração) e `abas-da-ficha.spec` (as abas de cada sistema) cobrem as contas e a navegação.
 - D&D (2.1e): `regras-dnd.spec` (modificador com 9 dando −1, proficiência por nível, bônus de perícia, especialização e salvaguarda, nas fronteiras), `catalogo-dnd.spec` (6 atributos, 18 perícias, rótulo "Raça" e "Espécie"), `ficha-dnd.spec` (bônus na tela, "Rolar", seletor de modo que volta a Normal, "−" no bônus negativo, "20 natural", anéis Vida e Temporário), `ficha-ordem.spec` (a ficha de Ordem, agora um componente por sistema), `formulario-dnd.spec` (valores iniciais, limites, erro do servidor no campo, edição), `edicao-ficha.spec` (a rota de edição abre o formulário do sistema da ficha) e `formulario-comum.spec` (o que os dois formulários repartem).
 
-**Back-end:** são 302 testes, 0 falhas (número da última execução do `./mvnw -B clean verify` na branch do 2.1h; eram 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
+**Back-end:** são 386 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.1j; eram 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
 
 | Grupo | O que cobre |
 | --- | --- |
@@ -667,14 +699,15 @@ cd "Gerenciador de fichas RPG"
 | `RegrasOrdemTest` | Unitário: quantidade de dados (atributo 0 rola 2 e mantém o menor), bônus de cada grau e o dado de 20 faces |
 | `PericiaOrdemTest` | Unitário: as 28 perícias, a distribuição por atributo (AGI 7, FOR 2, INT 9, PRE 9, VIG 1) e nomes sem repetição |
 | `MigracaoSistemasTest` | Migra um schema separado até a V3, insere fichas d100 (uma com perícias e retrato, outra sem vida nem sanidade, outra sem perícias) e confere, após a V4, ids e dados comuns, `sistema`, NEX 5, atributos 1, PV e SAN copiados, nenhuma perícia, retrato intacto e as colunas e a tabela d100 ausentes |
-| `ContratoJsonTest` | O contrato do front: as 16 chaves da ficha de Ordem e as 22 da de D&D (com mapas por código, `itens` e `moedas`) e as 7 do resumo |
-| `ListagemSemNMaisUmTest` | Listar fichas de Ordem e de D&D, todas com perícias, habilidades (desde o 2.1g) e itens (desde o 2.1h), executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + N, mesmo com a herança JOINED |
-| `EsquemaBancoTest` | As tabelas `ficha`, `ficha_ordem`, `ficha_ordem_pericia` e `retrato_ficha` (e, desde o 2.1e, `ficha_dnd` e `ficha_dnd_pericia`) (nomes, tipos e nulabilidade) e a prova de que o Flyway aplicou da V1 à V7 (a V6 acrescentou `ficha_habilidade` e as colunas da descrição, e a V7, `ficha_ordem_item`, `ficha_dnd_item` e as cinco moedas de `ficha_dnd`) |
+| `ContratoJsonTest` | O contrato do front: as 17 chaves da ficha de Ordem e as 25 da de D&D (com mapas por código, `itens`, `moedas`, `magias`, `espacos` com os níveis "1" a "9", `rituais` e `atributoConjuracao`) e as 7 do resumo |
+| `ListagemSemNMaisUmTest` | Listar fichas de Ordem e de D&D, todas com perícias, habilidades (desde o 2.1g), itens (desde o 2.1h) e magias, espaços ou rituais (desde o 2.1j), executa 1 consulta SQL (estatísticas do Hibernate), e não 1 + N, mesmo com a herança JOINED |
+| `EsquemaBancoTest` | As tabelas `ficha`, `ficha_ordem`, `ficha_ordem_pericia` e `retrato_ficha` (e, desde o 2.1e, `ficha_dnd` e `ficha_dnd_pericia`) (nomes, tipos e nulabilidade) e a prova de que o Flyway aplicou da V1 à V8 (a V6 acrescentou `ficha_habilidade` e as colunas da descrição, a V7, `ficha_ordem_item`, `ficha_dnd_item` e as cinco moedas de `ficha_dnd`, e a V8, as tabelas de magias, espaços e rituais, com os `check` e a cascata conferidos por SQL) |
 | `HabilidadeFichaRepositoryTest`, `TipoHabilidadeTest` | A habilidade vai e volta do banco, em ordem de criação, e some junto com a ficha (cascata); qual tipo vale em qual sistema (`CLASSE` e `OUTRA` nos dois, os demais em um só) |
 | `DescricaoControllerTest`, `HabilidadeControllerTest` | `PUT /fichas/{id}/descricao` (texto vazio vira `null`, quebras de linha preservadas, limite de 4000, 404) e as rotas das habilidades (201 + `Location`, `PUT`, `DELETE` 204, 400 por campo, tipo de outro sistema em `errors.tipo`, habilidade de outra ficha em 404 "Item não encontrado") |
 | `ItemOrdemRepositoryTest`, `ItemDndRepositoryTest` | O item de cada sistema vai e volta do banco, na ordem de criação, e some junto com a ficha (cascata) |
 | `ItemControllerTest` | As rotas de itens nos dois sistemas: 201 + `Location`, `PUT`, `DELETE` 204, 400 por campo, campo do outro sistema em 400 no próprio campo, obrigatório ausente, zero válido, e item de outra ficha ou de outro sistema em 404 "Item não encontrado" |
 | `MoedasControllerTest` | `PATCH /fichas/{id}/moedas`: só as chaves enviadas mudam, valor negativo e chave desconhecida em 400, ficha de Ordem em 400 (`errors.lista`) e 404 |
+| `MagiaControllerTest`, `RitualControllerTest`, `EspacosControllerTest` | As rotas do 2.1j: 201 + `Location`, `PUT`, `DELETE` 204, 400 por campo, 404 para item de outra ficha, lista do outro sistema em 400 (`errors.lista`), cascata ao excluir a ficha; nos espaços, o `PATCH` parcial, os 9 níveis na resposta, usados acima do total e nível fora de 1 a 9 em 400. O atributo de conjuração (e `FOR` em 400) fica no `FichaDndControllerTest` |
 | `MigracaoPericiasTest`, `MigracaoRetratoTest` | Migrações antigas (V2 e V3) continuam provadas, cada uma com dados no formato anterior |
 | `RetratoFichaRepositoryTest`, `ValidadorRetratoTest`, `RetratoControllerTest` | O retrato do 2.1c: bytes e instante, cascata, JPEG válido e inválido, a "bomba de decodificação", as 3 rotas e os cabeçalhos |
 | `ApiExceptionHandlerTest`, `DocumentacaoApiTest`, `FichasRpgApplicationTests` | O 500 genérico sem vazar texto interno, Swagger UI e OpenAPI respondem, e o contexto sobe |
@@ -689,7 +722,7 @@ Os testes do controller nasceram no 1.1 como testes de caracterização, que reg
 - Chave desconhecida (`"STR"`), código de perícia ou grau inexistente, `sistema` desconhecido ou ausente, tipo errado (`"idade": "abc"`) e JSON malformado respondem 400.
 - `PUT` substitui a ficha inteira, de propósito: campos omitidos viram `null` e perícias omitidas são removidas. Com outro `sistema`, responde 409.
 - O `id` enviado no corpo é ignorado.
-- O `PUT /fichas/{id}` não toca na descrição, nas habilidades, nos itens nem nas moedas, e enviá-las no corpo dá 400 (JSON estrito).
+- O `PUT /fichas/{id}` não toca na descrição, nas habilidades, nos itens, nas moedas, nas magias, nos espaços de magia nem nos rituais, e enviá-los no corpo dá 400 (JSON estrito).
 
 ## Decisões e trade-offs
 
@@ -839,6 +872,9 @@ Porque o total muda a cada item adicionado, editado ou removido, e a API não pr
 **Como a mesma rota de itens atende dois sistemas com campos diferentes?**
 Há um `ItemRequest` só, com os campos dos dois sistemas. O `ItemService` descobre o sistema da ficha com um `switch` sem `default` e delega ao `ItensOrdem` ou ao `ItensDnd`, que conferem os campos do seu sistema: um campo do outro dá 400 no próprio campo (`errors.peso`, por exemplo). Como o `switch` é exaustivo, um sistema novo sem inventário é erro de compilação. O custo é um DTO com campos que nem sempre valem; a alternativa seria uma rota por sistema, com o mesmo código repetido.
 
+**Magia só existe em D&D e ritual só em Ordem. Por que os serviços ainda têm um `switch` pelo sistema?**
+Para manter a mesma garantia do inventário: o `switch` sem `default` obriga a decidir, em tempo de compilação, o que acontece com magias e rituais num sistema novo. No sistema certo, o serviço delega ao componente da lista; no outro, responde 400 em `errors.lista`. Os espaços de magia, por sua vez, não são uma lista: são um mapa nível → {total, usados} dentro da ficha de D&D, como as perícias, porque cada nível existe uma vez só. O `GET` devolve sempre os 9 níveis, e o `PATCH` muda só os níveis enviados; o banco garante `usados ≤ total` com `check`, e a API confere antes e devolve todos os erros de uma vez.
+
 **Como você evitou repetir o código das abas?**
 Com a classe base `AbaDeLista`, que reúne o salvar e o remover das abas de lista (habilidades e os dois inventários). Fiz a extração antes de copiar o código para o inventário, como refatoração sem mudança de comportamento, protegida pelos testes da aba de habilidades que já existiam. Cada aba só diz o que muda nela (o formulário e as chamadas da API).
 
@@ -849,7 +885,7 @@ Hoje a última gravação vence, porque a API não tem controle de concorrência
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- **2.1i Ataques** e **2.1j Magias e rituais**: uma aba nova para cada um, com a lista em rotas próprias, reaproveitando o `ListaEditavel`, a `AbaDeLista` e a exceção de item não encontrado ([ADR 0018](docs/decisoes/0018-listas-da-ficha-em-recursos-proprios.md)). O inventário (2.1h) já está pronto.
+- **2.1i Ataques**: uma aba nova, com a lista em rotas próprias e a rolagem de ataque e dano no servidor, reaproveitando o `ListaEditavel`, a `AbaDeLista` e a exceção de item não encontrado ([ADR 0018](docs/decisoes/0018-listas-da-ficha-em-recursos-proprios.md)). O inventário (2.1h) e as magias e rituais (2.1j) já estão prontos.
 - **2.1f Dado animado**, já com d20 (vários dados em Ordem, 2 com vantagem ou desvantagem, e o dado mantido em destaque).
 - **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
 - **2.3 Campanhas** com convite e papéis Mestre/Jogador.
@@ -875,6 +911,7 @@ A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 - Descrição e listas da ficha em rotas próprias (`PUT` da descrição e `POST`, `PUT` e `DELETE` das habilidades), sem coleção JPA na entidade para a listagem continuar em 1 consulta, e abas na interface com a aba aberta guardada na URL.
 - Um segundo sistema de RPG sem duplicar regra: interface `SistemaDeFicha` com registro e uma implementação por sistema, regras puras testadas nas fronteiras (modificador de D&D, vantagem e desvantagem) e atribuição de licença (SRD, CC-BY-4.0).
 - Inventário em dois sistemas com campos diferentes: uma tabela de itens por sistema, uma rota só com `switch` exaustivo, contas de carga como funções puras no front (ADR 0019) e uma classe base que tirou a repetição das abas de lista.
+- Magias e rituais: listas de um sistema só com o mesmo `switch` exaustivo, espaços de magia como mapa por nível com a regra `usados ≤ total` no banco e na API, e backend e front desenvolvidos em paralelo sobre um contrato fechado no plano.
 
 ## Contexto do portfólio
 
