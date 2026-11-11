@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -17,6 +17,9 @@ import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
+import { CamadaDosDados } from '../dado/camada-dos-dados';
+import { DadoAnimado } from '../dado/dado-animado';
+import { LancadorDeDados } from '../dado/lancador-de-dados';
 import { FichaApi } from '../ficha-api';
 import {
   DescricaoFicha,
@@ -51,6 +54,7 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     RituaisOrdemAba,
     DescricaoAba,
     ResultadoRolagem,
+    CamadaDosDados,
     FichaOrdemCorpo,
     FichaDndCorpo,
   ],
@@ -62,6 +66,13 @@ export class FichaDetalhe {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly retratos = inject(RetratoCache);
+  private readonly dado = inject(DadoAnimado);
+
+  /**
+   * Conta as "vidas" da tela: sobe ao recarregar ou sair da ficha. Uma rolagem que volta depois disso
+   * (resposta ou preparar() atrasados) é de outra ficha e é descartada.
+   */
+  private geracao = 0;
 
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
@@ -87,7 +98,10 @@ export class FichaDetalhe {
   readonly ficha = signal<Ficha | null>(null);
   readonly erro = signal<ApiError | null>(null);
   readonly ultimoResultado = signal<TesteResultado | null>(null);
+  /** Código do teste em andamento: da ida ao servidor até o cartão aparecer (a animação conta). */
   readonly rolando = signal<string | null>(null);
+  /** Dados lançando na camada; o cartão desse resultado só aparece quando ela termina. */
+  readonly animacao = signal<{ resultado: TesteResultado; lancador: LancadorDeDados; indiceMantido: number } | null>(null);
   readonly confirmandoExclusao = signal(false);
   readonly excluindo = signal(false);
   readonly confirmandoRemocaoRetrato = signal(false);
@@ -99,11 +113,15 @@ export class FichaDetalhe {
       const id = Number(this.id());
       untracked(() => this.carregar(id));
     });
+    inject(DestroyRef).onDestroy(() => this.geracao++);
   }
 
   carregar(id: number): void {
     this.estado.set('carregando');
     this.erro.set(null);
+    this.geracao++;
+    this.animacao.set(null); // a camada, ao sair, encerra a cena
+    this.rolando.set(null);
     this.ultimoResultado.set(null);
     this.confirmandoExclusao.set(false);
     this.api.buscarFicha(id).subscribe({
@@ -178,15 +196,46 @@ export class FichaDetalhe {
     if (!ficha || this.rolando()) {
       return;
     }
+    const geracao = this.geracao;
     this.rolando.set(pedido.codigo);
     this.erro.set(null);
-    this.api
-      .testar(ficha.id, pedido)
-      .pipe(finalize(() => this.rolando.set(null)))
-      .subscribe({
-        next: (resultado) => this.ultimoResultado.set(resultado),
-        error: (erro: ApiError) => this.erro.set(erro),
-      });
+    this.api.testar(ficha.id, pedido).subscribe({
+      next: (resultado) => void this.animar(resultado, geracao),
+      error: (erro: ApiError) => {
+        if (geracao === this.geracao) {
+          this.rolando.set(null);
+          this.erro.set(erro);
+        }
+      },
+    });
+  }
+
+  /** Com o 3D disponível, abre a camada e deixa o cartão para quando ela terminar; senão, plano B. */
+  private async animar(resultado: TesteResultado, geracao: number): Promise<void> {
+    const lancador = await this.dado.preparar();
+    if (geracao !== this.geracao) {
+      lancador?.encerrar(); // saiu da ficha enquanto o pedaço 3D baixava
+      return;
+    }
+    if (!lancador) {
+      this.mostrar(resultado);
+      return;
+    }
+    this.animacao.set({ resultado, lancador, indiceMantido: resultado.dados.indexOf(resultado.mantido) });
+  }
+
+  /** A camada terminou (dados parados, toque, Esc, limite ou falha): agora sim o cartão. */
+  aoTerminarAnimacao(): void {
+    const animacao = this.animacao();
+    if (animacao) {
+      this.animacao.set(null);
+      this.mostrar(animacao.resultado);
+    }
+  }
+
+  private mostrar(resultado: TesteResultado): void {
+    this.ultimoResultado.set(resultado);
+    this.rolando.set(null);
   }
 
   /** Arquivo escolhido → diálogo de recorte → envia o JPEG 400×500 → recarrega a ficha (nova versão). */
