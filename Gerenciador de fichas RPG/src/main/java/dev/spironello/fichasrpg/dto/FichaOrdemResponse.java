@@ -27,6 +27,7 @@ public record FichaOrdemResponse(
 		DescricaoFicha descricao,
 		List<HabilidadeResponse> habilidades,
 		List<ItemOrdemResponse> itens,
+		List<RitualResponse> rituais,
 		ClasseOrdem classe,
 		String origem,
 		int nex,
