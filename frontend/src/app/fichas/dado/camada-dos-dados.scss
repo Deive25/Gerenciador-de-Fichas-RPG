@@ -1,0 +1,25 @@
+// Camada sobre a tela inteira, acima do cabeçalho (z-index: 10). O véu leve destaca os dados da ficha.
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: block;
+  background: rgba(11, 10, 15, 0.35);
+  cursor: pointer;
+}
+
+// A biblioteca cria o canvas dentro do palco, do tamanho dele.
+.palco {
+  position: absolute;
+  inset: 0;
+}
+
+.dica {
+  position: absolute;
+  inset: auto 0 24px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+  pointer-events: none;
+}
