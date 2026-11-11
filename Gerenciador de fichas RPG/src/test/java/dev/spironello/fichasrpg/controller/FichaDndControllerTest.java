@@ -33,6 +33,8 @@ import dev.spironello.fichasrpg.FichasDeTeste;
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
+import dev.spironello.fichasrpg.model.EspacoMagia;
+import dev.spironello.fichasrpg.model.MagiaDnd;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.ItemDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
@@ -42,6 +44,7 @@ import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import dev.spironello.fichasrpg.repository.ItemDndRepository;
+import dev.spironello.fichasrpg.repository.MagiaDndRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /** Comportamento do CRUD /fichas com fichas de D&D (5e de 2014 e 2024): corpos, ida e volta pelo banco, 409. */
@@ -59,6 +62,9 @@ class FichaDndControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private ItemDndRepository itens;
+
+	@Autowired
+	private MagiaDndRepository magias;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -312,6 +318,160 @@ class FichaDndControllerTest extends IntegrationTestBase {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(corpo)))
 				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D grava o atributo de conjuração (INT, SAB ou CAR) e o GET devolve")
+	void atualizarGravaAtributoDeConjuracao() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		for (String atributo : List.of("INT", "SAB", "CAR")) {
+			Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+			corpo.put("atributoConjuracao", atributo);
+
+			mockMvc.perform(put("/fichas/{id}", ficha.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(corpo)))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.atributoConjuracao").value(atributo));
+
+			mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+					.andExpect(jsonPath("$.atributoConjuracao").value(atributo));
+		}
+		assertThat(((FichaDnd) repository.findById(ficha.getId()).orElseThrow()).getAtributoConjuracao())
+				.isEqualTo(AtributoDnd.CAR);
+	}
+
+	@Test
+	@DisplayName("POST /fichas de D&D aceita o atributo de conjuração, e uma ficha nova vem com ele nulo")
+	void criarComAtributoDeConjuracao() throws Exception {
+		mockMvc.perform(post("/fichas")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.atributoConjuracao").value(nullValue()));
+
+		Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+		corpo.put("atributoConjuracao", "SAB");
+		mockMvc.perform(post("/fichas")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.atributoConjuracao").value("SAB"));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D sem atributoConjuracao zera o campo (o PUT substitui a ficha)")
+	void atualizarSemAtributoDeConjuracaoZera() throws Exception {
+		FichaDnd ficha = FichasDeTeste.dnd("Ana");
+		ficha.setAtributoConjuracao(AtributoDnd.INT);
+		ficha = repository.save(ficha);
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.atributoConjuracao").value(nullValue()));
+	}
+
+	@Test
+	@DisplayName("atributoConjuracao FOR, DES ou CON dá 400 em errors.atributoConjuracao, no PUT e no POST")
+	void atributoDeConjuracaoFisicoDa400() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		for (String atributo : List.of("FOR", "DES", "CON")) {
+			Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+			corpo.put("atributoConjuracao", atributo);
+
+			mockMvc.perform(put("/fichas/{id}", ficha.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(corpo)))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.errors.atributoConjuracao").exists());
+			mockMvc.perform(post("/fichas")
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(corpo)))
+					.andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.errors.atributoConjuracao").exists());
+		}
+		assertThat(((FichaDnd) repository.findById(ficha.getId()).orElseThrow()).getAtributoConjuracao()).isNull();
+	}
+
+	@Test
+	@DisplayName("atributoConjuracao que não é um atributo dá 400")
+	void atributoDeConjuracaoDesconhecidoDa400() throws Exception {
+		Map<String, Object> corpo = FichasDeTeste.corpoDnd();
+		corpo.put("atributoConjuracao", "XYZ");
+
+		mockMvc.perform(post("/fichas")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de uma ficha de D&D nova traz magias vazias, os nove espaços em 0 e conjuração nula")
+	void fichaNovaTemMagiasVaziasEEspacosZerados() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.magias", hasSize(0)))
+				.andExpect(jsonPath("$.espacos.length()").value(9))
+				.andExpect(jsonPath("$.espacos['5'].total").value(0))
+				.andExpect(jsonPath("$.espacos['5'].usados").value(0))
+				.andExpect(jsonPath("$.atributoConjuracao").value(nullValue()));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D não apaga as magias nem os espaços de magia (ADR 0018)")
+	void atualizarPreservaMagiasEEspacos() throws Exception {
+		FichaDnd nova = FichasDeTeste.dnd("Ana");
+		nova.getEspacos().put(1, new EspacoMagia(4, 1));
+		nova.getEspacos().put(9, new EspacoMagia(1, 0));
+		FichaDnd ficha = repository.save(nova);
+		magias.save(FichasDeTeste.magiaDnd(ficha, "Luz", 0));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.magias", hasSize(1)))
+				.andExpect(jsonPath("$.espacos['1'].total").value(4))
+				.andExpect(jsonPath("$.espacos['1'].usados").value(1))
+				.andExpect(jsonPath("$.espacos['9'].total").value(1));
+
+		assertThat(magias.findByFichaIdOrderByNivelAscIdAsc(ficha.getId())).extracting(MagiaDnd::getNome)
+				.containsExactly("Luz");
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.espacos['1'].total").value(4))
+				.andExpect(jsonPath("$.espacos['1'].usados").value(1));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} de D&D com magias ou espacos no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComMagiasOuEspacosNoCorpoDa400() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		Map<String, Object> comMagias = FichasDeTeste.corpoDnd();
+		comMagias.put("magias", List.of());
+		Map<String, Object> comEspacos = FichasDeTeste.corpoDnd();
+		comEspacos.put("espacos", Map.of("1", Map.of("total", 1, "usados", 0)));
+
+		for (Map<String, Object> corpo : List.of(comMagias, comEspacos)) {
+			mockMvc.perform(put("/fichas/{id}", ficha.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(corpo)))
+					.andExpect(status().isBadRequest());
+		}
+	}
+
+	@Test
+	@DisplayName("DELETE /fichas/{id} de D&D com magias devolve 204 e as magias somem do banco")
+	void excluirFichaComMagias() throws Exception {
+		FichaDnd ficha = repository.save(FichasDeTeste.dnd("Ana"));
+		magias.save(FichasDeTeste.magiaDnd(ficha, "Luz", 0));
+
+		mockMvc.perform(delete("/fichas/{id}", ficha.getId())).andExpect(status().isNoContent());
+
+		assertThat(magias.count()).isZero();
 	}
 
 	@Test

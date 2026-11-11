@@ -3,6 +3,7 @@ package dev.spironello.fichasrpg.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +13,10 @@ import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
 import dev.spironello.fichasrpg.dto.FichaOrdemResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
 import dev.spironello.fichasrpg.dto.RecursoResumo;
+import dev.spironello.fichasrpg.dto.RitualResponse;
 import dev.spironello.fichasrpg.dto.RecursoValor;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
+import dev.spironello.fichasrpg.model.ElementoRitual;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
@@ -96,6 +99,21 @@ class FichaOrdemMapperTest {
 				Map.entry(RecursoOrdem.PV, new RecursoValor(10, 12)),
 				Map.entry(RecursoOrdem.SAN, new RecursoValor(null, 20)),
 				Map.entry(RecursoOrdem.PE, new RecursoValor(null, null)));
+	}
+
+	@Test
+	@DisplayName("a resposta leva adiante os rituais da lista")
+	void respostaLevaOsRituais() {
+		FichaOrdem ficha = mapper.criar(pedido(null));
+		RitualResponse ritual = new RitualResponse(1L, "Cicatrização", 1, ElementoRitual.SANGUE, null, null, null,
+				null, null, null);
+
+		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS,
+				new ListasOrdem(List.of(), List.of(ritual)));
+
+		assertThat(resposta.rituais()).containsExactly(ritual);
+		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_ORDEM).rituais())
+				.isEmpty();
 	}
 
 	@Test
