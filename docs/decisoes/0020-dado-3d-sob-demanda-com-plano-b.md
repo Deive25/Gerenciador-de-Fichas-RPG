@@ -7,7 +7,7 @@ O Arthur pediu que a rolagem fosse animada: um d20 em 3D por dado rolado. São d
 
 ## Decisão
 - **Biblioteca `open-dice-dnd` 1.13.0** (MIT). Ela usa `three` 0.130.1 e `cannon-es` 0.20.0, também MIT, e as três versões ficam fixas. A biblioteca aceita o valor de cada dado (`rolled`): ela calcula a física antes e pinta o valor pedido na face que vai cair para cima. O teste rápido do 2.1f confirmou que 5 d20 param nos valores forçados, sem divergência, no computador e no celular emulado.
-- **Carregamento sob demanda:** a biblioteca só é importada na primeira rolagem (`import()` dinâmico) e fica num pedaço próprio de 908,56 kB, ou 212,81 kB transferidos. O pacote inicial não muda.
+- **Carregamento sob demanda:** a biblioteca só é importada na primeira rolagem (`import()` dinâmico) e fica num pedaço próprio, o `lancador-3d`, de 849,05 kB, ou 197,94 kB transferidos. O pacote inicial (317,80 kB) não ganhou o `three`.
 - **Uma interface separa a tela da cena 3D:**
   - o `LancadorDeDados` tem dois métodos: `lancar(palco, dados, indiceMantido)`, que resolve quando os dados param, e `encerrar()`;
   - só o `lancador-3d.ts` importa a biblioteca;
