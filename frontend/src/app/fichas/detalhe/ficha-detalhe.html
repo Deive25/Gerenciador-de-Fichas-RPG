@@ -106,6 +106,20 @@
                   }
                 </div>
               }
+              @case ('inventario') {
+                @switch (f.sistema) {
+                  @case ('ORDEM_PARANORMAL') {
+                    <app-inventario-ordem-aba [ficha]="f" (atualizada)="atualizarItensOrdem($event)" />
+                  }
+                  @case ('DND') {
+                    <app-inventario-dnd-aba
+                      [ficha]="f"
+                      (atualizada)="atualizarItensDnd($event)"
+                      (moedasAtualizadas)="atualizarMoedas($event)"
+                    />
+                  }
+                }
+              }
               @case ('habilidades') {
                 <app-habilidades-aba [ficha]="f" (atualizada)="atualizarHabilidades($event)" />
               }

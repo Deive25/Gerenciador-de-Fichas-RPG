@@ -55,6 +55,41 @@ export interface Habilidade {
 /** Corpo do POST e do PUT de uma habilidade: o id vem da URL. */
 export type HabilidadeEntrada = Omit<Habilidade, 'id'>;
 
+// ---- Inventário (2.1h) ----
+
+/** Item de Ordem: categoria de 0 a 4 (mostrada como 0, I, II, III, IV); espaços e quantidade são por unidade. */
+export interface ItemOrdem {
+  id: number;
+  nome: string;
+  categoria: number;
+  espacos: number;
+  quantidade: number;
+  descricao: string | null;
+}
+
+/** Item de D&D: peso em kg, por unidade. */
+export interface ItemDnd {
+  id: number;
+  nome: string;
+  quantidade: number;
+  peso: number;
+  equipado: boolean;
+  descricao: string | null;
+}
+
+/** Corpo do POST e do PUT de um item: o id vem da URL. */
+export type ItemOrdemEntrada = Omit<ItemOrdem, 'id'>;
+export type ItemDndEntrada = Omit<ItemDnd, 'id'>;
+
+/** Moedas de D&D: cobre, prata, electro, ouro e platina. */
+export interface Moedas {
+  pc: number;
+  pp: number;
+  pe: number;
+  po: number;
+  pl: number;
+}
+
 // ---- Ordem Paranormal (2.1d) ----
 
 export type AtributoOrdem = 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
@@ -121,6 +156,7 @@ export interface FichaOrdem {
   pericias: Partial<Record<PericiaOrdem, GrauOrdem>>;
   descricao: DescricaoFicha;
   habilidades: Habilidade[];
+  itens: ItemOrdem[];
 }
 
 // ---- D&D 5e (2014) e D&D 2024 (2.1e) ----
@@ -178,6 +214,8 @@ export interface FichaDnd {
   pericias: Partial<Record<PericiaDnd, GrauDnd>>;
   descricao: DescricaoFicha;
   habilidades: Habilidade[];
+  itens: ItemDnd[];
+  moedas: Moedas;
 }
 
 /** O que `GET /fichas/{id}` devolve: o campo `sistema` diz qual das fichas é. */
@@ -205,10 +243,10 @@ export interface TesteResultado {
 
 /**
  * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
- * `retratoVersao` (o retrato tem rota própria) nem `descricao` e `habilidades` (rotas próprias, ADR 0018).
+ * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens` e `moedas` (rotas próprias, ADR 0018).
  * O JSON estrito da API recusa chaves a mais.
  */
-type SoDaLeitura = 'id' | 'retratoVersao' | 'descricao' | 'habilidades';
+type SoDaLeitura = 'id' | 'retratoVersao' | 'descricao' | 'habilidades' | 'itens' | 'moedas';
 export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura>;
 export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura>;
 export type FichaEntrada = FichaOrdemEntrada | FichaDndEntrada;
@@ -224,6 +262,8 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       retratoVersao: _retratoVersao,
       descricao: _descricao,
       habilidades: _habilidades,
+      itens: _itens,
+      moedas: _moedas,
       atributos, recursos, salvaguardas, pericias, ...resto } = ficha;
     return {
       ...resto,
@@ -238,6 +278,7 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       retratoVersao: _retratoVersao,
       descricao: _descricao,
       habilidades: _habilidades,
+      itens: _itens,
       atributos, recursos, pericias, ...resto } = ficha;
   return {
     ...resto,

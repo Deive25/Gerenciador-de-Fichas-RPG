@@ -1,4 +1,14 @@
-import { bonusPericia, bonusSalvaguarda, comSinal, modificador, proficiencia } from './regras-dnd';
+import { ItemDnd } from '../../ficha.model';
+import {
+  bonusPericia,
+  bonusSalvaguarda,
+  capacidadeDeCarga,
+  comSinal,
+  formatarPeso,
+  modificador,
+  pesoTotal,
+  proficiencia,
+} from './regras-dnd';
 
 describe('regras de D&D', () => {
   it('modificador arredonda para baixo, inclusive nos negativos', () => {
@@ -44,5 +54,29 @@ describe('regras de D&D', () => {
     expect(comSinal(0)).toBe('+0');
     expect(comSinal(-1)).toBe('−1');
     expect(comSinal(-1)).not.toBe('-1');
+  });
+});
+
+describe('carga de D&D', () => {
+  const item = (peso: number, quantidade: number): ItemDnd => ({
+    id: 1, nome: 'Item', quantidade, peso, equipado: false, descricao: null,
+  });
+
+  it('a capacidade e FOR x 7,5 kg', () => {
+    expect(capacidadeDeCarga(1)).toBe(7.5);
+    expect(capacidadeDeCarga(10)).toBe(75);
+    expect(capacidadeDeCarga(15)).toBe(112.5);
+  });
+
+  it('o peso total soma peso x quantidade sem ruido de ponto flutuante', () => {
+    expect(pesoTotal([])).toBe(0);
+    expect(pesoTotal([item(0.1, 3)])).toBe(0.3);
+    expect(pesoTotal([item(1.5, 2), item(4, 1)])).toBe(7);
+  });
+
+  it('formata o peso em pt-BR, com ate 2 casas e sem zeros a direita', () => {
+    expect(formatarPeso(112.5)).toBe('112,5');
+    expect(formatarPeso(7)).toBe('7');
+    expect(formatarPeso(0.25)).toBe('0,25');
   });
 });
