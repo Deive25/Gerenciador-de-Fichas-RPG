@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ApiError } from '../core/api-error';
 import { FichaApi } from './ficha-api';
-import { FichaOrdemEntrada, FichaResumo, ItemOrdem } from './ficha.model';
+import { espacosZerados } from './testes/espacos-zerados';
+import { FichaOrdemEntrada, FichaResumo, ItemOrdem, MagiaDndEntrada, RitualOrdemEntrada } from './ficha.model';
 
 const API = 'http://localhost:8080';
 
@@ -191,6 +192,74 @@ describe('FichaApi', () => {
       const todas = { pc: 0, pp: 0, pe: 0, po: 10, pl: 0 };
       req.flush(todas);
       expect(devolvidas).toEqual(todas);
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+  });
+
+  describe('magias, rituais e espacos', () => {
+    const MAGIA: MagiaDndEntrada = {
+      nome: 'Bola de Fogo', nivel: 3, escola: 'Evocação', tempo: '1 ação', alcance: '45 m', componentes: 'V, S, M',
+      duracao: 'Instantânea', concentracao: false, ritual: false, preparada: true, descricao: null,
+    };
+    const RITUAL: RitualOrdemEntrada = {
+      nome: 'Rasgar a Realidade', circulo: 2, elemento: 'SANGUE', execucao: 'Padrão', alcance: 'Curto', alvo: null,
+      duracao: null, resistencia: null, descricao: null,
+    };
+
+    it('criarMagia faz POST /fichas/7/magias e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      let criada: unknown;
+      api.criarMagia(7, MAGIA).subscribe((m) => (criada = m));
+      const req = http.expectOne(`${API}/fichas/7/magias`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(MAGIA);
+      req.flush({ id: 1, ...MAGIA }, { status: 201, statusText: 'Created' });
+      expect(criada).toEqual({ id: 1, ...MAGIA });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('atualizarMagia faz PUT /fichas/7/magias/1 e excluirMagia faz DELETE', () => {
+      api.atualizarMagia(7, 1, MAGIA).subscribe();
+      const put = http.expectOne(`${API}/fichas/7/magias/1`);
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.body).toEqual(MAGIA);
+      put.flush({ id: 1, ...MAGIA });
+
+      api.excluirMagia(7, 1).subscribe();
+      const del = http.expectOne(`${API}/fichas/7/magias/1`);
+      expect(del.request.method).toBe('DELETE');
+      del.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('criarRitual, atualizarRitual e excluirRitual usam /fichas/7/rituais', () => {
+      api.criarRitual(7, RITUAL).subscribe();
+      const post = http.expectOne(`${API}/fichas/7/rituais`);
+      expect(post.request.method).toBe('POST');
+      expect(post.request.body).toEqual(RITUAL);
+      post.flush({ id: 2, ...RITUAL });
+
+      api.atualizarRitual(7, 2, RITUAL).subscribe();
+      const put = http.expectOne(`${API}/fichas/7/rituais/2`);
+      expect(put.request.method).toBe('PUT');
+      put.flush({ id: 2, ...RITUAL });
+
+      api.excluirRitual(7, 2).subscribe();
+      const del = http.expectOne(`${API}/fichas/7/rituais/2`);
+      expect(del.request.method).toBe('DELETE');
+      del.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('atualizarEspacos faz PATCH /fichas/7/espacos so com os niveis enviados e devolve os nove', () => {
+      const antes = api.versaoFichas();
+      let devolvidos: unknown;
+      api.atualizarEspacos(7, { '3': { total: 2, usados: 1 } }).subscribe((e) => (devolvidos = e));
+      const req = http.expectOne(`${API}/fichas/7/espacos`);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ '3': { total: 2, usados: 1 } });
+      const todos = espacosZerados();
+      todos['3'] = { total: 2, usados: 1 };
+      req.flush(todos);
+      expect(devolvidos).toEqual(todos);
       expect(api.versaoFichas()).toBe(antes + 1);
     });
   });

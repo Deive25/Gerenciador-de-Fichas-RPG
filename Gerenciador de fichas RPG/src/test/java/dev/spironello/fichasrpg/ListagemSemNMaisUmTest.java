@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import dev.spironello.fichasrpg.dto.FichaDndRequest;
 import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
@@ -33,6 +34,8 @@ import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import dev.spironello.fichasrpg.repository.ItemDndRepository;
 import dev.spironello.fichasrpg.repository.ItemOrdemRepository;
+import dev.spironello.fichasrpg.repository.MagiaDndRepository;
+import dev.spironello.fichasrpg.repository.RitualOrdemRepository;
 import dev.spironello.fichasrpg.service.FichaService;
 import jakarta.persistence.EntityManagerFactory;
 
@@ -54,6 +57,12 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	@Autowired
 	private ItemDndRepository itensDnd;
 	@Autowired
+	private MagiaDndRepository magias;
+	@Autowired
+	private RitualOrdemRepository rituais;
+	@Autowired
+	private JdbcTemplate jdbc;
+	@Autowired
 	private EntityManagerFactory entityManagerFactory;
 
 	private final List<Long> criadas = new ArrayList<>();
@@ -64,20 +73,23 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, habilidades e itens, executa 1 consulta, e não 1 + 4")
+	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, habilidades, itens, magias, espaços e rituais, executa 1 consulta, e não 1 + 4")
 	void listarEmUmaConsulta() {
 		for (int i = 1; i <= 2; i++) {
 			criadas.add(service.criar(pedido("ficha" + i)).id());
 			criadas.add(service.criar(pedidoDnd("dnd" + i)).id());
 		}
-		// Habilidades e itens em todas as fichas: o resumo não pode lê-los (nem a descrição) para continuar em 1 consulta.
+		// Habilidades, itens, magias, espaços e rituais em todas as fichas: o resumo não pode lê-los (nem a descrição) para continuar em 1 consulta.
 		for (Long id : criadas) {
 			habilidades.save(FichasDeTeste.habilidade(repository.getReferenceById(id), "Ataque", TipoHabilidade.CLASSE, null));
 			Ficha ficha = repository.findById(id).orElseThrow();
 			if (ficha instanceof FichaOrdem ordem) {
 				itensOrdem.save(FichasDeTeste.itemOrdem(ordem, "Pistola"));
+				rituais.save(FichasDeTeste.ritualOrdem(ordem, "Cicatrizacao", 1));
 			} else {
 				itensDnd.save(FichasDeTeste.itemDnd((FichaDnd) ficha, "Corda"));
+				magias.save(FichasDeTeste.magiaDnd((FichaDnd) ficha, "Luz", 0));
+				jdbc.update("insert into ficha_dnd_espaco (ficha_id, nivel, total, usados) values (?, 1, 4, 1)", id);
 			}
 		}
 		Statistics estatisticas = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
@@ -108,6 +120,6 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 		}
 		return new FichaDndRequest(nome, nome, "F", null, EdicaoDnd.D2024, null, null, null, 3, atributos, null, null,
 				null, Set.of(AtributoDnd.FOR),
-				Map.of(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE, PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA));
+				Map.of(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE, PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA), null);
 	}
 }

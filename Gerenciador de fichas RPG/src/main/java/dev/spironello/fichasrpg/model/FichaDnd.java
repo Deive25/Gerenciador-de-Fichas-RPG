@@ -1,6 +1,7 @@
 package dev.spironello.fichasrpg.model;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,6 +66,19 @@ public class FichaDnd extends Ficha {
 	private int pe;
 	private int po;
 	private int pl;
+
+	/** Atributo de conjuração (INT, SAB ou CAR; o banco confere). Nulo = a ficha não conjura. Vai no PUT da ficha. */
+	@Enumerated(EnumType.STRING)
+	private AtributoDnd atributoConjuracao;
+
+	/**
+	 * Espaços de magia por nível (1 a 9); nível sem entrada vale 0 de 0. Só o PATCH de espaços grava aqui: o
+	 * PUT da ficha não toca neste mapa, como nas moedas. Lazy, e a listagem nunca o lê.
+	 */
+	@ElementCollection
+	@CollectionTable(name = "ficha_dnd_espaco", joinColumns = @JoinColumn(name = "ficha_id"))
+	@MapKeyColumn(name = "nivel")
+	private Map<Integer, EspacoMagia> espacos = new HashMap<>();
 
 	@ElementCollection
 	@CollectionTable(name = "ficha_dnd_pericia", joinColumns = @JoinColumn(name = "ficha_id"))
@@ -248,6 +262,15 @@ public class FichaDnd extends Ficha {
 	}
 	public void setPl(int pl) {
 		this.pl = pl;
+	}
+	public AtributoDnd getAtributoConjuracao() {
+		return atributoConjuracao;
+	}
+	public void setAtributoConjuracao(AtributoDnd atributoConjuracao) {
+		this.atributoConjuracao = atributoConjuracao;
+	}
+	public Map<Integer, EspacoMagia> getEspacos() {
+		return espacos;
 	}
 	public Map<PericiaDnd, GrauDnd> getPericias() {
 		return pericias;

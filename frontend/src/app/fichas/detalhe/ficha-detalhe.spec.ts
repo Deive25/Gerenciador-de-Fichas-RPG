@@ -9,6 +9,7 @@ import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
 import { FichaDnd, FichaOrdem, TesteResultado } from '../ficha.model';
 import { FichaDetalhe } from './ficha-detalhe';
+import { espacosZerados } from '../testes/espacos-zerados';
 
 const FICHA: FichaOrdem = {
   id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
@@ -23,6 +24,7 @@ const FICHA: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [],
   itens: [],
+  rituais: [],
 };
 
 const RESULTADO: TesteResultado = {
@@ -40,6 +42,9 @@ const FICHA_DND: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 const RESULTADO_DND: TesteResultado = {
@@ -398,8 +403,8 @@ describe('FichaDetalhe · abas', () => {
   const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
 
   it.each([
-    ['Ordem', FICHA, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
-    ['D&D', FICHA_DND, ['Ficha', 'Inventário', 'Habilidades', 'Descrição']],
+    ['Ordem', FICHA, ['Ficha', 'Inventário', 'Rituais', 'Habilidades', 'Descrição']],
+    ['D&D', FICHA_DND, ['Ficha', 'Inventário', 'Magias', 'Habilidades', 'Descrição']],
   ])('ficha de %s tem as abas na ordem certa', (_nome, ficha, esperadas) => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
     expect(rotulos(el)).toEqual(esperadas);
@@ -474,6 +479,71 @@ describe('FichaDetalhe · abas', () => {
 
     expect(aba.ficha().moedas).toEqual(novas);
     expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('na aba Magias de D&D mostra a CD, e uma magia nova, os espacos e o atributo chegam a aba sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Raio de Fogo', nivel: 0, escola: null, tempo: null, alcance: null, componentes: null,
+      duracao: null, concentracao: false, ritual: false, preparada: false, descricao: null };
+    const nova = { ...existente, id: 4, nome: 'Bola de Fogo', nivel: 3 };
+    const buscarFicha = vi.fn(() => of({ ...FICHA_DND, atributoConjuracao: 'CAR', magias: [existente] }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'magias');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Magias');
+    expect(el.textContent).toContain('Raio de Fogo');
+    // Nível 5 (proficiência 3) e Carisma 16 (+3): CD 14.
+    expect(el.querySelector('[data-conta="cd"] .valor')?.textContent?.trim()).toBe('14');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-magias-dnd-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+      espacosAtualizados: { emit(espacos: unknown): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    aba.espacosAtualizados.emit({ ...espacosZerados(), '2': { total: 3, usados: 1 } });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Bola de Fogo');
+    expect(el.querySelectorAll('[data-nivel="2"] button.marcador').length).toBe(3);
+    expect(el.querySelectorAll('[data-nivel="2"] button.marcador.usado').length).toBe(1);
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('na aba Rituais de Ordem mostra os rituais e um ritual novo aparece sem recarregar', async () => {
+    const existente = { id: 3, nome: 'Cicatrização', circulo: 1, elemento: 'SANGUE', execucao: null, alcance: null, alvo: null,
+      duracao: null, resistencia: null, descricao: null };
+    const nova = { ...existente, id: 4, nome: 'Terror', circulo: 2, elemento: 'MEDO' };
+    const buscarFicha = vi.fn(() => of({ ...FICHA, rituais: [existente] }));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'rituais');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(selecionada(el)).toBe('Rituais');
+    expect(el.textContent).toContain('Cicatrização');
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-rituais-ordem-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([existente, nova]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Terror');
+    // NEX 10 e Presença 2: DT 14; 2º círculo custa 3 PE.
+    expect(el.textContent).toContain('2º círculo · Medo · 3 PE · DT 14');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['D&D', FICHA_DND, 'rituais'],
+    ['Ordem', FICHA, 'magias'],
+  ])('ficha de %s: a aba do outro sistema na URL abre a Ficha', (_nome, ficha, aba) => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
+    fixture.componentRef.setInput('aba', aba);
+    fixture.detectChanges();
+    expect(selecionada(el)).toBe('Ficha');
   });
 
   it('sem aba na URL abre a Ficha, com os botoes Rolar', () => {

@@ -88,6 +88,7 @@ public class FichaOrdemMapper {
 				comuns.descricao(),
 				comuns.habilidades(),
 				listas.itens(),
+				listas.rituais(),
 				ficha.getClasse(),
 				ficha.getOrigem(),
 				ficha.getNex(),
