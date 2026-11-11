@@ -41,6 +41,7 @@ import {
   paraNumero,
   registro,
   textoDe,
+  textoOuNulo,
 } from '../comum/formulario-comum';
 import { ATRIBUTOS_DND, NOMES_EDICAO, NOME_GRAU_DND, PERICIAS_DND, rotuloEspecie } from './catalogo-dnd';
 
@@ -116,11 +117,6 @@ export function valorVazioDnd(): ValorFormularioDnd {
     salvaguardas: registro(CODIGOS_ATRIBUTO, () => false),
     pericias: registro(CODIGOS_PERICIA, () => ''),
   };
-}
-
-function textoOuNulo(texto: string): string | null {
-  const limpo = texto.trim();
-  return limpo === '' ? null : limpo;
 }
 
 /**
