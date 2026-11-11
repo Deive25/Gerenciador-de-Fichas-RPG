@@ -120,6 +120,20 @@
                   }
                 }
               }
+              @case ('magias') {
+                @if (f.sistema === 'DND') {
+                  <app-magias-dnd-aba
+                    [ficha]="f"
+                    (atualizada)="atualizarMagias($event)"
+                    (espacosAtualizados)="atualizarEspacos($event)"
+                  />
+                }
+              }
+              @case ('rituais') {
+                @if (f.sistema === 'ORDEM_PARANORMAL') {
+                  <app-rituais-ordem-aba [ficha]="f" (atualizada)="atualizarRituais($event)" />
+                }
+              }
               @case ('habilidades') {
                 <app-habilidades-aba [ficha]="f" (atualizada)="atualizarHabilidades($event)" />
               }

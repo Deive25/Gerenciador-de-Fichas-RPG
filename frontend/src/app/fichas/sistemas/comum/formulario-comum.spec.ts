@@ -9,6 +9,7 @@ import {
   focarPrimeiroInvalido,
   mensagemDoControle,
   paraDecimal,
+  textoOuNulo,
 } from './formulario-comum';
 
 describe('mensagemDoControle', () => {
@@ -127,5 +128,13 @@ describe('decimal', () => {
     controle.markAsTouched();
     expect(mensagemDoControle(controle)).toBe(controle.errors?.['decimal']);
     expect(mensagemDoControle(controle)).toContain('99.999,99');
+  });
+});
+
+describe('textoOuNulo', () => {
+  it('tira os espacos das pontas e devolve null quando sobra nada', () => {
+    expect(textoOuNulo('  V, S  ')).toBe('V, S');
+    expect(textoOuNulo('   ')).toBeNull();
+    expect(textoOuNulo('')).toBeNull();
   });
 });
