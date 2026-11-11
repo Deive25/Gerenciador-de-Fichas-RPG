@@ -31,14 +31,17 @@ import com.jayway.jsonpath.JsonPath;
 import dev.spironello.fichasrpg.FichasDeTeste;
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.model.ClasseOrdem;
+import dev.spironello.fichasrpg.model.ElementoRitual;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.ItemOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
+import dev.spironello.fichasrpg.model.RitualOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import dev.spironello.fichasrpg.repository.ItemOrdemRepository;
+import dev.spironello.fichasrpg.repository.RitualOrdemRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -61,6 +64,9 @@ class FichaControllerTest extends IntegrationTestBase {
 
 	@Autowired
 	private ItemOrdemRepository itens;
+
+	@Autowired
+	private RitualOrdemRepository rituais;
 
 	@Autowired
 	private ObjectMapper objectMapper;
@@ -352,6 +358,88 @@ class FichaControllerTest extends IntegrationTestBase {
 				.andExpect(status().isNoContent());
 
 		assertThat(itens.count()).isZero();
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} de uma ficha nova traz rituais vazios")
+	void fichaNovaTemRituaisVazios() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.rituais", hasSize(0)));
+	}
+
+	@Test
+	@DisplayName("GET /fichas/{id} traz os rituais por círculo e depois pela ordem de criação")
+	void buscarTrazRituaisPorCirculo() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		RitualOrdem terceiro = FichasDeTeste.ritualOrdem(ficha, "Terceiro", 3);
+		terceiro.setElemento(ElementoRitual.MEDO);
+		terceiro.setExecucao("Padrão");
+		terceiro.setAlcance("Curto");
+		terceiro.setAlvo("1 pessoa");
+		terceiro.setDuracao("Cena");
+		terceiro.setResistencia("Vontade anula");
+		terceiro.setDescricao("Texto");
+		rituais.save(terceiro);
+		rituais.save(FichasDeTeste.ritualOrdem(ficha, "Primeiro", 1));
+		rituais.save(FichasDeTeste.ritualOrdem(ficha, "Primeiro B", 1));
+
+		mockMvc.perform(get("/fichas/{id}", ficha.getId()))
+				.andExpect(jsonPath("$.rituais", hasSize(3)))
+				.andExpect(jsonPath("$.rituais[0].nome").value("Primeiro"))
+				.andExpect(jsonPath("$.rituais[1].nome").value("Primeiro B"))
+				.andExpect(jsonPath("$.rituais[2].nome").value("Terceiro"))
+				.andExpect(jsonPath("$.rituais[2].circulo").value(3))
+				.andExpect(jsonPath("$.rituais[2].elemento").value("MEDO"))
+				.andExpect(jsonPath("$.rituais[2].execucao").value("Padrão"))
+				.andExpect(jsonPath("$.rituais[2].alcance").value("Curto"))
+				.andExpect(jsonPath("$.rituais[2].alvo").value("1 pessoa"))
+				.andExpect(jsonPath("$.rituais[2].duracao").value("Cena"))
+				.andExpect(jsonPath("$.rituais[2].resistencia").value("Vontade anula"))
+				.andExpect(jsonPath("$.rituais[2].descricao").value("Texto"));
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} não apaga os rituais (ADR 0018)")
+	void atualizarPreservaRituais() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		rituais.save(FichasDeTeste.ritualOrdem(ficha, "Cicatrização", 1));
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoOrdem())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.rituais", hasSize(1)));
+
+		assertThat(rituais.findByFichaIdOrderByCirculoAscIdAsc(ficha.getId())).extracting(RitualOrdem::getNome)
+				.containsExactly("Cicatrização");
+	}
+
+	@Test
+	@DisplayName("PUT /fichas/{id} com rituais no corpo devolve 400 (o JSON é estrito)")
+	void atualizarComRituaisNoCorpoDa400() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		Map<String, Object> corpo = FichasDeTeste.corpoOrdem();
+		corpo.put("rituais", List.of());
+
+		mockMvc.perform(put("/fichas/{id}", ficha.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(corpo)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("DELETE /fichas/{id} de uma ficha com rituais devolve 204 e os rituais somem do banco")
+	void excluirFichaComRituais() throws Exception {
+		FichaOrdem ficha = repository.save(FichasDeTeste.ordem("Ana"));
+		rituais.save(FichasDeTeste.ritualOrdem(ficha, "Cicatrização", 1));
+
+		mockMvc.perform(delete("/fichas/{id}", ficha.getId()))
+				.andExpect(status().isNoContent());
+
+		assertThat(rituais.count()).isZero();
 	}
 
 	@Test

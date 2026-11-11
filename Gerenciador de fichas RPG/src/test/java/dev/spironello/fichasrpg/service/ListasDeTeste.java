@@ -4,15 +4,19 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 
+import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.repository.ItemDndRepository;
 import dev.spironello.fichasrpg.repository.ItemOrdemRepository;
+import dev.spironello.fichasrpg.repository.MagiaDndRepository;
+import dev.spironello.fichasrpg.repository.RitualOrdemRepository;
 
-/** Montagens das listas da ficha (itens) para os testes unitários, que não sobem o Spring nem o banco. */
+/** Montagens das listas da ficha (itens, magias, espaços e rituais) para os testes unitários, que não sobem o Spring nem o banco. */
 final class ListasDeTeste {
 
-	/** Nenhum item. */
-	static final ListasOrdem VAZIAS_ORDEM = new ListasOrdem(List.of());
-	static final ListasDnd VAZIAS_DND = new ListasDnd(List.of());
+	/** Nenhum item nem ritual. */
+	static final ListasOrdem VAZIAS_ORDEM = new ListasOrdem(List.of(), List.of());
+	/** Nenhum item nem magia, e os nove níveis de espaços em 0 de 0. */
+	static final ListasDnd VAZIAS_DND = new ListasDnd(List.of(), List.of(), EspacosDaFicha.de(new FichaDnd()));
 
 	private ListasDeTeste() {
 	}
@@ -24,5 +28,13 @@ final class ListasDeTeste {
 
 	static ItensDnd itensDnd() {
 		return new ItensDnd(mock(ItemDndRepository.class));
+	}
+
+	static RituaisOrdem rituaisOrdem() {
+		return new RituaisOrdem(mock(RitualOrdemRepository.class));
+	}
+
+	static MagiasDnd magiasDnd() {
+		return new MagiasDnd(mock(MagiaDndRepository.class));
 	}
 }
