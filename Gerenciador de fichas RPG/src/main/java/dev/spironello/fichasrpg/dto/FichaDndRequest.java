@@ -42,7 +42,8 @@ public record FichaDndRequest(
 		@Min(value = 0, message = "deve ser 0 ou mais") Integer ca,
 		Boolean inspiracao,
 		Set<AtributoDnd> salvaguardas,
-		Map<PericiaDnd, GrauDnd> pericias) implements FichaRequest {
+		Map<PericiaDnd, GrauDnd> pericias,
+		AtributoDnd atributoConjuracao) implements FichaRequest {
 
 	@Override
 	public Sistema sistema() {

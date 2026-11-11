@@ -33,11 +33,14 @@ public class SistemaOrdem implements SistemaDeFicha {
 	private final FichaOrdemMapper mapper;
 	private final PartesComunsDaFicha partesComuns;
 	private final ItensOrdem itens;
+	private final RituaisOrdem rituais;
 
-	public SistemaOrdem(FichaOrdemMapper mapper, PartesComunsDaFicha partesComuns, ItensOrdem itens) {
+	public SistemaOrdem(FichaOrdemMapper mapper, PartesComunsDaFicha partesComuns, ItensOrdem itens,
+			RituaisOrdem rituais) {
 		this.mapper = mapper;
 		this.partesComuns = partesComuns;
 		this.itens = itens;
+		this.rituais = rituais;
 	}
 
 	@Override
@@ -61,7 +64,8 @@ public class SistemaOrdem implements SistemaDeFicha {
 
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
-		return mapper.resposta((FichaOrdem) ficha, partesComuns.de(ficha), new ListasOrdem(itens.listar(ficha.getId())));
+		return mapper.resposta((FichaOrdem) ficha, partesComuns.de(ficha),
+				new ListasOrdem(itens.listar(ficha.getId()), rituais.listar(ficha.getId())));
 	}
 
 	@Override
