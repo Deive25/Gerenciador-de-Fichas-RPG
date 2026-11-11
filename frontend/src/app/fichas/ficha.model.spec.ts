@@ -1,4 +1,5 @@
 import { FichaDnd, FichaOrdem, paraEntradaDaFicha } from './ficha.model';
+import { espacosZerados } from './testes/espacos-zerados';
 
 describe('paraEntradaDaFicha', () => {
   const ficha: FichaOrdem = {
@@ -10,6 +11,7 @@ describe('paraEntradaDaFicha', () => {
     descricao: { aparencia: 'Alta', historia: null, anotacoes: null },
     habilidades: [{ id: 1, nome: 'Ataque Especial', tipo: 'CLASSE', descricao: null }],
     itens: [{ id: 4, nome: 'Faca', categoria: 0, espacos: 1, quantidade: 1, descricao: null }],
+    rituais: [],
   };
 
   it('tira id, retratoVersao, descricao e habilidades (o JSON estrito da API recusaria) e mantem o resto', () => {
@@ -21,6 +23,7 @@ describe('paraEntradaDaFicha', () => {
     expect('habilidades' in entrada).toBe(false);
     expect('itens' in entrada).toBe(false);
     expect('moedas' in entrada).toBe(false);
+    expect('rituais' in entrada).toBe(false);
     expect(entrada.sistema).toBe('ORDEM_PARANORMAL');
     expect(entrada.personagem).toBe('Lia');
     expect(entrada.classe).toBeNull();
@@ -47,6 +50,9 @@ describe('paraEntradaDaFicha', () => {
       habilidades: [{ id: 2, nome: 'Ataque Furtivo', tipo: 'CLASSE', descricao: null }],
       itens: [{ id: 5, nome: 'Corda', quantidade: 1, peso: 5, equipado: false, descricao: null }],
       moedas: { pc: 0, pp: 0, pe: 0, po: 10, pl: 0 },
+      atributoConjuracao: 'INT',
+      magias: [],
+      espacos: espacosZerados(),
     };
     const entrada = paraEntradaDaFicha(dnd);
     expect('id' in entrada).toBe(false);
@@ -55,8 +61,12 @@ describe('paraEntradaDaFicha', () => {
     expect('habilidades' in entrada).toBe(false);
     expect('itens' in entrada).toBe(false);
     expect('moedas' in entrada).toBe(false);
+    expect('magias' in entrada).toBe(false);
+    expect('espacos' in entrada).toBe(false);
     expect(entrada.sistema).toBe('DND');
     if (entrada.sistema !== 'DND') return;
+    // O atributo de conjuração é da ficha (vai no PUT); a lista e os espaços têm rota própria.
+    expect(entrada.atributoConjuracao).toBe('INT');
     expect(entrada.edicao).toBe('D2014');
     expect(entrada.recursos.PV_TEMP).toEqual({ atual: 2, maximo: null });
     expect(entrada.salvaguardas).toEqual(['FOR']);

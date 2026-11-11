@@ -8,12 +8,17 @@ import {
   Ficha,
   FichaEntrada,
   FichaResumo,
+  Espacos,
   Habilidade,
   HabilidadeEntrada,
   ItemDnd,
   ItemOrdem,
+  MagiaDnd,
+  MagiaDndEntrada,
   Moedas,
   PedidoTeste,
+  RitualOrdem,
+  RitualOrdemEntrada,
   TesteResultado,
 } from './ficha.model';
 
@@ -116,6 +121,37 @@ export class FichaApi {
   /** Só D&D. Só mudam as moedas enviadas; a resposta traz as cinco. */
   atualizarMoedas(id: number, moedas: Partial<Moedas>): Observable<Moedas> {
     return this.alterou(this.tratar(this.http.patch<Moedas>(`${this.base}/${id}/moedas`, moedas)));
+  }
+
+  /** Só D&D. */
+  criarMagia(id: number, magia: MagiaDndEntrada): Observable<MagiaDnd> {
+    return this.alterou(this.tratar(this.http.post<MagiaDnd>(`${this.base}/${id}/magias`, magia)));
+  }
+
+  atualizarMagia(id: number, magiaId: number, magia: MagiaDndEntrada): Observable<MagiaDnd> {
+    return this.alterou(this.tratar(this.http.put<MagiaDnd>(`${this.base}/${id}/magias/${magiaId}`, magia)));
+  }
+
+  excluirMagia(id: number, magiaId: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/magias/${magiaId}`)));
+  }
+
+  /** Só Ordem. */
+  criarRitual(id: number, ritual: RitualOrdemEntrada): Observable<RitualOrdem> {
+    return this.alterou(this.tratar(this.http.post<RitualOrdem>(`${this.base}/${id}/rituais`, ritual)));
+  }
+
+  atualizarRitual(id: number, ritualId: number, ritual: RitualOrdemEntrada): Observable<RitualOrdem> {
+    return this.alterou(this.tratar(this.http.put<RitualOrdem>(`${this.base}/${id}/rituais/${ritualId}`, ritual)));
+  }
+
+  excluirRitual(id: number, ritualId: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/rituais/${ritualId}`)));
+  }
+
+  /** Só D&D. Só mudam os níveis enviados; a resposta traz os nove. */
+  atualizarEspacos(id: number, parcial: Partial<Espacos>): Observable<Espacos> {
+    return this.alterou(this.tratar(this.http.patch<Espacos>(`${this.base}/${id}/espacos`, parcial)));
   }
 
   private alterou<T>(requisicao: Observable<T>): Observable<T> {

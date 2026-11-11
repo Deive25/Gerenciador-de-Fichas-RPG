@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { FichaDnd, PedidoTeste } from '../../ficha.model';
 import { FichaDndCorpo } from './ficha-dnd';
+import { espacosZerados } from '../../testes/espacos-zerados';
 
 const FICHA: FichaDnd = {
   id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
@@ -13,6 +14,9 @@ const FICHA: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 function montar(ficha: FichaDnd = FICHA, rolando = false) {

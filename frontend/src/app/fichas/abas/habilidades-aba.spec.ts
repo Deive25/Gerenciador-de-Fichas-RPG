@@ -6,6 +6,7 @@ import { ApiError } from '../../core/api-error';
 import { FichaApi } from '../ficha-api';
 import { Ficha, FichaDnd, FichaOrdem, Habilidade } from '../ficha.model';
 import { HabilidadesAba } from './habilidades-aba';
+import { espacosZerados } from '../testes/espacos-zerados';
 
 const EXISTENTE: Habilidade = { id: 3, nome: 'Ataque especial', tipo: 'CLASSE', descricao: 'Gasta 2 PE.\nCausa +1d6.' };
 
@@ -18,6 +19,7 @@ const ORDEM: FichaOrdem = {
   descricao: { aparencia: null, historia: null, anotacoes: null },
   habilidades: [EXISTENTE],
   itens: [],
+  rituais: [],
 };
 
 const DND: FichaDnd = {
@@ -30,6 +32,9 @@ const DND: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 function montar(ficha: Ficha, api: Partial<Record<keyof FichaApi, unknown>> = {}) {
