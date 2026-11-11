@@ -1,0 +1,118 @@
+@if (erroGeral(); as erro) {
+  <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+}
+
+<app-lista-editavel
+  [itens]="ficha().rituais"
+  nomeDoItem="ritual"
+  vazio="Nenhum ritual ainda."
+  [tituloDe]="tituloDe"
+  [salvando]="salvando()"
+  [editando]="editando()"
+  (editandoChange)="aoMudarEdicao($event)"
+  (remover)="remover($event)"
+>
+  <ng-template #visualizacao let-ritual>
+    <div class="cabeca">
+      <h3 class="nome">{{ ritual.nome }}</h3>
+    </div>
+    <p class="conta">
+      {{ rotuloCirculo(ritual.circulo) }} · {{ rotuloElemento(ritual.elemento) }} · {{ custoEmPe(ritual.circulo) }} PE · DT {{ dt() }}
+    </p>
+    @if (detalhes(ritual); as texto) {
+      <p class="detalhes">{{ texto }}</p>
+    }
+    @if (ritual.descricao) {
+      <p class="descricao">{{ ritual.descricao }}</p>
+    }
+  </ng-template>
+
+  <ng-template #formulario>
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <mat-form-field appearance="outline" data-campo="nome">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+        @if (mensagem(form.controls.nome); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="circulo">
+        <mat-label>Círculo</mat-label>
+        <mat-select formControlName="circulo">
+          @for (circulo of circulos; track circulo.valor) {
+            <mat-option [value]="circulo.valor">{{ circulo.rotulo }}</mat-option>
+          }
+        </mat-select>
+        @if (mensagem(form.controls.circulo); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="elemento">
+        <mat-label>Elemento</mat-label>
+        <mat-select formControlName="elemento">
+          @for (elemento of elementos; track elemento.codigo) {
+            <mat-option [value]="elemento.codigo">{{ elemento.nome }}</mat-option>
+          }
+        </mat-select>
+        @if (mensagem(form.controls.elemento); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="execucao">
+        <mat-label>Execução</mat-label>
+        <input matInput formControlName="execucao" />
+        @if (mensagem(form.controls.execucao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="alcance">
+        <mat-label>Alcance</mat-label>
+        <input matInput formControlName="alcance" />
+        @if (mensagem(form.controls.alcance); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="alvo">
+        <mat-label>Alvo</mat-label>
+        <input matInput formControlName="alvo" />
+        @if (mensagem(form.controls.alvo); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="duracao">
+        <mat-label>Duração</mat-label>
+        <input matInput formControlName="duracao" />
+        @if (mensagem(form.controls.duracao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="resistencia">
+        <mat-label>Resistência</mat-label>
+        <input matInput formControlName="resistencia" />
+        @if (mensagem(form.controls.resistencia); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="descricao" subscriptSizing="dynamic">
+        <mat-label>Descrição</mat-label>
+        <textarea matInput formControlName="descricao" rows="4"></textarea>
+        @if (mensagem(form.controls.descricao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="acoes-form">
+        <button type="button" class="botao-neutro" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+  </ng-template>
+</app-lista-editavel>

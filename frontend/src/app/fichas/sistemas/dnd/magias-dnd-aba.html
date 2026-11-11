@@ -1,0 +1,136 @@
+<section class="conjuracao" aria-label="Conjuração">
+  <p class="atributo">Atributo de conjuração: <strong>{{ nomeDoAtributo() ?? '—' }}</strong></p>
+  <div class="contas">
+    <p class="conta-magica" data-conta="cd">
+      <span class="rotulo">CD das magias</span>
+      <strong class="valor">{{ cd() ?? '—' }}</strong>
+    </p>
+    <p class="conta-magica" data-conta="ataque">
+      <span class="rotulo">Ataque mágico</span>
+      <strong class="valor">{{ ataque() === null ? '—' : comSinal(ataque()!) }}</strong>
+    </p>
+  </div>
+  @if (nomeDoAtributo() === null) {
+    <p class="dica">Escolha o atributo de conjuração em Editar ficha.</p>
+  }
+</section>
+
+<app-espacos-dnd [ficha]="ficha()" (atualizados)="espacosAtualizados.emit($event)" />
+
+@if (erroGeral(); as erro) {
+  <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+}
+
+<app-lista-editavel
+  [itens]="ficha().magias"
+  nomeDoItem="magia"
+  vazio="Nenhuma magia ainda."
+  [tituloDe]="tituloDe"
+  [salvando]="salvando()"
+  [editando]="editando()"
+  (editandoChange)="aoMudarEdicao($event)"
+  (remover)="remover($event)"
+>
+  <ng-template #visualizacao let-magia>
+    <div class="cabeca">
+      <h3 class="nome">{{ magia.nome }}</h3>
+      @if (magia.concentracao) {
+        <span class="selo">Concentração</span>
+      }
+      @if (magia.ritual) {
+        <span class="selo">Ritual</span>
+      }
+      @if (magia.preparada) {
+        <span class="selo">Preparada</span>
+      }
+    </div>
+    <p class="conta">{{ rotuloNivel(magia.nivel) }}@if (magia.escola) { · {{ magia.escola }}}</p>
+    @if (detalhes(magia); as texto) {
+      <p class="detalhes">{{ texto }}</p>
+    }
+    @if (magia.descricao) {
+      <p class="descricao">{{ magia.descricao }}</p>
+    }
+  </ng-template>
+
+  <ng-template #formulario>
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <mat-form-field appearance="outline" data-campo="nome">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+        @if (mensagem(form.controls.nome); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="nivel">
+        <mat-label>Nível</mat-label>
+        <mat-select formControlName="nivel">
+          @for (nivel of niveis; track nivel.valor) {
+            <mat-option [value]="nivel.valor">{{ nivel.rotulo }}</mat-option>
+          }
+        </mat-select>
+        @if (mensagem(form.controls.nivel); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="escola">
+        <mat-label>Escola</mat-label>
+        <input matInput formControlName="escola" />
+        @if (mensagem(form.controls.escola); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="tempo">
+        <mat-label>Tempo de conjuração</mat-label>
+        <input matInput formControlName="tempo" />
+        @if (mensagem(form.controls.tempo); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="alcance">
+        <mat-label>Alcance</mat-label>
+        <input matInput formControlName="alcance" />
+        @if (mensagem(form.controls.alcance); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="componentes">
+        <mat-label>Componentes</mat-label>
+        <input matInput formControlName="componentes" />
+        @if (mensagem(form.controls.componentes); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="duracao">
+        <mat-label>Duração</mat-label>
+        <input matInput formControlName="duracao" />
+        @if (mensagem(form.controls.duracao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-checkbox class="opcao" formControlName="concentracao" data-campo="concentracao">Concentração</mat-checkbox>
+      <mat-checkbox class="opcao" formControlName="ritual" data-campo="ritual">Ritual</mat-checkbox>
+      <mat-checkbox class="opcao" formControlName="preparada" data-campo="preparada">Preparada</mat-checkbox>
+
+      <mat-form-field appearance="outline" data-campo="descricao" subscriptSizing="dynamic">
+        <mat-label>Descrição</mat-label>
+        <textarea matInput formControlName="descricao" rows="4"></textarea>
+        @if (mensagem(form.controls.descricao); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="acoes-form">
+        <button type="button" class="botao-neutro" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+  </ng-template>
+</app-lista-editavel>

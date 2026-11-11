@@ -1,0 +1,110 @@
+:host {
+  display: block;
+}
+
+.bloco {
+  margin: 0.75rem 0;
+}
+
+.titulo {
+  margin: 0 0 0.5rem;
+  font-family: var(--fonte-titulo);
+  font-size: 1.15rem;
+  color: var(--cor-titulo);
+}
+
+.nivel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.rotulo-nivel {
+  min-width: 5rem;
+  font-weight: 600;
+}
+
+.marcadores {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+// Alvo de toque de 44 px (2.1b); o desenho é um círculo menor dentro dele. Usado = cheio, disponível = vazado:
+// a diferença é de forma, não só de cor.
+.marcador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &::before {
+    content: '';
+    width: 22px;
+    height: 22px;
+    box-sizing: border-box;
+    border: 2px solid var(--cor-acao);
+    border-radius: 50%;
+  }
+
+  &.usado::before {
+    background: var(--cor-acao);
+  }
+
+  // Enquanto grava o botão segue focável (aria-disabled), mas não parece clicável.
+  &[aria-disabled='true'] {
+    opacity: 0.6;
+    cursor: progress;
+  }
+}
+
+.contagem {
+  color: var(--cor-texto-suave);
+}
+
+.status {
+  min-height: 1.5em;
+  margin: 0.25rem 0;
+  color: var(--cor-texto-suave);
+}
+
+.erro-acao {
+  margin: 0 0 0.5rem;
+  color: #f0a597;
+}
+
+.descanso {
+  margin-bottom: 0.5rem;
+}
+
+.totais {
+  margin: 0.5rem 0 0;
+  padding: 0.85rem 1rem 0.5rem;
+  min-width: 0;
+}
+
+legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+// A legend flutua: sem clear, a grade logo depois dela fica com largura zero. min(100%, …): nunca passa de 375 px.
+.grade {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 80px), 1fr));
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.acoes-form {
+  display: flex;
+  justify-content: flex-end;
+}

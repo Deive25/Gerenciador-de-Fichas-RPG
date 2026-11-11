@@ -1,0 +1,57 @@
+@use '../../abas/cartao-de-lista';
+
+:host {
+  display: block;
+}
+
+.conjuracao {
+  margin: 0.75rem 0;
+}
+
+.atributo {
+  margin: 0 0 0.5rem;
+}
+
+.contas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.conta-magica {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.rotulo {
+  color: var(--cor-texto-suave);
+}
+
+.valor {
+  font-family: var(--fonte-titulo);
+  font-size: 1.4rem;
+  color: var(--cor-titulo);
+}
+
+.dica {
+  margin: 0.5rem 0 0;
+  color: var(--cor-texto-suave);
+}
+
+.conta,
+.detalhes {
+  margin: 0.5rem 0 0;
+}
+
+.detalhes {
+  color: var(--cor-texto-suave);
+}
+
+// Caixa de marcar com 44 px de altura mínima (alvo de toque do 2.1b).
+.opcao {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
