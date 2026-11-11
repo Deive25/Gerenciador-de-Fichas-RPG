@@ -8,6 +8,7 @@ import { ApiError } from '../../../core/api-error';
 import { FichaApi } from '../../ficha-api';
 import { EdicaoDnd, FichaDnd, FichaDndEntrada } from '../../ficha.model';
 import { FormularioDnd, paraEntradaDnd, valorVazioDnd } from './formulario-dnd';
+import { espacosZerados } from '../../testes/espacos-zerados';
 
 const FICHA: FichaDnd = {
   id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Brann', genero: 'M', idade: 41, retratoVersao: 1772366400250,
@@ -19,6 +20,9 @@ const FICHA: FichaDnd = {
   habilidades: [],
   itens: [],
   moedas: { pc: 0, pp: 0, pe: 0, po: 0, pl: 0 },
+  atributoConjuracao: null,
+  magias: [],
+  espacos: espacosZerados(),
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, opcoes: { edicao?: EdicaoDnd; ficha?: FichaDnd } = {}) {
@@ -105,6 +109,7 @@ describe('FormularioDnd', () => {
       especie: null,
       antecedente: null,
       nivel: 1,
+      atributoConjuracao: null,
       atributos: { FOR: 10, DES: 10, CON: 10, INT: 10, SAB: 10, CAR: 10 },
       recursos: { PV: { atual: null, maximo: null }, PV_TEMP: { atual: null, maximo: null } },
       ca: null,
@@ -301,6 +306,53 @@ describe('FormularioDnd', () => {
     expect('id' in entrada).toBe(false);
     expect('retratoVersao' in entrada).toBe(false);
     expect(navegar).toHaveBeenCalledWith(['/fichas', 9]);
+  });
+
+  describe('atributo de conjuracao', () => {
+    it('oferece Nenhum, Inteligencia, Sabedoria e Carisma e comeca em Nenhum numa ficha nova', async () => {
+      const { fixture, el } = montar({}, { edicao: 'D2024' });
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const select = await loader.getHarness(MatSelectHarness.with({ selector: '[data-campo="atributoConjuracao"] mat-select' }));
+      expect(el.querySelector('[data-campo="atributoConjuracao"] mat-label')?.textContent?.trim()).toBe('Atributo de conjuração');
+      await select.open();
+      const nomes = await Promise.all((await select.getOptions()).map(async (o) => (await o.getText()).trim()));
+      expect(nomes).toEqual(['Nenhum', 'Inteligência', 'Sabedoria', 'Carisma']);
+      await select.close();
+      expect(await select.getValueText()).toBe('Nenhum');
+    });
+
+    it('escolher Sabedoria e salvar manda atributoConjuracao SAB', async () => {
+      const criar = vi.fn(() => of({ ...FICHA, id: 12 }));
+      const { fixture, salvar, componente } = montar({ criar }, { edicao: 'D2024' });
+      preencherObrigatorios(componente);
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const select = await loader.getHarness(MatSelectHarness.with({ selector: '[data-campo="atributoConjuracao"] mat-select' }));
+      await select.clickOptions({ text: 'Sabedoria' });
+      salvar();
+
+      const [entrada] = criar.mock.calls[0] as unknown as [FichaDndEntrada];
+      expect(entrada.atributoConjuracao).toBe('SAB');
+    });
+
+    it('a edicao traz o atributo da ficha e voltar para Nenhum manda null', async () => {
+      const atualizar = vi.fn(() => of(FICHA));
+      const { fixture, salvar } = montar({ atualizar }, { ficha: { ...FICHA, atributoConjuracao: 'INT' } });
+      const loader = TestbedHarnessEnvironment.loader(fixture);
+      const select = await loader.getHarness(MatSelectHarness.with({ selector: '[data-campo="atributoConjuracao"] mat-select' }));
+      expect(await select.getValueText()).toBe('Inteligência');
+      await select.clickOptions({ text: 'Nenhum' });
+      salvar();
+
+      const [, entrada] = atualizar.mock.calls[0] as unknown as [number, FichaDndEntrada];
+      expect(entrada.atributoConjuracao).toBeNull();
+    });
+
+    it('erro do servidor em atributoConjuracao aparece no campo', () => {
+      const atualizar = vi.fn(() => throwError(() => erroApi({ atributoConjuracao: 'deve ser INT, SAB ou CAR' })));
+      const { el, salvar } = montar({ atualizar }, { ficha: FICHA });
+      salvar();
+      expect(el.querySelector('[data-campo="atributoConjuracao"]')?.textContent).toContain('deve ser INT, SAB ou CAR');
+    });
   });
 
   it('o select da pericia oferece os tres graus e mostra so o nome', async () => {

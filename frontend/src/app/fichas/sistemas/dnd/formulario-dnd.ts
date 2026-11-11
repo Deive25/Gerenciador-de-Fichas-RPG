@@ -21,6 +21,7 @@ import { Observable } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
 import { FichaApi } from '../../ficha-api';
 import {
+  AtributoConjuracao,
   AtributoDnd,
   EdicaoDnd,
   Ficha,
@@ -55,6 +56,8 @@ export interface ValorFormularioDnd {
   especie: string;
   antecedente: string;
   nivel: string;
+  /** '' = Nenhum (a ficha não conjura). */
+  atributoConjuracao: string;
   atributos: Record<AtributoDnd, string>;
   recursos: { PV: { atual: string; maximo: string }; PV_TEMP: { atual: string } };
   ca: string;
@@ -74,6 +77,7 @@ type FormularioDndGrupo = FormGroup<{
   especie: Texto;
   antecedente: Texto;
   nivel: Texto;
+  atributoConjuracao: Texto;
   atributos: FormGroup<Record<AtributoDnd, Texto>>;
   recursos: FormGroup<{
     PV: FormGroup<{ atual: Texto; maximo: Texto }>;
@@ -104,6 +108,7 @@ export function valorVazioDnd(): ValorFormularioDnd {
     antecedente: '',
     // Um personagem novo começa no nível 1 e com os atributos em 10 (modificador 0).
     nivel: String(NIVEL_MINIMO),
+    atributoConjuracao: '',
     atributos: registro(CODIGOS_ATRIBUTO, () => '10'),
     recursos: { PV: { atual: '', maximo: '' }, PV_TEMP: { atual: '' } },
     ca: '',
@@ -142,6 +147,7 @@ export function paraEntradaDnd(valor: ValorFormularioDnd, edicao: EdicaoDnd): Fi
     especie: textoOuNulo(valor.especie),
     antecedente: textoOuNulo(valor.antecedente),
     nivel: Number(valor.nivel),
+    atributoConjuracao: valor.atributoConjuracao === '' ? null : (valor.atributoConjuracao as AtributoConjuracao),
     atributos: registro(CODIGOS_ATRIBUTO, (codigo) => Number(valor.atributos[codigo])),
     recursos: { PV: pv, PV_TEMP: pvTemp },
     ca: paraNumero(valor.ca),
@@ -161,6 +167,7 @@ function paraValor(ficha: FichaDnd): ValorFormularioDnd {
   valor.especie = ficha.especie ?? '';
   valor.antecedente = ficha.antecedente ?? '';
   valor.nivel = String(ficha.nivel);
+  valor.atributoConjuracao = ficha.atributoConjuracao ?? '';
   for (const codigo of CODIGOS_ATRIBUTO) {
     valor.atributos[codigo] = String(ficha.atributos[codigo]);
     valor.salvaguardas[codigo] = ficha.salvaguardas.includes(codigo);
@@ -216,6 +223,14 @@ export class FormularioDnd {
     { valor: 'PROFICIENTE', nome: NOME_GRAU_DND.PROFICIENTE },
     { valor: 'ESPECIALISTA', nome: NOME_GRAU_DND.ESPECIALISTA },
   ];
+  /** Só os atributos de lançador; "Nenhum" (vazio) tira a CD e o ataque mágico da aba Magias. */
+  readonly conjuracao: readonly { valor: string; nome: string }[] = [
+    { valor: '', nome: 'Nenhum' },
+    ...ATRIBUTOS_DND.filter((a) => a.codigo === 'INT' || a.codigo === 'SAB' || a.codigo === 'CAR').map((a) => ({
+      valor: a.codigo,
+      nome: a.nome,
+    })),
+  ];
   readonly identificacao: { chave: CampoTexto; nome: string }[] = [
     { chave: 'jogador', nome: 'Jogador(a)' },
     { chave: 'personagem', nome: 'Personagem' },
@@ -257,6 +272,7 @@ export class FormularioDnd {
         Validators.pattern(INTEIRO),
         faixa(NIVEL_MINIMO, NIVEL_MAXIMO),
       ]),
+      atributoConjuracao: this.fb.control(padrao.atributoConjuracao),
       atributos: this.fb.group(
         registro(CODIGOS_ATRIBUTO, () =>
           this.fb.control('10', [Validators.required, Validators.pattern(INTEIRO), faixa(ATRIBUTO_MINIMO, ATRIBUTO_MAXIMO)]),
