@@ -913,6 +913,19 @@ describe('FichaDetalhe · ataque e rolagem livre', () => {
     expect(fixture.componentInstance.rolando()).toBe(false);
   });
 
+  it('rolagem livre só com constante (nenhum dado) mostra o cartao na hora, sem camada vazia', async () => {
+    const soConstante: RolagemLivre = { expressao: '5', bonus: 5, total: 5, dados: [] };
+    const { fixture, el, preparar } = montarComLancador(FICHA, { rolarLivre: vi.fn(() => of(soConstante)) });
+
+    fixture.componentInstance.rolar({ tipo: 'livre', expressao: '5' });
+    await aguardar(fixture);
+
+    expect(preparar).not.toHaveBeenCalled();
+    expect(el.querySelector('app-camada-dos-dados')).toBeNull();
+    expect(el.textContent).toContain('5 = 5');
+    expect(fixture.componentInstance.rolando()).toBe(false);
+  });
+
   it('o d100 conta como 2 dados: 11 d100 passam do limite', async () => {
     const d100: RolagemLivre = {
       expressao: '11d100', bonus: 0, total: 11, dados: Array.from({ length: 11 }, () => ({ lados: 100 as const, valor: 1 })),
