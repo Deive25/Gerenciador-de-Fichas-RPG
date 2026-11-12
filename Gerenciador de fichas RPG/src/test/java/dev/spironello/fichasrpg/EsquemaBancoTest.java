@@ -17,10 +17,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
- * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item, ficha_dnd_item, ficha_dnd_magia, ficha_dnd_espaco e ficha_ordem_ritual), que vem das migrações
+ * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item, ficha_dnd_item, ficha_dnd_magia, ficha_dnd_espaco, ficha_ordem_ritual, ficha_ordem_ataque e ficha_dnd_ataque), que vem das migrações
  * Flyway e não do Hibernate: com ddl-auto=validate ele só confere.
  * O teste protege os nomes de coluna e a nulabilidade que as entidades esperam, e também mostra que
- * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 8 aplicadas).
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 9 aplicadas).
  */
 @DisplayName("Esquema do banco (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
@@ -39,7 +39,7 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder(
 				"ficha", "ficha_ordem", "ficha_ordem_pericia", "ficha_dnd", "ficha_dnd_pericia", "retrato_ficha",
 				"ficha_habilidade", "ficha_ordem_item", "ficha_dnd_item", "ficha_dnd_magia", "ficha_dnd_espaco",
-				"ficha_ordem_ritual", "flyway_schema_history");
+				"ficha_ordem_ritual", "ficha_ordem_ataque", "ficha_dnd_ataque", "flyway_schema_history");
 	}
 
 	@Test
@@ -228,6 +228,83 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
+	@DisplayName("a tabela ficha_ordem_ataque tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDosAtaquesDeOrdem() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("id", "bigint/NO");
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("nome", "character varying/NO");
+		esperado.put("pericia", "character varying/NO");
+		for (String c : List.of("bonus", "margem", "multiplicador")) {
+			esperado.put(c, "integer/NO");
+		}
+		esperado.put("dano", "character varying/NO");
+		esperado.put("tipo_dano", "character varying/YES");
+		esperado.put("alcance", "character varying/YES");
+
+		assertThat(colunas("ficha_ordem_ataque")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("a tabela ficha_dnd_ataque tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDosAtaquesDnd() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("id", "bigint/NO");
+		esperado.put("ficha_id", "bigint/NO");
+		esperado.put("nome", "character varying/NO");
+		esperado.put("atributo", "character varying/NO");
+		esperado.put("proficiente", "boolean/NO");
+		esperado.put("bonus", "integer/NO");
+		esperado.put("dano", "character varying/NO");
+		esperado.put("tipo_dano", "character varying/YES");
+		esperado.put("alcance", "character varying/YES");
+
+		assertThat(colunas("ficha_dnd_ataque")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("os CHECKs da V9 recusam no banco o que a API também recusa, e o cascade leva os ataques")
+	void checksDaV9() {
+		Long dnd = fichas.save(FichasDeTeste.dnd("Bram")).getId();
+		Long ordem = fichas.save(FichasDeTeste.ordem("Lia")).getId();
+		String insertOrdem = "insert into ficha_ordem_ataque (ficha_id, nome, pericia, bonus, dano, margem, multiplicador) "
+				+ "values (?, 'X', ?, ?, '1d8', ?, ?)";
+		String insertDnd = "insert into ficha_dnd_ataque (ficha_id, nome, atributo, bonus, dano) values (?, 'X', ?, ?, '1d8')";
+		try {
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "ATLETISMO", 0, 20, 2))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", 100, 20, 2))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", -100, 20, 2))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", 0, 1, 2))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", 0, 21, 2))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", 0, 20, 1))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertOrdem, ordem, "LUTA", 0, 20, 6))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertDnd, dnd, "STR", 0))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update(insertDnd, dnd, "FOR", 100))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			assertThatThrownBy(() -> jdbc.update("insert into ficha_dnd_ataque (ficha_id, nome, atributo, dano) "
+					+ "values (?, 'X', 'FOR', ?)", dnd, "1".repeat(61)))
+					.isInstanceOf(DataIntegrityViolationException.class);
+			// Os valores limite passam.
+			jdbc.update(insertOrdem, ordem, "PONTARIA", -99, 2, 5);
+			jdbc.update(insertOrdem, ordem, "LUTA", 99, 20, 2);
+			jdbc.update(insertDnd, dnd, "CAR", 99);
+		} finally {
+			fichas.deleteAll();
+		}
+		// A FK com on delete cascade levou as linhas junto com a ficha.
+		assertThat(jdbc.queryForObject("select count(*) from ficha_ordem_ataque", Integer.class)).isZero();
+		assertThat(jdbc.queryForObject("select count(*) from ficha_dnd_ataque", Integer.class)).isZero();
+	}
+
+	@Test
 	@DisplayName("os CHECKs da V8 recusam no banco o que a API também recusa")
 	void checksDaV8() {
 		Long dnd = fichas.save(FichasDeTeste.dnd("Bram")).getId();
@@ -267,11 +344,11 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7 e V8 com sucesso")
+	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7, V8 e V9 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(8);
+		assertThat(historico).hasSize(9);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
@@ -303,6 +380,10 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(historico.get(7))
 				.containsEntry("version", "8")
 				.containsEntry("description", "magias e rituais")
+				.containsEntry("success", true);
+		assertThat(historico.get(8))
+				.containsEntry("version", "9")
+				.containsEntry("description", "ataques")
 				.containsEntry("success", true);
 	}
 

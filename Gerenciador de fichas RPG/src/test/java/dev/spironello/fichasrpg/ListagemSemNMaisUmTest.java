@@ -30,6 +30,8 @@ import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaDnd;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
+import dev.spironello.fichasrpg.repository.AtaqueDndRepository;
+import dev.spironello.fichasrpg.repository.AtaqueOrdemRepository;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.HabilidadeFichaRepository;
 import dev.spironello.fichasrpg.repository.ItemDndRepository;
@@ -53,6 +55,10 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	@Autowired
 	private HabilidadeFichaRepository habilidades;
 	@Autowired
+	private AtaqueOrdemRepository ataquesOrdem;
+	@Autowired
+	private AtaqueDndRepository ataquesDnd;
+	@Autowired
 	private ItemOrdemRepository itensOrdem;
 	@Autowired
 	private ItemDndRepository itensDnd;
@@ -73,20 +79,22 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, habilidades, itens, magias, espaços e rituais, executa 1 consulta, e não 1 + 4")
+	@DisplayName("listar 2 fichas de Ordem e 2 de D&D, todas com perícias, habilidades, ataques, itens, magias, espaços e rituais, executa 1 consulta, e não 1 + 4")
 	void listarEmUmaConsulta() {
 		for (int i = 1; i <= 2; i++) {
 			criadas.add(service.criar(pedido("ficha" + i)).id());
 			criadas.add(service.criar(pedidoDnd("dnd" + i)).id());
 		}
-		// Habilidades, itens, magias, espaços e rituais em todas as fichas: o resumo não pode lê-los (nem a descrição) para continuar em 1 consulta.
+		// Habilidades, ataques, itens, magias, espaços e rituais em todas as fichas: o resumo não pode lê-los (nem a descrição) para continuar em 1 consulta.
 		for (Long id : criadas) {
 			habilidades.save(FichasDeTeste.habilidade(repository.getReferenceById(id), "Ataque", TipoHabilidade.CLASSE, null));
 			Ficha ficha = repository.findById(id).orElseThrow();
 			if (ficha instanceof FichaOrdem ordem) {
+				ataquesOrdem.save(FichasDeTeste.ataqueOrdem(ordem, "Faca"));
 				itensOrdem.save(FichasDeTeste.itemOrdem(ordem, "Pistola"));
 				rituais.save(FichasDeTeste.ritualOrdem(ordem, "Cicatrizacao", 1));
 			} else {
+				ataquesDnd.save(FichasDeTeste.ataqueDnd((FichaDnd) ficha, "Espada"));
 				itensDnd.save(FichasDeTeste.itemDnd((FichaDnd) ficha, "Corda"));
 				magias.save(FichasDeTeste.magiaDnd((FichaDnd) ficha, "Luz", 0));
 				jdbc.update("insert into ficha_dnd_espaco (ficha_id, nivel, total, usados) values (?, 1, 4, 1)", id);
