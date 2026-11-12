@@ -420,8 +420,8 @@ describe('FichaDetalhe · abas', () => {
   const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
 
   it.each([
-    ['Ordem', FICHA, ['Ficha', 'Inventário', 'Rituais', 'Habilidades', 'Descrição']],
-    ['D&D', FICHA_DND, ['Ficha', 'Inventário', 'Magias', 'Habilidades', 'Descrição']],
+    ['Ordem', FICHA, ['Ficha', 'Ataques', 'Dados', 'Inventário', 'Rituais', 'Habilidades', 'Descrição']],
+    ['D&D', FICHA_DND, ['Ficha', 'Ataques', 'Dados', 'Inventário', 'Magias', 'Habilidades', 'Descrição']],
   ])('ficha de %s tem as abas na ordem certa', (_nome, ficha, esperadas) => {
     const { el } = montar({ buscarFicha: vi.fn(() => of(ficha)) });
     expect(rotulos(el)).toEqual(esperadas);
@@ -975,5 +975,145 @@ describe('FichaDetalhe · ataque e rolagem livre', () => {
 
     expect(lancador.encerrar).toHaveBeenCalled();
     expect(el.querySelector('app-resultado-ataque')).toBeNull();
+  });
+});
+
+describe('FichaDetalhe · abas Ataques e Dados', () => {
+  const selecionada = (el: HTMLElement) => el.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim();
+  const ATAQUE_ORDEM = { id: 3, nome: 'Faca', pericia: 'LUTA' as const, bonus: 0, dano: '1d4', tipoDano: null, alcance: null, margem: 19, multiplicador: 3 };
+  const ATAQUE_DND = { id: 4, nome: 'Espada', atributo: 'FOR' as const, proficiente: true, bonus: 0, dano: '1d8+3', tipoDano: 'cortante', alcance: null };
+  const RESULTADO_ATAQUE: AtaqueResultado = {
+    ataqueId: 3, nome: 'Faca', ataque: { dados: [10], mantido: 10, bonus: 5, total: 15 },
+    dano: { expressao: '1d4', dados: [{ lados: 4, valor: 2 }], bonus: 0, total: 2 }, critico: false,
+  };
+
+  async function abrir(ficha: FichaOrdem | FichaDnd, aba: string, api: Partial<Record<keyof FichaApi, unknown>> = {}) {
+    const montado = montar({ buscarFicha: vi.fn(() => of(ficha)), ...api });
+    montado.fixture.componentRef.setInput('aba', aba);
+    montado.fixture.detectChanges();
+    await montado.fixture.whenStable();
+    montado.fixture.detectChanges();
+    return montado;
+  }
+
+  it.each([
+    ['Ordem', FICHA, 'app-ataques-ordem-aba'],
+    ['D&D', FICHA_DND, 'app-ataques-dnd-aba'],
+  ])('?aba=ataques abre a aba Ataques de %s', async (_nome, ficha, seletor) => {
+    const { el } = await abrir(ficha, 'ataques');
+    expect(selecionada(el)).toBe('Ataques');
+    expect(el.querySelector(seletor)).not.toBeNull();
+  });
+
+  it.each([
+    ['Ordem', FICHA],
+    ['D&D', FICHA_DND],
+  ])('?aba=dados abre a aba Dados de %s', async (_nome, ficha) => {
+    const { el } = await abrir(ficha, 'dados');
+    expect(selecionada(el)).toBe('Dados');
+    expect(el.querySelector('app-dados-aba')).not.toBeNull();
+  });
+
+  it('Rolar da aba Dados chama rolarLivre e o cartao livre aparece no topo, fora das abas', async () => {
+    const rolarLivre = vi.fn(() =>
+      of({ expressao: '1d6', bonus: 0, total: 4, dados: [{ lados: 6 as const, valor: 4 }] } satisfies RolagemLivre),
+    );
+    const { fixture, el } = await abrir(FICHA, 'dados', { rolarLivre });
+    const campo = el.querySelector<HTMLInputElement>('app-dados-aba input')!;
+    campo.value = '1d6';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const rolar = Array.from(el.querySelectorAll<HTMLButtonElement>('app-dados-aba button')).find((b) => b.textContent?.trim() === 'Rolar')!;
+    rolar.click();
+    await aguardar(fixture);
+
+    expect(rolarLivre).toHaveBeenCalledWith(7, '1d6');
+    expect(el.querySelector('mat-tab-group app-resultado-livre')).toBeNull();
+    expect(el.querySelector('app-resultado-livre')).not.toBeNull();
+    expect(el.textContent).toContain('1d6 = 4');
+  });
+
+  it('Rolar de um ataque de Ordem chama rolarAtaque e mostra o cartao do ataque', async () => {
+    const rolarAtaque = vi.fn(() => of(RESULTADO_ATAQUE));
+    const { fixture, el } = await abrir({ ...FICHA, ataques: [ATAQUE_ORDEM] }, 'ataques', { rolarAtaque });
+
+    el.querySelector<HTMLButtonElement>('button[aria-label="Rolar ataque Faca"]')!.click();
+    await aguardar(fixture);
+
+    expect(rolarAtaque).toHaveBeenCalledWith(7, 3, undefined);
+    expect(el.querySelector('app-resultado-ataque')).not.toBeNull();
+    expect(el.textContent).toContain('Faca: 10 + 5 = 15');
+  });
+
+  it('D&D: Vantagem no seletor da aba Ataques vai ao servidor, e o seletor volta a Normal', async () => {
+    const rolarAtaque = vi.fn(() => of({ ...RESULTADO_ATAQUE, nome: 'Espada', ataqueId: 4 }));
+    const { fixture, el } = await abrir({ ...FICHA_DND, ataques: [ATAQUE_DND] }, 'ataques', { rolarAtaque });
+    const modo = (nome: string) =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.modo button')).find((b) => b.textContent?.trim() === nome)!;
+
+    modo('Vantagem').click();
+    fixture.detectChanges();
+    el.querySelector<HTMLButtonElement>('button[aria-label="Rolar ataque Espada"]')!.click();
+    await aguardar(fixture);
+
+    expect(rolarAtaque).toHaveBeenCalledWith(9, 4, 'VANTAGEM');
+    expect(modo('Normal').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('enquanto rola, o Rolar fica desabilitado nas abas Ataques e Dados', async () => {
+    const resposta = new Subject<AtaqueResultado>();
+    const { fixture, el } = await abrir({ ...FICHA, ataques: [ATAQUE_ORDEM] }, 'ataques', { rolarAtaque: vi.fn(() => resposta) });
+    const rolar = el.querySelector<HTMLButtonElement>('button[aria-label="Rolar ataque Faca"]')!;
+
+    rolar.click();
+    fixture.detectChanges();
+    expect(rolar.disabled).toBe(true);
+
+    fixture.componentRef.setInput('aba', 'dados');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const campo = el.querySelector<HTMLInputElement>('app-dados-aba input')!;
+    campo.value = '1d6';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const rolarDados = Array.from(el.querySelectorAll<HTMLButtonElement>('app-dados-aba button')).find((b) => b.textContent?.trim() === 'Rolar')!;
+    expect(rolarDados.disabled).toBe(true);
+  });
+
+  it('um ataque novo gravado pela aba entra na ficha sem recarregar', async () => {
+    const buscarFicha = vi.fn(() => of(FICHA));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'ataques');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-ataques-ordem-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([ATAQUE_ORDEM]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Faca');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+
+  it('um ataque novo de D&D tambem entra na ficha sem recarregar', async () => {
+    const buscarFicha = vi.fn(() => of(FICHA_DND));
+    const { fixture, el } = montar({ buscarFicha });
+    fixture.componentRef.setInput('aba', 'ataques');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const aba = fixture.debugElement.query((d) => d.name === 'app-ataques-dnd-aba').componentInstance as {
+      atualizada: { emit(lista: unknown[]): void };
+    };
+    aba.atualizada.emit([ATAQUE_DND]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.textContent).toContain('Espada');
+    expect(buscarFicha).toHaveBeenCalledTimes(1);
   });
 });
