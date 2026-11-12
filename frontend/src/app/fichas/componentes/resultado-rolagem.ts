@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { TesteResultado } from '../ficha.model';
+import { contaComBonus } from './formato-rolagem';
 
 /** Resultado de um teste (Ordem ou D&D): cada d20 rolado, o dado que ficou e o total. */
 @Component({
@@ -18,11 +19,7 @@ export class ResultadoRolagem {
    */
   readonly titulo = computed(() => {
     const r = this.resultado();
-    if (r.bonus === 0) {
-      return `${r.nome}: ${r.mantido} = ${r.total}`;
-    }
-    const operacao = r.bonus < 0 ? `− ${-r.bonus}` : `+ ${r.bonus}`;
-    return `${r.nome}: ${r.mantido} ${operacao} = ${r.total}`;
+    return `${r.nome}: ${contaComBonus(r.mantido, r.bonus)} = ${r.total}`;
   });
 
   /** "20 natural" ou "1 natural" quando o dado que ficou foi 20 ou 1; vazio nos outros casos. */
