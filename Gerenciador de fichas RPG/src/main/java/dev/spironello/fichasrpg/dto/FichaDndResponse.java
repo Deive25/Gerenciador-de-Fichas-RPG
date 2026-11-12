@@ -25,6 +25,7 @@ public record FichaDndResponse(
 		Long retratoVersao,
 		DescricaoFicha descricao,
 		List<HabilidadeResponse> habilidades,
+		List<AtaqueDndResponse> ataques,
 		List<ItemDndResponse> itens,
 		List<MagiaResponse> magias,
 		Map<Integer, EspacoDnd> espacos,

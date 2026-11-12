@@ -90,6 +90,7 @@ public class FichaDndMapper {
 				ficha.getRetratoVersao(),
 				comuns.descricao(),
 				comuns.habilidades(),
+				listas.ataques(),
 				listas.itens(),
 				listas.magias(),
 				listas.espacos(),
