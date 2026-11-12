@@ -17,6 +17,7 @@ const FICHA: FichaDnd = {
   atributoConjuracao: null,
   magias: [],
   espacos: espacosZerados(),
+  ataques: [],
 };
 
 function montar(ficha: FichaDnd = FICHA, rolando = false) {

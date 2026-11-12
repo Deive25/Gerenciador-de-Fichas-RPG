@@ -15,6 +15,7 @@ const FICHA: FichaOrdem = {
   habilidades: [],
   itens: [],
   rituais: [],
+  ataques: [],
 };
 
 function montar(api: Partial<Record<keyof FichaApi, unknown>> = {}) {

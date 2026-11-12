@@ -21,6 +21,7 @@ const FICHA: FichaOrdem = {
   habilidades: [],
   itens: [],
   rituais: [],
+  ataques: [],
 };
 
 const FICHA_DND: FichaDnd = {
@@ -36,6 +37,7 @@ const FICHA_DND: FichaDnd = {
   atributoConjuracao: null,
   magias: [],
   espacos: espacosZerados(),
+  ataques: [],
 };
 
 describe('aplicarAjuste', () => {

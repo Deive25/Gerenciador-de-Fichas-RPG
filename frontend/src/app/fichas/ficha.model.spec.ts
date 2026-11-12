@@ -12,6 +12,7 @@ describe('paraEntradaDaFicha', () => {
     habilidades: [{ id: 1, nome: 'Ataque Especial', tipo: 'CLASSE', descricao: null }],
     itens: [{ id: 4, nome: 'Faca', categoria: 0, espacos: 1, quantidade: 1, descricao: null }],
     rituais: [],
+    ataques: [],
   };
 
   it('tira id, retratoVersao, descricao e habilidades (o JSON estrito da API recusaria) e mantem o resto', () => {
@@ -53,6 +54,7 @@ describe('paraEntradaDaFicha', () => {
       atributoConjuracao: 'INT',
       magias: [],
       espacos: espacosZerados(),
+      ataques: [],
     };
     const entrada = paraEntradaDaFicha(dnd);
     expect('id' in entrada).toBe(false);

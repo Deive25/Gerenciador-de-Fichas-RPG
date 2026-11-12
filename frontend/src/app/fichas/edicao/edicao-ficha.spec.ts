@@ -20,6 +20,7 @@ const ORDEM: FichaOrdem = {
   habilidades: [],
   itens: [],
   rituais: [],
+  ataques: [],
 };
 
 const DND: FichaDnd = {
@@ -35,6 +36,7 @@ const DND: FichaDnd = {
   atributoConjuracao: null,
   magias: [],
   espacos: espacosZerados(),
+  ataques: [],
 };
 
 function montar(buscarFicha: (id: number) => unknown, id = '7') {

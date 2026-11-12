@@ -3,7 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { Observable, finalize, map } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
@@ -16,12 +16,17 @@ import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
 import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
 import { Medalhao } from '../componentes/medalhao';
+import { ResultadoAtaque } from '../componentes/resultado-ataque';
+import { ResultadoLivre } from '../componentes/resultado-livre';
 import { ResultadoRolagem } from '../componentes/resultado-rolagem';
 import { CamadaDosDados } from '../dado/camada-dos-dados';
+import { cabeNaCena } from '../dado/config-dos-dados';
+import { dadosDaRolagemLivre, dadosDoAtaque, dadosDoTeste } from '../dado/dados-lancados';
 import { DadoAnimado } from '../dado/dado-animado';
-import { LancadorDeDados } from '../dado/lancador-de-dados';
+import { DadoLancado, LancadorDeDados } from '../dado/lancador-de-dados';
 import { FichaApi } from '../ficha-api';
 import {
+  AtaqueResultado,
   DescricaoFicha,
   Espacos,
   Ficha,
@@ -30,14 +35,22 @@ import {
   ItemOrdem,
   MagiaDnd,
   Moedas,
+  PedidoDeRolagem,
   PedidoTeste,
   RitualOrdem,
+  RolagemLivre,
   TesteResultado,
 } from '../ficha.model';
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
 type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
+
+/** O que o cartão do topo mostra: o resultado da última rolagem, de um teste, de um ataque ou livre. */
+export type UltimoResultado =
+  | { tipo: 'teste'; resultado: TesteResultado }
+  | { tipo: 'ataque'; resultado: AtaqueResultado }
+  | { tipo: 'livre'; resultado: RolagemLivre };
 
 @Component({
   selector: 'app-ficha-detalhe',
@@ -54,6 +67,8 @@ type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
     RituaisOrdemAba,
     DescricaoAba,
     ResultadoRolagem,
+    ResultadoAtaque,
+    ResultadoLivre,
     CamadaDosDados,
     FichaOrdemCorpo,
     FichaDndCorpo,
@@ -97,11 +112,11 @@ export class FichaDetalhe {
   readonly estado = signal<Estado>('carregando');
   readonly ficha = signal<Ficha | null>(null);
   readonly erro = signal<ApiError | null>(null);
-  readonly ultimoResultado = signal<TesteResultado | null>(null);
-  /** Código do teste em andamento: da ida ao servidor até o cartão aparecer (a animação conta). */
-  readonly rolando = signal<string | null>(null);
+  readonly ultimoResultado = signal<UltimoResultado | null>(null);
+  /** Há uma rolagem em andamento: da ida ao servidor até o cartão aparecer (a animação conta). */
+  readonly rolando = signal(false);
   /** Dados lançando na camada; o cartão desse resultado só aparece quando ela termina. */
-  readonly animacao = signal<{ resultado: TesteResultado; lancador: LancadorDeDados; indiceMantido: number } | null>(null);
+  readonly animacao = signal<{ resultado: UltimoResultado; lancador: LancadorDeDados; dados: DadoLancado[] } | null>(null);
   readonly confirmandoExclusao = signal(false);
   readonly excluindo = signal(false);
   readonly confirmandoRemocaoRetrato = signal(false);
@@ -121,7 +136,7 @@ export class FichaDetalhe {
     this.erro.set(null);
     this.geracao++;
     this.animacao.set(null); // a camada, ao sair, encerra a cena
-    this.rolando.set(null);
+    this.rolando.set(false);
     this.ultimoResultado.set(null);
     this.confirmandoExclusao.set(false);
     this.api.buscarFicha(id).subscribe({
@@ -190,29 +205,63 @@ export class FichaDetalhe {
     this.ficha.update((f) => f && { ...f, descricao });
   }
 
-  /** Rola o que o corpo da ficha pediu: o servidor faz os d20 e devolve cada dado. */
-  rolar(pedido: PedidoTeste): void {
+  /** O corpo da ficha pediu um teste (perícia, atributo ou salvaguarda). */
+  rolarTeste(teste: PedidoTeste): void {
+    this.rolar({ tipo: 'teste', teste });
+  }
+
+  /** Rola o que foi pedido (teste, ataque ou rolagem livre): o servidor sorteia e devolve cada dado. */
+  rolar(pedido: PedidoDeRolagem): void {
     const ficha = this.ficha();
     if (!ficha || this.rolando()) {
       return;
     }
     const geracao = this.geracao;
-    this.rolando.set(pedido.codigo);
+    this.rolando.set(true);
     this.erro.set(null);
-    this.api.testar(ficha.id, pedido).subscribe({
+    this.chamar(ficha.id, pedido).subscribe({
       next: (resultado) => void this.animar(resultado, geracao),
       error: (erro: ApiError) => {
         if (geracao === this.geracao) {
-          this.rolando.set(null);
+          this.rolando.set(false);
           this.erro.set(erro);
         }
       },
     });
   }
 
-  /** Com o 3D disponível, abre a camada e deixa o cartão para quando ela terminar; senão, plano B. */
-  private async animar(resultado: TesteResultado, geracao: number): Promise<void> {
-    const lancador = await this.dado.preparar();
+  private chamar(fichaId: number, pedido: PedidoDeRolagem): Observable<UltimoResultado> {
+    switch (pedido.tipo) {
+      case 'teste':
+        return this.api.testar(fichaId, pedido.teste).pipe(map((resultado) => ({ tipo: 'teste', resultado })));
+      case 'ataque':
+        return this.api
+          .rolarAtaque(fichaId, pedido.ataqueId, pedido.modo)
+          .pipe(map((resultado) => ({ tipo: 'ataque', resultado })));
+      case 'livre':
+        return this.api.rolarLivre(fichaId, pedido.expressao).pipe(map((resultado) => ({ tipo: 'livre', resultado })));
+    }
+  }
+
+  /** Os dados da cena: no teste, os d20 (o mantido dourado); no ataque, os d20 e o dano; na livre, todos comuns. */
+  private dadosDa(r: UltimoResultado): DadoLancado[] {
+    switch (r.tipo) {
+      case 'teste':
+        return dadosDoTeste(r.resultado);
+      case 'ataque':
+        return dadosDoAtaque(r.resultado);
+      case 'livre':
+        return dadosDaRolagemLivre(r.resultado);
+    }
+  }
+
+  /**
+   * Com o 3D disponível, abre a camada e deixa o cartão para quando ela terminar; senão, plano B.
+   * Mais de 20 dados na cena (o d100 conta 2) também vai direto ao plano B, sem baixar o pedaço 3D.
+   */
+  private async animar(resultado: UltimoResultado, geracao: number): Promise<void> {
+    const dados = this.dadosDa(resultado);
+    const lancador = cabeNaCena(dados) ? await this.dado.preparar() : null;
     if (geracao !== this.geracao) {
       lancador?.encerrar(); // saiu da ficha enquanto o pedaço 3D baixava
       return;
@@ -221,7 +270,7 @@ export class FichaDetalhe {
       this.mostrar(resultado);
       return;
     }
-    this.animacao.set({ resultado, lancador, indiceMantido: resultado.dados.indexOf(resultado.mantido) });
+    this.animacao.set({ resultado, lancador, dados });
   }
 
   /** A camada terminou (dados parados, toque, Esc, limite ou falha): agora sim o cartão. */
@@ -233,9 +282,9 @@ export class FichaDetalhe {
     }
   }
 
-  private mostrar(resultado: TesteResultado): void {
+  private mostrar(resultado: UltimoResultado): void {
     this.ultimoResultado.set(resultado);
-    this.rolando.set(null);
+    this.rolando.set(false);
   }
 
   /** Arquivo escolhido → diálogo de recorte → envia o JPEG 400×500 → recarrega a ficha (nova versão). */

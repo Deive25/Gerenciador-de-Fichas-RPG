@@ -1,0 +1,11 @@
+@use 'resultado';
+
+// Os dados da rolagem livre são todos comuns; o modificador fica no dourado esmaecido para se distinguir.
+.dado {
+  color: var(--cor-titulo);
+}
+
+.modificador {
+  border-color: var(--cor-borda-dourada);
+  background: #2a2416;
+}

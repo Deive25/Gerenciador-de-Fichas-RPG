@@ -32,6 +32,7 @@ function fichaCom(rituais: RitualOrdem[], nex = 10, presenca = 2): FichaOrdem {
     habilidades: [],
     itens: [],
     rituais,
+    ataques: [],
   };
 }
 

@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, DestroyRef, ElementRef, inject, input, output, viewChild } from '@angular/core';
-import { LancadorDeDados } from './lancador-de-dados';
+import { DadoLancado, LancadorDeDados } from './lancador-de-dados';
 
 /** Quanto os dados parados ficam visíveis antes de a camada fechar, para dar tempo de ler o valor. */
 const PAUSA_COM_OS_DADOS_PARADOS_MS = 600;
@@ -7,7 +7,7 @@ const PAUSA_COM_OS_DADOS_PARADOS_MS = 600;
 const LIMITE_MS = 5000;
 
 /**
- * Camada sobre a tela inteira onde os d20 são lançados. Emite `terminou` uma vez só: quando os dados
+ * Camada sobre a tela inteira onde os dados são lançados. Emite `terminou` uma vez só: quando os dados
  * param (mais uma pausa para ler), no toque, no Esc, no limite de 5 s ou se a animação falhar.
  * Sempre libera a cena (`encerrar`) ao fechar.
  */
@@ -24,8 +24,7 @@ const LIMITE_MS = 5000;
 })
 export class CamadaDosDados implements AfterViewInit {
   readonly lancador = input.required<LancadorDeDados>();
-  readonly dados = input.required<number[]>();
-  readonly indiceMantido = input.required<number>();
+  readonly dados = input.required<DadoLancado[]>();
   readonly terminou = output<void>();
 
   private readonly palco = viewChild.required<ElementRef<HTMLElement>>('palco');
@@ -41,7 +40,7 @@ export class CamadaDosDados implements AfterViewInit {
     this.timers.push(setTimeout(() => this.fechar(true), LIMITE_MS));
     try {
       this.lancador()
-        .lancar(this.palco().nativeElement, this.dados(), this.indiceMantido())
+        .lancar(this.palco().nativeElement, this.dados())
         .then(
           () => this.timers.push(setTimeout(() => this.fechar(true), PAUSA_COM_OS_DADOS_PARADOS_MS)),
           (erro: unknown) => this.falhar(erro),
