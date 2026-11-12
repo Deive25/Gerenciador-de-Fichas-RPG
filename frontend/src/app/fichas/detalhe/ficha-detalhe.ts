@@ -8,10 +8,13 @@ import { ApiError } from '../../core/api-error';
 import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
+import { DadosAba } from '../abas/dados-aba';
 import { DescricaoAba } from '../abas/descricao-aba';
 import { HabilidadesAba } from '../abas/habilidades-aba';
+import { AtaquesDndAba } from '../sistemas/dnd/ataques-dnd-aba';
 import { InventarioDndAba } from '../sistemas/dnd/inventario-dnd-aba';
 import { MagiasDndAba } from '../sistemas/dnd/magias-dnd-aba';
+import { AtaquesOrdemAba } from '../sistemas/ordem/ataques-ordem-aba';
 import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
 import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
@@ -26,6 +29,8 @@ import { DadoAnimado } from '../dado/dado-animado';
 import { DadoLancado, LancadorDeDados } from '../dado/lancador-de-dados';
 import { FichaApi } from '../ficha-api';
 import {
+  AtaqueDnd,
+  AtaqueOrdem,
   AtaqueResultado,
   DescricaoFicha,
   Espacos,
@@ -61,6 +66,9 @@ export type UltimoResultado =
     Medalhao,
     RecursosFicha,
     HabilidadesAba,
+    DadosAba,
+    AtaquesOrdemAba,
+    AtaquesDndAba,
     InventarioOrdemAba,
     InventarioDndAba,
     MagiasDndAba,
@@ -92,7 +100,7 @@ export class FichaDetalhe {
   /** Vem da rota /fichas/:id (withComponentInputBinding). */
   readonly id = input.required<string>();
 
-  /** Vem do query param ?aba= (o mesmo binding de inputs): ficha, inventario, magias (D&D), rituais (Ordem), habilidades ou descricao. */
+  /** Vem do query param ?aba= (o mesmo binding de inputs): ficha, ataques, dados, inventario, magias (D&D), rituais (Ordem), habilidades ou descricao. */
   readonly aba = input<string>();
 
   /** Abas do sistema da ficha carregada e o índice da aberta; aba ausente ou desconhecida é a Ficha (0). */
@@ -198,6 +206,16 @@ export class FichaDetalhe {
   /** Idem para os rituais de Ordem. */
   atualizarRituais(rituais: RitualOrdem[]): void {
     this.ficha.update((f) => (f && f.sistema === 'ORDEM_PARANORMAL' ? { ...f, rituais } : f));
+  }
+
+  /** Idem para os ataques de Ordem. */
+  atualizarAtaquesOrdem(ataques: AtaqueOrdem[]): void {
+    this.ficha.update((f) => (f && f.sistema === 'ORDEM_PARANORMAL' ? { ...f, ataques } : f));
+  }
+
+  /** Idem para os ataques de D&D. */
+  atualizarAtaquesDnd(ataques: AtaqueDnd[]): void {
+    this.ficha.update((f) => (f && f.sistema === 'DND' ? { ...f, ataques } : f));
   }
 
   /** Idem para a descrição: a aba já gravou, só troca na ficha. */

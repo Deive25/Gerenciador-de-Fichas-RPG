@@ -124,6 +124,29 @@
                   }
                 </div>
               }
+              @case ('ataques') {
+                @switch (f.sistema) {
+                  @case ('ORDEM_PARANORMAL') {
+                    <app-ataques-ordem-aba
+                      [ficha]="f"
+                      [rolando]="rolando()"
+                      (atualizada)="atualizarAtaquesOrdem($event)"
+                      (rolar)="rolar($event)"
+                    />
+                  }
+                  @case ('DND') {
+                    <app-ataques-dnd-aba
+                      [ficha]="f"
+                      [rolando]="rolando()"
+                      (atualizada)="atualizarAtaquesDnd($event)"
+                      (rolar)="rolar($event)"
+                    />
+                  }
+                }
+              }
+              @case ('dados') {
+                <app-dados-aba [rolando]="rolando()" (rolar)="rolar($event)" />
+              }
               @case ('inventario') {
                 @switch (f.sistema) {
                   @case ('ORDEM_PARANORMAL') {
