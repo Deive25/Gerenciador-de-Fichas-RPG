@@ -1,12 +1,26 @@
 import { InjectionToken } from '@angular/core';
+import { LadosDoDado } from '../ficha.model';
+
+/**
+ * Como o dado aparece: `mantido` (dourado) é o d20 que valeu no teste; `comum` (escuro) são os outros dados
+ * rolados; `dano` (vinho) são os dados de dano de um ataque.
+ */
+export type CorDoDado = 'mantido' | 'comum' | 'dano';
+
+/** Um dado a lançar: de quantos lados, o valor que o servidor sorteou (de 1 a `lados`) e a cor. */
+export interface DadoLancado {
+  lados: LadosDoDado;
+  valor: number;
+  cor: CorDoDado;
+}
 
 /** Lança os dados numa cena e avisa quando eles param. Quem usa não sabe se é 3D ou outra coisa. */
 export interface LancadorDeDados {
   /**
-   * Cria a cena dentro do `palco` e lança um d20 por valor de `dados`, cada um parando no seu valor.
-   * O dado do `indiceMantido` fica em destaque. Resolve quando todos param.
+   * Cria a cena dentro do `palco` e lança os `dados`, cada um parando no seu valor e com a sua cor.
+   * Resolve quando todos param.
    */
-  lancar(palco: HTMLElement, dados: number[], indiceMantido: number): Promise<void>;
+  lancar(palco: HTMLElement, dados: DadoLancado[]): Promise<void>;
   /** Corta a animação e libera a cena (WebGL, física). Pode ser chamado a qualquer momento. */
   encerrar(): void;
 }

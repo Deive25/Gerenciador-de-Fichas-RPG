@@ -1,0 +1,24 @@
+@use 'resultado';
+
+// O dano em vinho, a mesma cor dos dados dele na camada 3D.
+.dado.dano {
+  border-color: #8c3a4d;
+  background: #2a1219;
+  color: var(--cor-titulo);
+}
+
+.titulo-dano {
+  margin-top: 0.2rem;
+}
+
+// Selo do crítico: texto em --cor-acao sobre o cartão (contraste AA), como o "20 natural".
+.critico {
+  padding: 0.1rem 0.7rem;
+  border: 1px solid var(--cor-acao);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cor-acao);
+}

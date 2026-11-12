@@ -50,4 +50,9 @@ public final class RegrasDnd {
 		int mantido = modo == ModoTeste.DESVANTAGEM ? Collections.min(dados) : Collections.max(dados);
 		return new TesteRolado(dados, mantido, bonus, mantido + bonus);
 	}
+
+	/** Ataque crítico: só o 20 natural do d20 mantido (com desvantagem, o 20 no outro dado não conta). */
+	public static boolean critico(int mantido) {
+		return mantido == FACES;
+	}
 }

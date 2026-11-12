@@ -1,0 +1,10 @@
+<section class="modo bloco" role="group" [attr.aria-labelledby]="idDoRotulo">
+  <span [id]="idDoRotulo" class="titulo-secao">{{ titulo() }}</span>
+  <div class="botoes-modo">
+    @for (m of modos; track m.valor) {
+      <button type="button" [attr.aria-pressed]="modo() === m.valor" (click)="modo.set(m.valor)">
+        {{ m.rotulo }}
+      </button>
+    }
+  </div>
+</section>

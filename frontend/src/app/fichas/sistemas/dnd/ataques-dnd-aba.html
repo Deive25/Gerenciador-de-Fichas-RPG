@@ -1,0 +1,98 @@
+<app-seletor-de-modo [(modo)]="modo" />
+
+@if (erroGeral(); as erro) {
+  <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+}
+
+<app-lista-editavel
+  [itens]="ficha().ataques"
+  nomeDoItem="ataque"
+  vazio="Nenhum ataque ainda."
+  [tituloDe]="tituloDe"
+  [salvando]="salvando()"
+  [editando]="editando()"
+  (editandoChange)="aoMudarEdicao($event)"
+  (remover)="remover($event)"
+>
+  <ng-template #visualizacao let-ataque>
+    <div class="cabeca">
+      <h3 class="nome">{{ ataque.nome }}</h3>
+      <button
+        type="button"
+        class="rolar"
+        [attr.aria-label]="'Rolar ataque ' + ataque.nome"
+        [disabled]="rolando()"
+        (click)="pedir(ataque)"
+      >
+        🎲 Rolar
+      </button>
+    </div>
+    <p class="conta">{{ resumo(ataque) }}</p>
+    @if (ataque.alcance) {
+      <p class="detalhes">Alcance: {{ ataque.alcance }}</p>
+    }
+  </ng-template>
+
+  <ng-template #formulario>
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <mat-form-field appearance="outline" data-campo="nome">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" />
+        @if (mensagem(form.controls.nome); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="atributo">
+        <mat-label>Atributo</mat-label>
+        <mat-select formControlName="atributo">
+          @for (atributo of atributos; track atributo.codigo) {
+            <mat-option [value]="atributo.codigo">{{ atributo.nome }}</mat-option>
+          }
+        </mat-select>
+        @if (mensagem(form.controls.atributo); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-checkbox class="opcao" formControlName="proficiente" data-campo="proficiente">Proficiente</mat-checkbox>
+
+      <mat-form-field appearance="outline" data-campo="bonus">
+        <mat-label>Bônus (−99 a 99)</mat-label>
+        <input matInput formControlName="bonus" />
+        @if (mensagem(form.controls.bonus); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="dano">
+        <mat-label>Dano (ex.: 1d8+3)</mat-label>
+        <input matInput formControlName="dano" autocomplete="off" />
+        @if (mensagem(form.controls.dano); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="tipoDano">
+        <mat-label>Tipo de dano</mat-label>
+        <input matInput formControlName="tipoDano" />
+        @if (mensagem(form.controls.tipoDano); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" data-campo="alcance">
+        <mat-label>Alcance</mat-label>
+        <input matInput formControlName="alcance" />
+        @if (mensagem(form.controls.alcance); as texto) {
+          <mat-error>{{ texto }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="acoes-form">
+        <button type="button" class="botao-neutro" (click)="cancelar()">Cancelar</button>
+        <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+  </ng-template>
+</app-lista-editavel>

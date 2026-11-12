@@ -1,0 +1,27 @@
+@use '../../abas/cartao-de-lista';
+
+:host {
+  display: block;
+}
+
+app-seletor-de-modo {
+  display: block;
+  margin: 0.75rem 0;
+}
+
+.conta,
+.detalhes {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.detalhes {
+  color: var(--cor-texto-suave);
+}
+
+// Caixa de marcar com 44 px de altura mínima (alvo de toque do 2.1b).
+.opcao {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}

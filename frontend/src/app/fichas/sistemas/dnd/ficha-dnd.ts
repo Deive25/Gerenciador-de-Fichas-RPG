@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { SeletorDeModo } from '../../componentes/seletor-de-modo';
 import { AlvoTeste, FichaDnd, ModoTeste, PedidoTeste } from '../../ficha.model';
 import {
   ATRIBUTOS_DND,
@@ -11,13 +12,6 @@ import {
 } from './catalogo-dnd';
 import { bonusPericia, bonusSalvaguarda, comSinal, modificador, proficiencia } from './regras-dnd';
 
-/** Os três modos do seletor, na ordem em que aparecem. */
-const MODOS: readonly { valor: ModoTeste; rotulo: string }[] = [
-  { valor: 'NORMAL', rotulo: 'Normal' },
-  { valor: 'VANTAGEM', rotulo: 'Vantagem' },
-  { valor: 'DESVANTAGEM', rotulo: 'Desvantagem' },
-];
-
 /**
  * Corpo da ficha de D&D (as duas edições): identidade, atributos, salvaguardas e as 18 perícias.
  * O front só calcula os bônus para mostrar; quem rola os dados é o servidor. O modo
@@ -25,7 +19,7 @@ const MODOS: readonly { valor: ModoTeste; rotulo: string }[] = [
  */
 @Component({
   selector: 'app-ficha-dnd',
-  imports: [MatTooltipModule],
+  imports: [MatTooltipModule, SeletorDeModo],
   templateUrl: './ficha-dnd.html',
   styleUrl: './ficha-dnd.scss',
 })
@@ -35,7 +29,6 @@ export class FichaDndCorpo {
   readonly rolando = input(false);
   readonly rolar = output<PedidoTeste>();
 
-  readonly modos = MODOS;
   readonly modo = signal<ModoTeste>('NORMAL');
 
   readonly atributos = ATRIBUTOS_DND;

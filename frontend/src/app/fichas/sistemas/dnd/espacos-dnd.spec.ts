@@ -28,6 +28,7 @@ function fichaCom(espacos: Espacos): FichaDnd {
     atributoConjuracao: 'INT',
     magias: [],
     espacos,
+    ataques: [],
   };
 }
 
