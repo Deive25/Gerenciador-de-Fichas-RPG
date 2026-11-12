@@ -693,7 +693,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 692 testes unitários em 54 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.1i (eram 495 em 42 arquivos no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
+**Front-end:** 693 testes unitários em 54 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.1i (eram 495 em 42 arquivos no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
