@@ -50,33 +50,6 @@ ul {
   }
 }
 
-// Seletor de modo: três botões lado a lado, o pressionado ganha o dourado.
-.botoes-modo {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.4rem;
-  margin-top: 0.4rem;
-
-  button {
-    min-height: 44px;
-    padding: 0 0.4rem;
-    border: 1px solid var(--cor-borda);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--cor-texto);
-    font: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-
-    &[aria-pressed='true'] {
-      border-color: var(--cor-acao);
-      background: #2a2416;
-      color: var(--cor-titulo);
-      font-weight: 700;
-    }
-  }
-}
-
 // Uma coluna no celular; duas a partir de 900 px (como as perícias de Ordem).
 // minmax(0, …): sem isso a coluna cresce até o conteúdo mais largo e a ficha passa de 375 px.
 .grade {

@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CamadaDosDados } from './camada-dos-dados';
+import { d20sDoTeste } from './dados-lancados';
 import { LancadorDeDados } from './lancador-de-dados';
 
-const DADOS = [3, 17, 9];
+const DADOS = d20sDoTeste([3, 17, 9], 1);
 
 function montar(lancar: LancadorDeDados['lancar']) {
   const lancador: LancadorDeDados = { lancar: vi.fn(lancar), encerrar: vi.fn() };
   const fixture: ComponentFixture<CamadaDosDados> = TestBed.createComponent(CamadaDosDados);
   fixture.componentRef.setInput('lancador', lancador);
   fixture.componentRef.setInput('dados', DADOS);
-  fixture.componentRef.setInput('indiceMantido', 1);
   const terminou = vi.fn();
   fixture.componentInstance.terminou.subscribe(terminou);
   fixture.detectChanges();
@@ -27,11 +27,11 @@ describe('CamadaDosDados', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('lanca exatamente os dados no palco, com o indice do mantido', () => {
+  it('lanca exatamente os dados no palco, com o mantido ja marcado nos dados', () => {
     const { lancador, el } = montar(() => new Promise(() => undefined));
 
     expect(lancador.lancar).toHaveBeenCalledOnce();
-    expect(lancador.lancar).toHaveBeenCalledWith(el.querySelector('.palco'), DADOS, 1);
+    expect(lancador.lancar).toHaveBeenCalledWith(el.querySelector('.palco'), DADOS);
   });
 
   it('so emite terminou depois que lancar resolve e passam 0,6 s', async () => {

@@ -23,6 +23,7 @@ function fichaCom(itens: ItemDnd[], forca = 10): FichaDnd {
     atributoConjuracao: null,
     magias: [],
     espacos: espacosZerados(),
+    ataques: [],
   };
 }
 

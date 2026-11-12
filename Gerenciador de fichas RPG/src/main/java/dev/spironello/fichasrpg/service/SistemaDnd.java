@@ -32,13 +32,15 @@ public class SistemaDnd implements SistemaDeFicha {
 
 	private final FichaDndMapper mapper;
 	private final PartesComunsDaFicha partesComuns;
+	private final AtaquesDnd ataques;
 	private final ItensDnd itens;
 	private final MagiasDnd magias;
 
-	public SistemaDnd(FichaDndMapper mapper, PartesComunsDaFicha partesComuns, ItensDnd itens,
+	public SistemaDnd(FichaDndMapper mapper, PartesComunsDaFicha partesComuns, AtaquesDnd ataques, ItensDnd itens,
 			MagiasDnd magias) {
 		this.mapper = mapper;
 		this.partesComuns = partesComuns;
+		this.ataques = ataques;
 		this.itens = itens;
 		this.magias = magias;
 	}
@@ -65,7 +67,7 @@ public class SistemaDnd implements SistemaDeFicha {
 	@Override
 	public FichaResponse resposta(Ficha ficha) {
 		return mapper.resposta((FichaDnd) ficha, partesComuns.de(ficha),
-				new ListasDnd(itens.listar(ficha.getId()), magias.listar(ficha.getId()), EspacosDaFicha.de((FichaDnd) ficha)));
+				new ListasDnd(ataques.listar(ficha.getId()), itens.listar(ficha.getId()), magias.listar(ficha.getId()), EspacosDaFicha.de((FichaDnd) ficha)));
 	}
 
 	@Override

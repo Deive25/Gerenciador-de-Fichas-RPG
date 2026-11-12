@@ -22,6 +22,7 @@ const FICHA: FichaDnd = {
   atributoConjuracao: null,
   magias: [],
   espacos: espacosZerados(),
+  ataques: [],
 };
 
 const NOMES = ['pc', 'pp', 'pe', 'po', 'pl'];

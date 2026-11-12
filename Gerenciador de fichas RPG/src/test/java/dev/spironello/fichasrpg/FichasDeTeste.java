@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import dev.spironello.fichasrpg.model.AtaqueDnd;
+import dev.spironello.fichasrpg.model.AtaqueOrdem;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.EdicaoDnd;
@@ -15,6 +17,7 @@ import dev.spironello.fichasrpg.model.HabilidadeFicha;
 import dev.spironello.fichasrpg.model.ItemDnd;
 import dev.spironello.fichasrpg.model.ItemOrdem;
 import dev.spironello.fichasrpg.model.MagiaDnd;
+import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.RitualOrdem;
 import dev.spironello.fichasrpg.model.TipoHabilidade;
 
@@ -139,5 +142,27 @@ public final class FichasDeTeste {
 		item.setQuantidade(1);
 		item.setPeso(new BigDecimal("1.00"));
 		return item;
+	}
+
+	/** Ataque de Ordem válido (Luta, 1d8+3, margem 20, multiplicador 2), ainda não salvo; a ficha já tem de estar no banco. */
+	public static AtaqueOrdem ataqueOrdem(FichaOrdem ficha, String nome) {
+		AtaqueOrdem ataque = new AtaqueOrdem();
+		ataque.setFicha(ficha);
+		ataque.setNome(nome);
+		ataque.setPericia(PericiaOrdem.LUTA);
+		ataque.setDano("1d8+3");
+		ataque.setMargem(20);
+		ataque.setMultiplicador(2);
+		return ataque;
+	}
+
+	/** Ataque de D&D válido (Força, sem proficiência, 1d8+3), ainda não salvo; a ficha já tem de estar no banco. */
+	public static AtaqueDnd ataqueDnd(FichaDnd ficha, String nome) {
+		AtaqueDnd ataque = new AtaqueDnd();
+		ataque.setFicha(ficha);
+		ataque.setNome(nome);
+		ataque.setAtributo(AtributoDnd.FOR);
+		ataque.setDano("1d8+3");
+		return ataque;
 	}
 }

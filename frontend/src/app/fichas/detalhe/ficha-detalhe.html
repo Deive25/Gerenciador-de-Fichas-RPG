@@ -38,14 +38,23 @@
       @if (animacao(); as a) {
         <app-camada-dos-dados
           [lancador]="a.lancador"
-          [dados]="a.resultado.dados"
-          [indiceMantido]="a.indiceMantido"
+          [dados]="a.dados"
           (terminou)="aoTerminarAnimacao()"
         />
       }
 
-      @if (ultimoResultado(); as resultado) {
-        <app-resultado-rolagem class="resultado" [resultado]="resultado" [natural]="f.sistema === 'DND'" />
+      @if (ultimoResultado(); as ultimo) {
+        @switch (ultimo.tipo) {
+          @case ('teste') {
+            <app-resultado-rolagem class="resultado" [resultado]="ultimo.resultado" [natural]="f.sistema === 'DND'" />
+          }
+          @case ('ataque') {
+            <app-resultado-ataque class="resultado" [resultado]="ultimo.resultado" [natural]="f.sistema === 'DND'" />
+          }
+          @case ('livre') {
+            <app-resultado-livre class="resultado" [resultado]="ultimo.resultado" />
+          }
+        }
       }
 
       @if (erro() && estado() === 'pronto') {
@@ -107,13 +116,36 @@
                 <div class="bento corpo">
                   @switch (f.sistema) {
                     @case ('ORDEM_PARANORMAL') {
-                      <app-ficha-ordem [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                      <app-ficha-ordem [ficha]="f" [rolando]="rolando()" (rolar)="rolarTeste($event)" />
                     }
                     @case ('DND') {
-                      <app-ficha-dnd [ficha]="f" [rolando]="rolando() !== null" (rolar)="rolar($event)" />
+                      <app-ficha-dnd [ficha]="f" [rolando]="rolando()" (rolar)="rolarTeste($event)" />
                     }
                   }
                 </div>
+              }
+              @case ('ataques') {
+                @switch (f.sistema) {
+                  @case ('ORDEM_PARANORMAL') {
+                    <app-ataques-ordem-aba
+                      [ficha]="f"
+                      [rolando]="rolando()"
+                      (atualizada)="atualizarAtaquesOrdem($event)"
+                      (rolar)="rolar($event)"
+                    />
+                  }
+                  @case ('DND') {
+                    <app-ataques-dnd-aba
+                      [ficha]="f"
+                      [rolando]="rolando()"
+                      (atualizada)="atualizarAtaquesDnd($event)"
+                      (rolar)="rolar($event)"
+                    />
+                  }
+                }
+              }
+              @case ('dados') {
+                <app-dados-aba [rolando]="rolando()" (rolar)="rolar($event)" />
               }
               @case ('inventario') {
                 @switch (f.sistema) {

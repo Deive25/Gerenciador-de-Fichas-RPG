@@ -1,0 +1,21 @@
+<div class="resultado" role="status" aria-live="polite">
+  <strong class="titulo-ataque">{{ tituloAtaque() }}</strong>
+  <span class="dados dados-ataque" aria-hidden="true">
+    @for (dado of resultado().ataque.dados; track $index) {
+      <span class="dado" [class.mantido]="$index === indiceMantido()">{{ dado }}</span>
+    }
+  </span>
+  @if (resultado().critico) {
+    <span class="critico">Crítico</span>
+  }
+  @if (avisoNatural(); as aviso) {
+    <span class="natural">{{ aviso }}</span>
+  }
+  <strong class="titulo-dano">{{ tituloDano() }}</strong>
+  <span class="dados dados-dano" aria-hidden="true">
+    @for (dado of resultado().dano.dados; track $index) {
+      <span class="dado dano">d{{ dado.lados }}: {{ dado.valor }}</span>
+    }
+  </span>
+  <span class="so-leitor">{{ leitura() }}</span>
+</div>

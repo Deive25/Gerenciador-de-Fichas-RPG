@@ -1,6 +1,6 @@
 import { DiceRoller } from 'open-dice-dnd';
 import { configDosDados } from './config-dos-dados';
-import { LancadorDeDados } from './lancador-de-dados';
+import { DadoLancado, LancadorDeDados } from './lancador-de-dados';
 
 /**
  * O único arquivo que importa a open-dice-dnd (e, por ela, o three e o cannon-es): só é carregado, por
@@ -11,12 +11,12 @@ class Lancador3d implements LancadorDeDados {
   private roller: DiceRoller | null = null;
   private encerrado = false;
 
-  async lancar(palco: HTMLElement, dados: number[], indiceMantido: number): Promise<void> {
+  async lancar(palco: HTMLElement, dados: DadoLancado[]): Promise<void> {
     if (this.encerrado) {
       return;
     }
     this.roller = new DiceRoller({ container: palco });
-    await this.roller.roll(configDosDados(dados, indiceMantido));
+    await this.roller.roll(configDosDados(dados));
   }
 
   encerrar(): void {
