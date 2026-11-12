@@ -1,0 +1,69 @@
+<section class="bloco livre" aria-label="Rolagem livre">
+  <mat-form-field appearance="outline" class="notacao">
+    <mat-label>Rolagem (ex.: 2d6+1d4+3)</mat-label>
+    <input
+      matInput
+      [formControl]="campo"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+    />
+    @if (mensagem(campo); as texto) {
+      <mat-error>{{ texto }}</mat-error>
+    }
+  </mat-form-field>
+
+  <ul class="linhas">
+    @for (l of lados; track l) {
+      <li class="linha" [attr.data-dado]="l">
+        <span class="nome">d{{ l }}</span>
+        <button
+          type="button"
+          class="passo"
+          [attr.aria-label]="'Menos um d' + l"
+          [disabled]="contagem()[l] === 0"
+          (click)="mudarDado(l, -1)"
+        >
+          −
+        </button>
+        <span class="contador">{{ contagem()[l] }}</span>
+        <button
+          type="button"
+          class="passo"
+          [attr.aria-label]="'Mais um d' + l"
+          [disabled]="contagem()[l] >= maximoPorDado || totalDeDados() >= maximoNoTotal"
+          (click)="mudarDado(l, 1)"
+        >
+          +
+        </button>
+      </li>
+    }
+    <li class="linha" data-modificador>
+      <span class="nome">Modificador</span>
+      <button
+        type="button"
+        class="passo"
+        aria-label="Menos um no modificador"
+        [disabled]="modificador() <= -maximoDoModificador"
+        (click)="mudarModificador(-1)"
+      >
+        −
+      </button>
+      <span class="contador">{{ modificadorEscrito() }}</span>
+      <button
+        type="button"
+        class="passo"
+        aria-label="Mais um no modificador"
+        [disabled]="modificador() >= maximoDoModificador"
+        (click)="mudarModificador(1)"
+      >
+        +
+      </button>
+    </li>
+  </ul>
+
+  <div class="acoes">
+    <button type="button" class="botao-neutro" (click)="limpar()">Limpar</button>
+    <button type="button" class="botao" [disabled]="!podeRolar()" (click)="pedir()">Rolar</button>
+  </div>
+</section>

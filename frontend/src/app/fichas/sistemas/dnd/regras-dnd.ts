@@ -1,4 +1,4 @@
-import { GrauDnd, ItemDnd, MagiaDnd } from '../../ficha.model';
+import { AtaqueDnd, AtributoDnd, GrauDnd, ItemDnd, MagiaDnd } from '../../ficha.model';
 
 // As mesmas regras do backend (RegrasDnd). O front calcula para mostrar; quem rola é o servidor.
 
@@ -62,4 +62,13 @@ export function rotuloNivelMagia(nivel: number): string {
 /** Por nível e, no mesmo nível, por criação (id): a mesma ordem da API, para a lista não pular ao editar. */
 export function ordenarMagias(magias: readonly MagiaDnd[]): MagiaDnd[] {
   return [...magias].sort((a, b) => a.nivel - b.nivel || a.id - b.id);
+}
+
+/** Bônus do ataque: modificador do atributo + proficiência (se proficiente) + o bônus do próprio ataque. */
+export function bonusDoAtaqueDnd(
+  ataque: Pick<AtaqueDnd, 'atributo' | 'proficiente' | 'bonus'>,
+  atributos: Record<AtributoDnd, number>,
+  nivel: number,
+): number {
+  return modificador(atributos[ataque.atributo]) + (ataque.proficiente ? proficiencia(nivel) : 0) + ataque.bonus;
 }

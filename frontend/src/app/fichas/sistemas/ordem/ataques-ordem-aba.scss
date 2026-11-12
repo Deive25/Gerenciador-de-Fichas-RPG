@@ -1,0 +1,15 @@
+@use '../../abas/cartao-de-lista';
+
+:host {
+  display: block;
+}
+
+.conta,
+.detalhes {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.detalhes {
+  color: var(--cor-texto-suave);
+}

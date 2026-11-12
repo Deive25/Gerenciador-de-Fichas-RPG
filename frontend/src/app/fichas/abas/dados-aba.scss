@@ -1,0 +1,70 @@
+:host {
+  display: block;
+}
+
+.livre {
+  margin-top: 0.75rem;
+}
+
+.notacao {
+  width: 100%;
+}
+
+ul {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+// Nome, − , contador e + (alvos de 44 px). minmax(0, …): sem isso a coluna cresce com o conteúdo e passa de 375 px.
+.linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 3.2rem 44px;
+  align-items: center;
+  column-gap: 0.4rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nome {
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  color: var(--cor-titulo);
+  overflow-wrap: anywhere;
+}
+
+.contador {
+  text-align: center;
+  font-family: var(--fonte-titulo);
+  font-size: 1.2rem;
+  color: var(--cor-titulo);
+}
+
+.passo {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  border-radius: 50%;
+  background: transparent;
+  color: #e9d9b4;
+  font: inherit;
+  font-size: 1.3rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+
+  button {
+    min-height: 44px;
+  }
+}

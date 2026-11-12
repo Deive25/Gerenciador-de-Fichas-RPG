@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Injector, afterNextRender } from '@angular/core';
 import { AbstractControl, FormControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { ApiError } from '../../../core/api-error';
+import { lerNotacao } from '../../dado/notacao-de-dados';
 
 // Peças que os formulários de todos os sistemas usam do mesmo jeito (2.1/2.1d): validação de
 // inteiros, erro do servidor no campo e foco no primeiro campo inválido. Ficam aqui para
@@ -20,6 +21,18 @@ export function faixa(minimo: number, maximo = Infinity): ValidatorFn {
     return numero < minimo || numero > maximo
       ? { faixa: maximo === Infinity ? `${minimo} ou mais` : `De ${minimo} a ${maximo}` }
       : null;
+  };
+}
+
+/** Notação de dados válida ("1d8+3"); vazio fica para o `required`. A mensagem é a mesma do campo da aba Dados. */
+export function notacao(): ValidatorFn {
+  return (controle: AbstractControl): ValidationErrors | null => {
+    const texto = String(controle.value ?? '');
+    if (texto.trim() === '') {
+      return null;
+    }
+    const lida = lerNotacao(texto);
+    return lida.ok ? null : { notacao: lida.erro };
   };
 }
 
@@ -83,7 +96,7 @@ export function focarPrimeiroInvalidoDepois(host: HTMLElement, injector: Injecto
   afterNextRender(() => focarPrimeiroInvalido(host), { injector });
 }
 
-/** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro, faixa, decimal. */
+/** Mensagem do primeiro erro do controle, na ordem: servidor, obrigatório, tamanho, inteiro, faixa, decimal, notação. */
 export function mensagemDoControle(controle: AbstractControl): string | null {
   const erros = controle.errors;
   if (!erros || !(controle.touched || controle.dirty)) {
@@ -106,6 +119,9 @@ export function mensagemDoControle(controle: AbstractControl): string | null {
   }
   if (erros['decimal']) {
     return erros['decimal'] as string;
+  }
+  if (erros['notacao']) {
+    return erros['notacao'] as string;
   }
   return null;
 }
