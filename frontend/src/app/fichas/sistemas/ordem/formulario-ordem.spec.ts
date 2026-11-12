@@ -19,6 +19,7 @@ const FICHA: FichaOrdem = {
   habilidades: [],
   itens: [],
   rituais: [],
+  ataques: [],
 };
 
 /** Ficha vinda da conversão do d100: sem classe, PE vazio, sem perícias, NEX 5 e atributos 1. */
@@ -32,6 +33,7 @@ const CONVERTIDA: FichaOrdem = {
   habilidades: [],
   itens: [],
   rituais: [],
+  ataques: [],
 };
 
 /** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */

@@ -37,6 +37,7 @@ function fichaCom(magias: MagiaDnd[], atributoConjuracao: AtributoConjuracao | n
     atributoConjuracao,
     magias,
     espacos: espacosZerados(),
+    ataques: [],
   };
 }
 

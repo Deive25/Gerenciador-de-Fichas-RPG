@@ -1,4 +1,13 @@
-import { AtributoOrdem, ClasseOrdem, ElementoRitual, GrauOrdem, ItemOrdem, PericiaOrdem, RitualOrdem } from '../../ficha.model';
+import {
+  AtaqueOrdem,
+  AtributoOrdem,
+  ClasseOrdem,
+  ElementoRitual,
+  GrauOrdem,
+  ItemOrdem,
+  PericiaOrdem,
+  RitualOrdem,
+} from '../../ficha.model';
 
 export interface AtributoCatalogo {
   codigo: AtributoOrdem;
@@ -133,4 +142,12 @@ export function dtDeRitual(nex: number, presenca: number): number {
 /** Por círculo e, no mesmo círculo, por criação (id): a mesma ordem da API. */
 export function ordenarRituais(rituais: readonly RitualOrdem[]): RitualOrdem[] {
   return [...rituais].sort((a, b) => a.circulo - b.circulo || a.id - b.id);
+}
+
+/** Bônus do ataque: o grau da perícia do ataque (Luta ou Pontaria) + o bônus do próprio ataque. */
+export function bonusDoAtaqueOrdem(
+  ataque: Pick<AtaqueOrdem, 'pericia' | 'bonus'>,
+  pericias: Partial<Record<PericiaOrdem, GrauOrdem>>,
+): number {
+  return bonusDoGrau(pericias[ataque.pericia]) + ataque.bonus;
 }

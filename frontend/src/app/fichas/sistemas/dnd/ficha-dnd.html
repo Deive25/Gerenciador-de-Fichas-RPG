@@ -36,16 +36,7 @@
   </dl>
 </section>
 
-<section class="modo bloco" role="group" aria-labelledby="rotulo-modo-rolagem">
-  <span id="rotulo-modo-rolagem" class="titulo-secao">Modo da próxima rolagem</span>
-  <div class="botoes-modo">
-    @for (m of modos; track m.valor) {
-      <button type="button" [attr.aria-pressed]="modo() === m.valor" (click)="modo.set(m.valor)">
-        {{ m.rotulo }}
-      </button>
-    }
-  </div>
-</section>
+<app-seletor-de-modo [(modo)]="modo" />
 
 <section class="atributos bloco">
   <h2 class="titulo-secao">Atributos</h2>

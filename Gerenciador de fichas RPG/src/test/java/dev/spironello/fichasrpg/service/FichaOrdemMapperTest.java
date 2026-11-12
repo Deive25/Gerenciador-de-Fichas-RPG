@@ -109,7 +109,7 @@ class FichaOrdemMapperTest {
 				null, null, null);
 
 		FichaOrdemResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS,
-				new ListasOrdem(List.of(), List.of(ritual)));
+				new ListasOrdem(List.of(), List.of(), List.of(ritual)));
 
 		assertThat(resposta.rituais()).containsExactly(ritual);
 		assertThat(mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS, ListasDeTeste.VAZIAS_ORDEM).rituais())

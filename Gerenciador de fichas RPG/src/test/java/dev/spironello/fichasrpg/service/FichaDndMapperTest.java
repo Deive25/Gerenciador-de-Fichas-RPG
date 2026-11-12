@@ -150,7 +150,7 @@ class FichaDndMapperTest {
 		Map<Integer, EspacoDnd> espacos = Map.of(1, new EspacoDnd(4, 1));
 
 		FichaDndResponse resposta = mapper.resposta(ficha, PartesComunsDeTeste.VAZIAS,
-				new ListasDnd(List.of(), List.of(luz), espacos));
+				new ListasDnd(List.of(), List.of(), List.of(luz), espacos));
 
 		assertThat(resposta.magias()).containsExactly(luz);
 		assertThat(resposta.espacos()).isEqualTo(espacos);

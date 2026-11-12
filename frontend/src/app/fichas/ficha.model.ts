@@ -125,6 +125,67 @@ export type NivelEspaco = keyof Espacos;
 /** Atributo de conjuração: só os três de lançador; sem ele a ficha não tem CD nem ataque mágico. */
 export type AtributoConjuracao = 'INT' | 'SAB' | 'CAR';
 
+// ---- Ataques e rolagem livre (2.1i) ----
+
+/** Os dados que a API rola e que o 3D desenha. */
+export const LADOS_DOS_DADOS = [4, 6, 8, 10, 12, 20, 100] as const;
+export type LadosDoDado = (typeof LADOS_DOS_DADOS)[number];
+
+/** Um dado rolado pelo servidor: de quantos lados e o valor que saiu (de 1 até `lados`). */
+export interface DadoRolado {
+  lados: LadosDoDado;
+  valor: number;
+}
+
+/** Campos comuns aos ataques dos dois sistemas. `dano` é a notação (ex.: "1d8+3"). */
+interface AtaqueBase {
+  id: number;
+  nome: string;
+  /** De −99 a 99, somado ao teste de ataque. */
+  bonus: number;
+  dano: string;
+  tipoDano: string | null;
+  alcance: string | null;
+}
+
+/** Ataque de Ordem: usa Luta ou Pontaria; é crítico quando o dado mantido chega à `margem`, e os dados do dano são multiplicados. */
+export interface AtaqueOrdem extends AtaqueBase {
+  pericia: 'LUTA' | 'PONTARIA';
+  /** De 2 a 20. */
+  margem: number;
+  /** De 2 a 5. */
+  multiplicador: number;
+}
+
+/** Ataque de D&D: soma o modificador do atributo e, se proficiente, a proficiência. */
+export interface AtaqueDnd extends AtaqueBase {
+  atributo: AtributoDnd;
+  proficiente: boolean;
+}
+
+export type Ataque = AtaqueOrdem | AtaqueDnd;
+
+/** Corpo do POST e do PUT de um ataque: o id vem da URL. */
+export type AtaqueOrdemEntrada = Omit<AtaqueOrdem, 'id'>;
+export type AtaqueDndEntrada = Omit<AtaqueDnd, 'id'>;
+
+/** Resultado de `POST /fichas/{id}/ataques/{ataqueId}/rolagem`: o teste do ataque, o dano e se foi crítico. */
+export interface AtaqueResultado {
+  ataqueId: number;
+  nome: string;
+  ataque: { dados: number[]; mantido: number; bonus: number; total: number };
+  dano: { expressao: string; dados: DadoRolado[]; bonus: number; total: number };
+  critico: boolean;
+}
+
+/** Resultado de `POST /fichas/{id}/rolagens`: a rolagem livre não grava nada. */
+export interface RolagemLivre {
+  expressao: string;
+  dados: DadoRolado[];
+  bonus: number;
+  total: number;
+}
+
 // ---- Ordem Paranormal (2.1d) ----
 
 export type AtributoOrdem = 'AGI' | 'FOR' | 'INT' | 'PRE' | 'VIG';
@@ -211,6 +272,7 @@ export interface FichaOrdem {
   habilidades: Habilidade[];
   itens: ItemOrdem[];
   rituais: RitualOrdem[];
+  ataques: AtaqueOrdem[];
 }
 
 // ---- D&D 5e (2014) e D&D 2024 (2.1e) ----
@@ -274,6 +336,7 @@ export interface FichaDnd {
   moedas: Moedas;
   magias: MagiaDnd[];
   espacos: Espacos;
+  ataques: AtaqueDnd[];
 }
 
 /** O que `GET /fichas/{id}` devolve: o campo `sistema` diz qual das fichas é. */
@@ -299,9 +362,15 @@ export interface TesteResultado {
   total: number;
 }
 
+/** O que a tela da ficha pede para rolar: um teste, um ataque (com o modo, só em D&D) ou uma expressão livre. */
+export type PedidoDeRolagem =
+  | { tipo: 'teste'; teste: PedidoTeste }
+  | { tipo: 'ataque'; ataqueId: number; modo?: ModoTeste }
+  | { tipo: 'livre'; expressao: string };
+
 /**
  * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
- * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens`, `moedas`, `magias`, `espacos` e `rituais` (rotas próprias, ADR 0018).
+ * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens`, `moedas`, `magias`, `espacos`, `rituais` e `ataques` (rotas próprias, ADR 0018).
  * O JSON estrito da API recusa chaves a mais.
  */
 type SoDaLeitura =
@@ -313,7 +382,8 @@ type SoDaLeitura =
   | 'moedas'
   | 'magias'
   | 'espacos'
-  | 'rituais';
+  | 'rituais'
+  | 'ataques';
 export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura>;
 export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura>;
 export type FichaEntrada = FichaOrdemEntrada | FichaDndEntrada;
@@ -333,6 +403,7 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       moedas: _moedas,
       magias: _magias,
       espacos: _espacos,
+      ataques: _ataques,
       atributos, recursos, salvaguardas, pericias, ...resto } = ficha;
     return {
       ...resto,
@@ -349,6 +420,7 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
       habilidades: _habilidades,
       itens: _itens,
       rituais: _rituais,
+      ataques: _ataques,
       atributos, recursos, pericias, ...resto } = ficha;
   return {
     ...resto,

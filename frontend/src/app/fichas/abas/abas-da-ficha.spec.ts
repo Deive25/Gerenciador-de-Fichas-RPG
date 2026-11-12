@@ -1,14 +1,23 @@
 import { ABAS_POR_SISTEMA, abaValida } from './abas-da-ficha';
 
 describe('abas da ficha', () => {
-  it('Ordem tem Ficha, Inventario, Rituais, Habilidades e Descricao, nessa ordem', () => {
+  it('Ordem tem Ficha, Ataques, Dados, Inventario, Rituais, Habilidades e Descricao, nessa ordem', () => {
     expect(ABAS_POR_SISTEMA.ORDEM_PARANORMAL.map((a) => a.rotulo)).toEqual([
-      'Ficha', 'Inventário', 'Rituais', 'Habilidades', 'Descrição',
+      'Ficha', 'Ataques', 'Dados', 'Inventário', 'Rituais', 'Habilidades', 'Descrição',
     ]);
   });
 
-  it('D&D tem Ficha, Inventario, Magias, Habilidades e Descricao, nessa ordem', () => {
-    expect(ABAS_POR_SISTEMA.DND.map((a) => a.rotulo)).toEqual(['Ficha', 'Inventário', 'Magias', 'Habilidades', 'Descrição']);
+  it('D&D tem Ficha, Ataques, Dados, Inventario, Magias, Habilidades e Descricao, nessa ordem', () => {
+    expect(ABAS_POR_SISTEMA.DND.map((a) => a.rotulo)).toEqual([
+      'Ficha', 'Ataques', 'Dados', 'Inventário', 'Magias', 'Habilidades', 'Descrição',
+    ]);
+  });
+
+  it('os codigos novos valem nos dois sistemas (?aba=ataques e ?aba=dados)', () => {
+    for (const sistema of ['ORDEM_PARANORMAL', 'DND'] as const) {
+      expect(abaValida(sistema, 'ataques')).toBe('ataques');
+      expect(abaValida(sistema, 'dados')).toBe('dados');
+    }
   });
 
   it('abaValida aceita magias em D&D e rituais em Ordem', () => {
