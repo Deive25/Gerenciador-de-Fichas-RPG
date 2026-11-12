@@ -350,4 +350,92 @@ describe('FichaApi', () => {
     expect(recebido?.status).toBe(404);
     expect(recebido?.titulo).toBe('Ficha não encontrada');
   });
+
+  describe('ataques e rolagem livre', () => {
+    const ATAQUE_ORDEM = { nome: 'Faca', pericia: 'LUTA' as const, bonus: 2, dano: '1d4+1', tipoDano: 'corte', alcance: null, margem: 19, multiplicador: 3 };
+    const ATAQUE_DND = { nome: 'Espada', atributo: 'FOR' as const, proficiente: true, bonus: 0, dano: '1d8+3', tipoDano: null, alcance: 'corpo a corpo' };
+
+    it('criarAtaque faz POST /fichas/7/ataques e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      let criado: unknown;
+      api.criarAtaque(7, ATAQUE_ORDEM).subscribe((a) => (criado = a));
+      const req = http.expectOne(`${API}/fichas/7/ataques`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(ATAQUE_ORDEM);
+      req.flush({ id: 3, ...ATAQUE_ORDEM });
+      expect(criado).toEqual({ id: 3, ...ATAQUE_ORDEM });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('atualizarAtaque faz PUT /fichas/7/ataques/3 com os campos de D&D', () => {
+      api.atualizarAtaque(7, 3, ATAQUE_DND).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/ataques/3`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(ATAQUE_DND);
+      req.flush({ id: 3, ...ATAQUE_DND });
+    });
+
+    it('excluirAtaque faz DELETE /fichas/7/ataques/3 e avisa que mudou', () => {
+      const antes = api.versaoFichas();
+      api.excluirAtaque(7, 3).subscribe();
+      const req = http.expectOne(`${API}/fichas/7/ataques/3`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(api.versaoFichas()).toBe(antes + 1);
+    });
+
+    it('rolarAtaque sem modo faz POST .../ataques/3/rolagem com o corpo vazio e devolve o resultado', () => {
+      let resultado: unknown;
+      api.rolarAtaque(7, 3).subscribe((r) => (resultado = r));
+      const req = http.expectOne(`${API}/fichas/7/ataques/3/rolagem`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({});
+      const corpo = {
+        ataqueId: 3, nome: 'Espada longa', ataque: { dados: [14, 19], mantido: 19, bonus: 5, total: 24 },
+        dano: { expressao: '1d8+3', dados: [{ lados: 8, valor: 6 }], bonus: 3, total: 9 }, critico: false,
+      };
+      req.flush(corpo);
+      expect(resultado).toEqual(corpo);
+    });
+
+    it('rolarAtaque com modo manda o modo', () => {
+      api.rolarAtaque(7, 3, 'VANTAGEM').subscribe();
+      const req = http.expectOne(`${API}/fichas/7/ataques/3/rolagem`);
+      expect(req.request.body).toEqual({ modo: 'VANTAGEM' });
+      req.flush({});
+    });
+
+    it('rolarLivre faz POST /fichas/7/rolagens com a expressao e devolve o resultado', () => {
+      let resultado: unknown;
+      api.rolarLivre(7, '2d6+1d4+3').subscribe((r) => (resultado = r));
+      const req = http.expectOne(`${API}/fichas/7/rolagens`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ expressao: '2d6+1d4+3' });
+      const corpo = {
+        expressao: '2d6+1d4+3', bonus: 3, total: 11,
+        dados: [{ lados: 6, valor: 4 }, { lados: 6, valor: 1 }, { lados: 4, valor: 3 }],
+      };
+      req.flush(corpo);
+      expect(resultado).toEqual(corpo);
+    });
+
+    it('rolar ataque e rolagem livre nao contam como alteracao da ficha', () => {
+      const antes = api.versaoFichas();
+      api.rolarAtaque(7, 3).subscribe();
+      http.expectOne(`${API}/fichas/7/ataques/3/rolagem`).flush({});
+      api.rolarLivre(7, '1d6').subscribe();
+      http.expectOne(`${API}/fichas/7/rolagens`).flush({});
+      expect(api.versaoFichas()).toBe(antes);
+    });
+
+    it('o erro de uma expressao invalida chega como ApiError com o campo expressao', () => {
+      let erro: ApiError | undefined;
+      api.rolarLivre(7, '1d7').subscribe({ error: (e: ApiError) => (erro = e) });
+      http.expectOne(`${API}/fichas/7/rolagens`).flush(
+        { title: 'Dados inválidos', status: 400, errors: { expressao: 'Não existe d7.' } },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      expect(erro?.campos['expressao']).toBe('Não existe d7.');
+    });
+  });
 });

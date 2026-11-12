@@ -4,6 +4,9 @@ import { Observable, catchError, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { paraApiError } from '../core/api-error';
 import {
+  AtaqueDnd,
+  AtaqueOrdem,
+  AtaqueResultado,
   DescricaoFicha,
   Ficha,
   FichaEntrada,
@@ -15,10 +18,12 @@ import {
   ItemOrdem,
   MagiaDnd,
   MagiaDndEntrada,
+  ModoTeste,
   Moedas,
   PedidoTeste,
   RitualOrdem,
   RitualOrdemEntrada,
+  RolagemLivre,
   TesteResultado,
 } from './ficha.model';
 
@@ -87,6 +92,18 @@ export class FichaApi {
     return this.tratar(this.http.post<TesteResultado>(`${this.base}/${id}/testes`, teste));
   }
 
+  /** O servidor rola o ataque e o dano (com o crítico de cada sistema). O `modo` só vale em D&D; sem ele é Normal. */
+  rolarAtaque(id: number, ataqueId: number, modo?: ModoTeste): Observable<AtaqueResultado> {
+    return this.tratar(
+      this.http.post<AtaqueResultado>(`${this.base}/${id}/ataques/${ataqueId}/rolagem`, modo ? { modo } : {}),
+    );
+  }
+
+  /** Rolagem livre ("2d6+1d4+3"): vale nos dois sistemas e não grava nada. */
+  rolarLivre(id: number, expressao: string): Observable<RolagemLivre> {
+    return this.tratar(this.http.post<RolagemLivre>(`${this.base}/${id}/rolagens`, { expressao }));
+  }
+
   atualizarDescricao(id: number, descricao: DescricaoFicha): Observable<DescricaoFicha> {
     return this.alterou(this.tratar(this.http.put<DescricaoFicha>(`${this.base}/${id}/descricao`, descricao)));
   }
@@ -116,6 +133,19 @@ export class FichaApi {
 
   excluirItem(id: number, itemId: number): Observable<void> {
     return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/itens/${itemId}`)));
+  }
+
+  /** O mesmo pedido serve aos dois sistemas; a API confere quais campos valem no sistema da ficha. */
+  criarAtaque<T extends AtaqueOrdem | AtaqueDnd>(id: number, ataque: Omit<T, 'id'>): Observable<T> {
+    return this.alterou(this.tratar(this.http.post<T>(`${this.base}/${id}/ataques`, ataque)));
+  }
+
+  atualizarAtaque<T extends AtaqueOrdem | AtaqueDnd>(id: number, ataqueId: number, ataque: Omit<T, 'id'>): Observable<T> {
+    return this.alterou(this.tratar(this.http.put<T>(`${this.base}/${id}/ataques/${ataqueId}`, ataque)));
+  }
+
+  excluirAtaque(id: number, ataqueId: number): Observable<void> {
+    return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}/ataques/${ataqueId}`)));
   }
 
   /** Só D&D. Só mudam as moedas enviadas; a resposta traz as cinco. */

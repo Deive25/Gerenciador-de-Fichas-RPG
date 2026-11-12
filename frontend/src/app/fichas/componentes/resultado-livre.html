@@ -1,0 +1,12 @@
+<div class="resultado" role="status" aria-live="polite">
+  <strong class="titulo">{{ titulo() }}</strong>
+  <span class="dados" aria-hidden="true">
+    @for (dado of resultado().dados; track $index) {
+      <span class="dado">d{{ dado.lados }}: {{ dado.valor }}</span>
+    }
+    @if (modificador(); as mod) {
+      <span class="dado modificador">{{ mod }}</span>
+    }
+  </span>
+  <span class="so-leitor">{{ leitura() }}</span>
+</div>
