@@ -46,7 +46,7 @@ class TesteServiceTest {
 
 	@BeforeEach
 	void criarServico() {
-		service = new TesteService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
+		service = new TesteService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
 	}
 
 	private FichaOrdem fichaComIntelecto3() {
