@@ -105,6 +105,19 @@ public final class NotacaoDeDados {
 	}
 
 	/**
+	 * Lê anotando o erro no mapa (campo -> mensagem) em vez de lançar, para o serviço juntar com os outros erros do
+	 * pedido e devolver todos de uma vez. Devolve null se a notação é inválida.
+	 */
+	public static Expressao lerAnotando(String texto, String campo, Map<String, String> erros) {
+		try {
+			return ler(texto);
+		} catch (NotacaoInvalidaException e) {
+			erros.put(campo, e.getMessage());
+			return null;
+		}
+	}
+
+	/**
 	 * Rola a expressão. O {@code multiplicadorDeDados} é 1 no normal e 2 (ou o multiplicador do ataque) no
 	 * crítico: ele multiplica a quantidade de dados de cada termo, nunca as constantes. O total não fica abaixo de 0.
 	 */
