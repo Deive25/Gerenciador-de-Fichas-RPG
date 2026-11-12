@@ -279,7 +279,8 @@ export class FichaDetalhe {
    */
   private async animar(resultado: UltimoResultado, geracao: number): Promise<void> {
     const dados = this.dadosDa(resultado);
-    const lancador = cabeNaCena(dados) ? await this.dado.preparar() : null;
+    // Sem dados (rolagem livre só com constante) ou com dados demais, o cartão aparece direto.
+    const lancador = dados.length > 0 && cabeNaCena(dados) ? await this.dado.preparar() : null;
     if (geracao !== this.geracao) {
       lancador?.encerrar(); // saiu da ficha enquanto o pedaço 3D baixava
       return;
