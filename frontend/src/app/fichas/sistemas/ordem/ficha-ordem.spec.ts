@@ -3,7 +3,7 @@ import { FichaOrdem, PedidoTeste } from '../../ficha.model';
 import { FichaOrdemCorpo } from './ficha-ordem';
 
 const FICHA: FichaOrdem = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
+  id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
   retratoVersao: null, classe: 'OCULTISTA', origem: 'Acadêmica', nex: 10,
   atributos: { AGI: 3, FOR: 1, INT: 4, PRE: 2, VIG: 0 },
   recursos: {

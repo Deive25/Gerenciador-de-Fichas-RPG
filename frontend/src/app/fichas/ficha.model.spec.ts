@@ -3,7 +3,7 @@ import { espacosZerados } from './testes/espacos-zerados';
 
 describe('paraEntradaDaFicha', () => {
   const ficha: FichaOrdem = {
-    id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: 34,
+    id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Lia', genero: 'F', idade: 34,
     retratoVersao: 1772366400250, classe: null, origem: null, nex: 5,
     atributos: { AGI: 1, FOR: 1, INT: 1, PRE: 1, VIG: 1 },
     recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: null, maximo: null } },
@@ -42,7 +42,7 @@ describe('paraEntradaDaFicha', () => {
 
   it('de uma ficha de D&D tira id e retratoVersao e copia os objetos internos', () => {
     const dnd: FichaDnd = {
-      id: 3, sistema: 'DND', jogador: 'A', personagem: 'B', genero: 'F', idade: null, retratoVersao: 99,
+      id: 3, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'A', personagem: 'B', genero: 'F', idade: null, retratoVersao: 99,
       edicao: 'D2014', classe: null, especie: 'Anão', antecedente: null, nivel: 5,
       atributos: { FOR: 10, DES: 10, CON: 10, INT: 10, SAB: 10, CAR: 10 },
       recursos: { PV: { atual: 5, maximo: 9 }, PV_TEMP: { atual: 2, maximo: null } },
