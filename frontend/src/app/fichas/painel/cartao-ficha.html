@@ -1,10 +1,16 @@
 @let f = ficha();
-<a class="cartao-ficha bloco bloco-dourado" [routerLink]="['/fichas', f.id]">
+<ng-template #conteudo>
   <span class="topo">
     <app-medalhao [nome]="f.personagem" [semente]="f.id" [retratoVersao]="f.retratoVersao" />
     <span class="identificacao">
       <span class="nome nome-versalete">{{ f.personagem }}</span>
       <span class="legenda">{{ legenda() }}</span>
+      @if (mostrarDono()) {
+        <span class="detalhe dono">Dono: {{ f.dono.nome }}</span>
+      }
+      @if (mostrarCampanha() && f.campanha; as campanha) {
+        <span class="detalhe campanha">Campanha: {{ campanha.nome }}</span>
+      }
       <span class="selo-sistema">{{ sistema() }}</span>
     </span>
   </span>
@@ -21,4 +27,14 @@
       }
     </span>
   }
-</a>
+</ng-template>
+
+@if (podeAbrir()) {
+  <a class="cartao-ficha bloco bloco-dourado" [routerLink]="['/fichas', f.id]">
+    <ng-container [ngTemplateOutlet]="conteudo" />
+  </a>
+} @else {
+  <div class="cartao-ficha bloco bloco-dourado">
+    <ng-container [ngTemplateOutlet]="conteudo" />
+  </div>
+}

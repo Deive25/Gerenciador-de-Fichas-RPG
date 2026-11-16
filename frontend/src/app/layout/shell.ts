@@ -1,11 +1,11 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthApi } from '../core/auth/auth-api';
 import { Sessao } from '../core/auth/sessao';
 
 /**
- * Esqueleto da aplicação: topo fixo (marca; logado, também "Nova ficha", o nome e "Sair") e uma
+ * Esqueleto da aplicação: topo fixo (marca; logado, também os links "Fichas" e "Campanhas", "Nova ficha", o nome e "Sair") e uma
  * tela por vez, igual no celular e no computador (spec do redesign, §3.1).
  *
  * O <router-outlet> é único e não fica dentro de nenhum @if de largura: girar o aparelho
@@ -13,7 +13,7 @@ import { Sessao } from '../core/auth/sessao';
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
