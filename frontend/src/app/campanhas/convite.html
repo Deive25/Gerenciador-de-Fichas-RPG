@@ -1,0 +1,49 @@
+<section class="bloco bloco-dourado cartao-convite">
+  @switch (estado()) {
+    @case ('carregando') {
+      <p class="aviso" role="status">Carregando convite…</p>
+    }
+    @case ('invalido') {
+      <h1 class="nome-versalete">Convite</h1>
+      <p class="erro-acao" role="alert">Convite inválido ou desativado. Peça um link novo ao mestre.</p>
+      <a class="botao-neutro" routerLink="/fichas">Ir para as minhas fichas</a>
+    }
+    @case ('erro') {
+      <h1 class="nome-versalete">Convite</h1>
+      <div class="aviso-erro" role="alert">
+        <strong>{{ erro()?.titulo }}</strong>
+        <p>{{ erro()?.detalhe }}</p>
+        <button type="button" class="botao" (click)="carregar(codigo())">Tentar de novo</button>
+      </div>
+    }
+    @default {
+      @if (previa(); as p) {
+        <h1 class="nome-versalete">Convite para uma campanha</h1>
+        <p class="resumo">
+          <strong class="campanha">{{ p.campanha }}</strong>
+          <span class="mestre">Mestre: {{ p.mestre }}</span>
+        </p>
+
+        @if (!logado()) {
+          <p class="aviso">Entre ou crie uma conta para participar. Você volta para este convite em seguida.</p>
+          <div class="acoes">
+            <a class="botao" routerLink="/entrar" [queryParams]="volta()">Entrar</a>
+            <a class="botao-neutro" routerLink="/cadastrar" [queryParams]="volta()">Criar conta</a>
+          </div>
+        } @else if (jaMembro()) {
+          <p class="aviso" role="status">Você já está nesta campanha.</p>
+          <a class="botao" [routerLink]="['/campanhas', p.campanhaId]">Abrir a campanha</a>
+        } @else {
+          <div class="acoes">
+            <button type="button" class="botao" [disabled]="aceitando()" (click)="aceitar()">
+              {{ aceitando() ? 'Entrando…' : 'Entrar na campanha' }}
+            </button>
+          </div>
+          @if (erroAoAceitar(); as erro) {
+            <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+          }
+        }
+      }
+    }
+  }
+</section>
