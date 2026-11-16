@@ -106,6 +106,9 @@ class CampanhaApiTest extends IntegrationTestBase {
 
 		assertThat(JsonPath.<String>read(resposta, "$.convite.codigo")).matches("[A-Za-z0-9]{12}");
 		Long id = JsonPath.<Number>read(resposta, "$.id").longValue();
+		// o corpo do POST é o mesmo do GET /campanhas/{id} (o front lê o id do corpo, o Location não passa pelo CORS)
+		String lido = mockMvc.perform(get("/campanhas/{id}", id).with(como(M))).andReturn().getResponse().getContentAsString();
+		assertThat(resposta).isEqualTo(lido);
 		assertThat(jdbc.queryForObject("select papel from participacao where campanha_id = ? and usuario_id = ?", String.class, id, M))
 				.isEqualTo("MESTRE");
 	}
