@@ -12,11 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.exception.RetratoGrandeDemaisException;
 import dev.spironello.fichasrpg.exception.RetratoNaoEncontradoException;
 import dev.spironello.fichasrpg.model.RetratoFicha;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 import dev.spironello.fichasrpg.repository.RetratoFichaRepository;
 
 /**
@@ -30,11 +28,11 @@ public class RetratoService {
 	private static final Logger log = LoggerFactory.getLogger(RetratoService.class);
 
 	private final RetratoFichaRepository retratos;
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final ValidadorRetrato validador;
 	private final Clock relogio;
 
-	public RetratoService(RetratoFichaRepository retratos, FichaRepository fichas, ValidadorRetrato validador,
+	public RetratoService(RetratoFichaRepository retratos, FichasDoUsuario fichas, ValidadorRetrato validador,
 			Clock relogio) {
 		this.retratos = retratos;
 		this.fichas = fichas;
@@ -80,9 +78,7 @@ public class RetratoService {
 	}
 
 	private void exigirFicha(Long fichaId) {
-		if (!fichas.existsById(fichaId)) {
-			throw new FichaNaoEncontradaException(fichaId);
-		}
+		fichas.exigir(fichaId);
 	}
 
 	private static byte[] lerComLimite(InputStream corpo) {

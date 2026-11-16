@@ -7,7 +7,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,7 +24,6 @@ import jakarta.servlet.http.HttpServletRequest;
  * Retrato do personagem: o corpo do PUT é a própria imagem (image/jpeg), sem JSON nem multipart.
  * O navegador já manda a imagem recortada e reduzida; o servidor valida mesmo assim.
  */
-@CrossOrigin(origins = "http://localhost:4200")
 @Tag(name = "Retrato", description = "Imagem do personagem (JPEG até 200 KB e 1000 px)")
 @RestController
 @RequestMapping("/fichas/{id}/retrato")
