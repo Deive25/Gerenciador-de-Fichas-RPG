@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -28,14 +29,16 @@ public class ContaService {
 	private static final int MAX_BYTES_SENHA = 72;
 
 	private final UsuarioRepository usuarios;
+	private final PoliticaDeSenha politica;
 	private final TokenService tokens;
 	private final PasswordEncoder encoder;
 	private final Clock relogio;
 	/** Hash de uma senha qualquer, calculado uma vez: o login com e-mail inexistente gasta o mesmo tempo de BCrypt. */
 	private final String hashFixo;
 
-	public ContaService(UsuarioRepository usuarios, TokenService tokens, PasswordEncoder encoder, Clock relogio) {
+	public ContaService(UsuarioRepository usuarios, PoliticaDeSenha politica, TokenService tokens, PasswordEncoder encoder, Clock relogio) {
 		this.usuarios = usuarios;
+		this.politica = politica;
 		this.tokens = tokens;
 		this.encoder = encoder;
 		this.relogio = relogio;
@@ -44,10 +47,11 @@ public class ContaService {
 
 	@Transactional
 	public RespostaAuth registrar(RegistroRequest pedido) {
-		if (pedido.senha().getBytes(StandardCharsets.UTF_8).length > MAX_BYTES_SENHA) {
-			throw new DadosInvalidosException(Map.of("senha", "A senha pode ter no máximo 72 caracteres"));
-		}
 		String email = normalizar(pedido.email());
+		Optional<String> problema = politica.problema(pedido.senha(), pedido.nome(), email);
+		if (problema.isPresent()) {
+			throw new DadosInvalidosException(Map.of("senha", problema.get()));
+		}
 		if (usuarios.existsByEmail(email)) {
 			throw new EmailJaCadastradoException();
 		}

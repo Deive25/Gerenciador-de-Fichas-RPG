@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -38,6 +39,8 @@ import com.jayway.jsonpath.JsonPath;
 
 import dev.spironello.fichasrpg.IntegrationTestBase;
 import dev.spironello.fichasrpg.RelogioDeTesteConfig.RelogioAjustavel;
+import dev.spironello.fichasrpg.auth.Usuario;
+import dev.spironello.fichasrpg.auth.UsuarioRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -48,7 +51,9 @@ import tools.jackson.databind.ObjectMapper;
 class AuthControllerTest extends IntegrationTestBase {
 
 	private static final Instant INICIO = Instant.parse("2026-01-01T00:00:00Z");
-	private static final String SENHA = "senha-boa-123";
+	private static final String SENHA = "dragão vermelho na taverna";
+	/** 72 caracteres (e 72 bytes): o limite do BCrypt. */
+	private static final String SENHA_72 = "dragao vermelho dorme na taverna do velho mestre perto da ponte antiga e";
 
 	@Autowired
 	private WebApplicationContext contexto;
@@ -56,6 +61,10 @@ class AuthControllerTest extends IntegrationTestBase {
 	private RelogioAjustavel relogio;
 	@Autowired
 	private JdbcTemplate jdbc;
+	@Autowired
+	private UsuarioRepository usuarios;
+	@Autowired
+	private PasswordEncoder encoder;
 	@Autowired
 	private ObjectMapper json;
 
@@ -133,14 +142,44 @@ class AuthControllerTest extends IntegrationTestBase {
 	@DisplayName("senha com 73 caracteres dá 400; com 72 caracteres ASCII é aceita")
 	void limiteDaSenha() throws Exception {
 		mvc.perform(post("/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(corpo(Map.of("nome", "Dan", "email", "dan@auth.test", "senha", "a".repeat(73)))))
+				.content(corpo(Map.of("nome", "Dan", "email", "dan@auth.test", "senha", SENHA_72 + "x"))))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.errors.senha").exists());
 		mvc.perform(post("/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(corpo(Map.of("nome", "Dan", "email", "dan@auth.test", "senha", "a".repeat(72)))))
+				.content(corpo(Map.of("nome", "Dan", "email", "dan@auth.test", "senha", SENHA_72))))
 				.andExpect(status().isCreated());
 	}
 
+
+	@Test
+	@DisplayName("senha com 14 caracteres dá 400 em errors.senha 'Use pelo menos 15 caracteres' e nada é gravado")
+	void senhaCurta() throws Exception {
+		mvc.perform(post("/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content(corpo(Map.of("nome", "Zeca", "email", "zeca@auth.test", "senha", "dragao na tave"))))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.senha").value("Use pelo menos 15 caracteres"));
+
+		assertThat(jdbc.queryForObject("select count(*) from usuario where email = 'zeca@auth.test'", Integer.class)).isZero();
+	}
+
+	@Test
+	@DisplayName("senha comum dá 400 em errors.senha com a mensagem da regra 6")
+	void senhaComum() throws Exception {
+		mvc.perform(post("/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content(corpo(Map.of("nome", "Zeca", "email", "zeca@auth.test", "senha", "Senha@2026!!!!!!!"))))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.senha").value("Essa senha é comum demais. Escolha outra"));
+	}
+
+	@Test
+	@DisplayName("login com uma senha antiga de 8 caracteres (conta já gravada) continua dando 200: a política vale só no cadastro")
+	void loginComSenhaAntigaCurta() throws Exception {
+		usuarios.saveAndFlush(new Usuario("velho@auth.test", "Velho", encoder.encode("abc12345"), INICIO));
+
+		login("velho@auth.test", "abc12345")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.usuario.email").value("velho@auth.test"));
+	}
 	@Test
 	@DisplayName("JSON estrito: chave desconhecida no cadastro dá 400")
 	void jsonEstrito() throws Exception {
