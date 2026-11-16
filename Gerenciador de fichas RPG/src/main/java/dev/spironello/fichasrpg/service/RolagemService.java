@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.spironello.fichasrpg.dto.RolagemRequest;
 import dev.spironello.fichasrpg.dto.RolagemResponse;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
  * Rolagem livre de uma notação de dados (aba Dados). Vale nos dois sistemas e não grava nada: só confere que a ficha
@@ -20,19 +18,17 @@ public class RolagemService {
 
 	private static final Logger log = LoggerFactory.getLogger(RolagemService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final Dado dado;
 
-	public RolagemService(FichaRepository fichas, Dado dado) {
+	public RolagemService(FichasDoUsuario fichas, Dado dado) {
 		this.fichas = fichas;
 		this.dado = dado;
 	}
 
 	@Transactional(readOnly = true)
 	public RolagemResponse rolar(Long fichaId, RolagemRequest request) {
-		if (!fichas.existsById(fichaId)) {
-			throw new FichaNaoEncontradaException(fichaId);
-		}
+		fichas.exigir(fichaId);
 		NotacaoDeDados.Expressao expressao = NotacaoDeDados.lerNoCampo(request.expressao(), "expressao");
 		Rolagem rolagem = NotacaoDeDados.rolar(expressao, 1, dado);
 		log.info("Rolagem livre fichaId={} total={}", fichaId, rolagem.total());

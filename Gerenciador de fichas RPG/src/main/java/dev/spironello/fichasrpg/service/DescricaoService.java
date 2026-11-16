@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.spironello.fichasrpg.dto.DescricaoFicha;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /** Edição da descrição da ficha (aparência, história e anotações), igual nos dois sistemas. */
 @Service
@@ -16,16 +14,16 @@ public class DescricaoService {
 
 	private static final Logger log = LoggerFactory.getLogger(DescricaoService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 
-	public DescricaoService(FichaRepository fichas) {
+	public DescricaoService(FichasDoUsuario fichas) {
 		this.fichas = fichas;
 	}
 
 	/** Substituição completa dos três campos; texto vazio ou só com espaços vira null. Loga só o id. */
 	@Transactional
 	public DescricaoFicha atualizar(Long fichaId, DescricaoFicha descricao) {
-		Ficha ficha = fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		Ficha ficha = fichas.buscar(fichaId);
 		ficha.setAparencia(vazioViraNulo(descricao.aparencia()));
 		ficha.setHistoria(vazioViraNulo(descricao.historia()));
 		ficha.setAnotacoes(vazioViraNulo(descricao.anotacoes()));
