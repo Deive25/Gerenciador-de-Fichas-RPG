@@ -1,0 +1,71 @@
+// Cartão das telas de conta (entrar e cadastrar): um bloco dourado estreito, centrado, pensado
+// primeiro para o celular (375 px). Importado pelo scss de cada tela com @use.
+@mixin cartao-auth {
+  :host {
+    display: block;
+  }
+
+  .cartao-auth {
+    max-width: 26rem;
+    margin: 1.5rem auto 0;
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .titulo-auth {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+  }
+
+  .subtitulo-auth {
+    margin: 0 0 1rem;
+    color: var(--cor-texto-suave);
+  }
+
+  form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .erro-acao {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--cor-vida);
+    border-radius: 8px;
+    background: var(--cor-fundo-erro);
+    color: #f0a597;
+  }
+
+  .mostrar-senha {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    border: none;
+    background: transparent;
+    color: var(--cor-acao);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+  }
+
+  .enviar {
+    width: 100%;
+  }
+
+  .trocar {
+    margin: 1rem 0 0;
+    text-align: center;
+    color: var(--cor-texto-suave);
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+  }
+}
