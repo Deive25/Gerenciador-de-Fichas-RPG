@@ -21,5 +21,8 @@ export function mensagemAuth(controle: AbstractControl): string | null {
   if (erros['maxlength']) {
     return `Máximo de ${erros['maxlength'].requiredLength} caracteres`;
   }
+  if (erros['requisitos']) {
+    return 'Atenda aos requisitos abaixo';
+  }
   return null;
 }
