@@ -1,6 +1,6 @@
 <section class="bloco bloco-dourado cartao-auth">
   <h1 class="titulo-auth">Entrar</h1>
-  <p class="subtitulo-auth">Acesse as suas fichas.</p>
+  <p class="subtitulo-auth">Bem-vindo de volta. As suas fichas estão te esperando.</p>
 
   <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -13,7 +13,15 @@
 
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Senha</mat-label>
-      <input matInput [type]="mostrarSenha() ? 'text' : 'password'" formControlName="senha" autocomplete="current-password" />
+      <input
+        matInput
+        [type]="mostrarSenha() ? 'text' : 'password'"
+        formControlName="senha"
+        autocomplete="current-password"
+        (keydown)="atualizarCapsLock($event)"
+        (keyup)="atualizarCapsLock($event)"
+        (blur)="capsLigado.set(false)"
+      />
       <button
         type="button"
         matSuffix
@@ -29,6 +37,10 @@
         <mat-error>{{ texto }}</mat-error>
       }
     </mat-form-field>
+
+    @if (capsLigado()) {
+      <p class="aviso-caps" role="status">Caps Lock está ligado</p>
+    }
 
     @if (erroGeral(); as erro) {
       <p class="erro-acao" role="alert">{{ erro }}</p>
