@@ -1,0 +1,165 @@
+@switch (estado()) {
+  @case ('carregando') {
+    <p class="aviso" role="status">Carregando campanha…</p>
+  }
+  @case ('nao-encontrada') {
+    <div class="aviso-erro" role="alert">
+      <strong>Campanha não encontrada</strong>
+      <p>Ela pode ter sido excluída, ou você não participa dela.</p>
+      <a routerLink="/campanhas">Voltar para as campanhas</a>
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erro()?.titulo }}</strong>
+      <p>{{ erro()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar(+id())">Tentar de novo</button>
+    </div>
+  }
+  @default {
+    @if (campanha(); as c) {
+      <a class="voltar" routerLink="/campanhas">← Campanhas</a>
+
+      <header class="cabecalho bloco bloco-dourado">
+        @if (editando()) {
+          <app-formulario-campanha
+            rotulo="Salvar campanha"
+            [inicial]="{ nome: c.nome, descricao: c.descricao }"
+            [enviando]="ocupado()"
+            [erro]="erroAoEditar()"
+            (enviar)="salvar($event)"
+            (cancelar)="editando.set(false)"
+          />
+        } @else {
+          <h1 class="nome-versalete">{{ c.nome }}</h1>
+          @if (c.descricao) {
+            <p class="descricao">{{ c.descricao }}</p>
+          }
+          <p class="papel">Mestre: {{ c.mestre.nome }} · {{ ehMestre() ? 'Você é o mestre' : 'Você é jogador' }}</p>
+          @if (ehMestre()) {
+            <div class="acoes">
+              <button type="button" class="botao-neutro" (click)="editando.set(true)">Editar</button>
+              <button type="button" class="botao-perigo" (click)="confirmacao.set({ tipo: 'excluir' })">
+                Excluir campanha
+              </button>
+            </div>
+          }
+        }
+      </header>
+
+      @if (confirmacao()?.tipo === 'excluir') {
+        <section class="confirmacao bloco">
+          <span>Excluir {{ c.nome }} de vez? As fichas voltam para os donos, sem campanha.</span>
+          <button type="button" class="botao-perigo" [disabled]="ocupado()" (click)="excluir()">Sim, excluir</button>
+          <button type="button" class="botao-neutro" (click)="confirmacao.set(null)">Cancelar</button>
+        </section>
+      }
+
+      @if (erroAcao(); as erro) {
+        <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+      }
+
+      <section class="secao" aria-labelledby="titulo-fichas">
+        <div class="titulo-linha">
+          <h2 id="titulo-fichas" class="titulo-secao">Fichas da mesa</h2>
+          <a class="botao" routerLink="/fichas/nova" [queryParams]="{ campanha: c.id }">+ Nova ficha aqui</a>
+        </div>
+        @if (fichas().length === 0) {
+          <div class="vazio bloco"><p>Nenhuma ficha na mesa ainda.</p></div>
+        } @else {
+          <div class="grade">
+            @for (ficha of fichas(); track ficha.id) {
+              <app-cartao-ficha
+                [ficha]="ficha"
+                [podeAbrir]="podeAbrir(ficha)"
+                [mostrarDono]="true"
+                [mostrarCampanha]="false"
+              />
+            }
+          </div>
+        }
+      </section>
+
+      <section class="secao" aria-labelledby="titulo-membros">
+        <h2 id="titulo-membros" class="titulo-secao">Membros</h2>
+        <ul class="membros bloco">
+          @for (m of membros(); track m.usuarioId) {
+            <li class="membro">
+              <span class="nome-membro">{{ m.nome }}</span>
+              <span class="selo-papel" [class.mestre]="m.papel === 'MESTRE'">{{ papeis[m.papel] }}</span>
+              @if (podeRemover(m)) {
+                <button
+                  type="button"
+                  class="botao-neutro"
+                  [attr.aria-label]="'Remover ' + m.nome + ' da campanha'"
+                  (click)="confirmacao.set({ tipo: 'remover', usuarioId: m.usuarioId })"
+                >
+                  Remover
+                </button>
+              }
+              @if (removendo(m)) {
+                <div class="confirmacao-membro">
+                  <span>Remover {{ m.nome }} da campanha? As fichas de {{ m.nome }} ficam sem campanha.</span>
+                  <button type="button" class="botao-perigo" [disabled]="ocupado()" (click)="remover(m.usuarioId)">
+                    Sim, remover
+                  </button>
+                  <button type="button" class="botao-neutro" (click)="confirmacao.set(null)">Cancelar</button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (!ehMestre()) {
+          @if (confirmacao()?.tipo === 'sair') {
+            <section class="confirmacao bloco">
+              <span>Sair de {{ c.nome }}? As suas fichas ficam sem campanha.</span>
+              <button type="button" class="botao-perigo" [disabled]="ocupado()" (click)="sair()">Sim, sair</button>
+              <button type="button" class="botao-neutro" (click)="confirmacao.set(null)">Cancelar</button>
+            </section>
+          } @else {
+            <button type="button" class="botao-perigo" (click)="confirmacao.set({ tipo: 'sair' })">
+              Sair da campanha
+            </button>
+          }
+        }
+      </section>
+
+      @if (ehMestre()) {
+        <section class="secao convite" aria-labelledby="titulo-convite">
+          <h2 id="titulo-convite" class="titulo-secao">Convite</h2>
+          <div class="bloco">
+            @if (link(); as endereco) {
+              <label class="rotulo-link" for="link-convite">Link do convite</label>
+              <div class="linha-link">
+                <input id="link-convite" class="campo-link" type="text" readonly [value]="endereco" (focus)="selecionar($event)" />
+                <button type="button" class="botao" (click)="copiar()">Copiar</button>
+              </div>
+              <p class="mensagem-copia" role="status">{{ mensagemCopia() }}</p>
+
+              @if (confirmacao()?.tipo === 'renovar') {
+                <div class="confirmacao-membro">
+                  <span>Renovar o link? O link antigo para de funcionar.</span>
+                  <button type="button" class="botao-perigo" [disabled]="ocupado()" (click)="renovarConvite()">
+                    Sim, renovar
+                  </button>
+                  <button type="button" class="botao-neutro" (click)="confirmacao.set(null)">Cancelar</button>
+                </div>
+              } @else {
+                <div class="acoes">
+                  <button type="button" class="botao-neutro" (click)="confirmacao.set({ tipo: 'renovar' })">Renovar</button>
+                  <button type="button" class="botao-neutro" [disabled]="ocupado()" (click)="desativarConvite()">
+                    Desativar
+                  </button>
+                </div>
+              }
+            } @else {
+              <p>O convite está desativado. Ninguém entra por ele até você gerar um link novo.</p>
+              <button type="button" class="botao" [disabled]="ocupado()" (click)="renovarConvite()">Gerar novo link</button>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+}
