@@ -1,0 +1,50 @@
+<section class="bloco bloco-dourado cartao-auth">
+  <h1 class="titulo-auth">Criar conta</h1>
+  <p class="subtitulo-auth">Guarde as suas fichas na sua conta.</p>
+
+  <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nome</mat-label>
+      <input matInput type="text" formControlName="nome" autocomplete="name" />
+      @if (mensagem(form.controls.nome); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>E-mail</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email" inputmode="email" />
+      @if (mensagem(form.controls.email); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Senha</mat-label>
+      <input matInput [type]="mostrarSenha() ? 'text' : 'password'" formControlName="senha" autocomplete="new-password" />
+      <button
+        type="button"
+        matSuffix
+        class="mostrar-senha"
+        aria-label="Mostrar senha"
+        [attr.aria-pressed]="mostrarSenha()"
+        [disabled]="enviando()"
+        (click)="mostrarSenha.set(!mostrarSenha())"
+      >
+        {{ mostrarSenha() ? 'Ocultar' : 'Mostrar' }}
+      </button>
+      <mat-hint>De 8 a 72 caracteres</mat-hint>
+      @if (mensagem(form.controls.senha); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (erroGeral(); as erro) {
+      <p class="erro-acao" role="alert">{{ erro }}</p>
+    }
+
+    <button type="submit" class="botao enviar" [disabled]="enviando()">{{ enviando() ? 'Criando…' : 'Criar conta' }}</button>
+  </form>
+
+  <p class="trocar">Já tem conta? <a routerLink="/entrar" [queryParams]="{ volta: volta() }">Entrar</a></p>
+</section>
