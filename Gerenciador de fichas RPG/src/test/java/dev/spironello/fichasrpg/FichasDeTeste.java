@@ -67,6 +67,7 @@ public final class FichasDeTeste {
 		}
 		Map<String, Object> corpo = new LinkedHashMap<>();
 		corpo.put("sistema", "ORDEM_PARANORMAL");
+		corpo.put("versao", 0); // a ficha de teste nasce na versão 0; o PUT exige a versão (o POST a ignora)
 		corpo.put("jogador", "Arthur");
 		corpo.put("personagem", "Ana");
 		corpo.put("genero", "F");
@@ -86,6 +87,7 @@ public final class FichasDeTeste {
 		}
 		Map<String, Object> corpo = new LinkedHashMap<>();
 		corpo.put("sistema", "DND");
+		corpo.put("versao", 0); // a ficha de teste nasce na versão 0; o PUT exige a versão (o POST a ignora)
 		corpo.put("jogador", "Arthur");
 		corpo.put("personagem", "Ana");
 		corpo.put("genero", "F");

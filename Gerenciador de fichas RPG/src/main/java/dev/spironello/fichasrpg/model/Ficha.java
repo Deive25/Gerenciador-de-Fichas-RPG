@@ -51,7 +51,7 @@ public abstract class Ficha {
 	private String anotacoes;
 
 	// Dono da ficha (2.2): coluna simples, sem @ManyToOne. A ficha nunca precisa carregar o usuário, e a chave
-	// estrangeira do banco garante a integridade. Não aparece no JSON da ficha.
+	// estrangeira do banco garante a integridade. Nas respostas aparece como dono {id, nome} (o nome vem de @Formula).
 	@Column(name = "dono_id", nullable = false)
 	private Long donoId;
 

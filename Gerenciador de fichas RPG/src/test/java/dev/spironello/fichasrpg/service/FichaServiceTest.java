@@ -51,6 +51,8 @@ class FichaServiceTest {
 
 	private static final Long ID = 7L;
 	private static final Long DONO = 1000000L;
+	/** A versão que a ficha existente tem e que o pedido de PUT traz (a trava otimista confere as duas). */
+	private static final Long VERSAO = 4L;
 	/** O usuário logado nos testes unitários: sem Spring Security, o id é fixo. */
 	private static final UsuarioAtual USUARIO = new UsuarioAtual() {
 		@Override
@@ -142,6 +144,7 @@ class FichaServiceTest {
 		// Ficha existente com tudo preenchido; o pedido traz outros valores e uma perícia nula.
 		FichaOrdem existente = new FichaOrdem();
 		existente.setId(ID);
+		org.springframework.test.util.ReflectionTestUtils.setField(existente, "versao", VERSAO);
 		FichaOrdemMapper mapper = new FichaOrdemMapper();
 		mapper.copiar(requestComTudoPreenchido(0), existente);
 		existente.getPericias().put(PericiaOrdem.TATICA, GrauOrdem.TREINADO); // o pedido não a traz: precisa sumir
@@ -172,9 +175,10 @@ class FichaServiceTest {
 	void atualizarComGrauIncompativel() {
 		FichaOrdem existente = new FichaOrdem();
 		existente.setId(ID);
+		org.springframework.test.util.ReflectionTestUtils.setField(existente, "versao", VERSAO);
 		when(repository.findById(ID)).thenReturn(Optional.of(doDono(existente)));
 		FichaOrdemRequest veteranoComNexBaixo = new FichaOrdemRequest("a", "b", "c", null, null, null, 30,
-				atributos(1), null, Map.of(PericiaOrdem.ATLETISMO, GrauOrdem.VETERANO), null);
+				atributos(1), null, Map.of(PericiaOrdem.ATLETISMO, GrauOrdem.VETERANO), VERSAO);
 
 		assertThatThrownBy(() -> service.atualizar(ID, veteranoComNexBaixo))
 				.isInstanceOfSatisfying(DadosInvalidosException.class, e -> assertThat(e.getErros())
@@ -244,6 +248,6 @@ class FichaServiceTest {
 		pericias.put(PericiaOrdem.CRIME, GrauOrdem.VETERANO);
 		pericias.put(PericiaOrdem.LUTA, null);
 		return new FichaOrdemRequest("nome-jogador", "nome-personagem", "nome-genero", 20 + base,
-				ClasseOrdem.values()[base], "nome-origem", 40 + base, atributos(2 + base), recursos, pericias, null);
+				ClasseOrdem.values()[base], "nome-origem", 40 + base, atributos(2 + base), recursos, pericias, VERSAO);
 	}
 }
