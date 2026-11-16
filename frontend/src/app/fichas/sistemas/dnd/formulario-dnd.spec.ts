@@ -11,7 +11,7 @@ import { FormularioDnd, paraEntradaDnd, valorVazioDnd } from './formulario-dnd';
 import { espacosZerados } from '../../testes/espacos-zerados';
 
 const FICHA: FichaDnd = {
-  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Brann', genero: 'M', idade: 41, retratoVersao: 1772366400250,
+  id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Brann', genero: 'M', idade: 41, retratoVersao: 1772366400250,
   edicao: 'D2014', classe: 'Guerreiro', especie: 'Anão', antecedente: 'Soldado', nivel: 5,
   atributos: { FOR: 16, DES: 12, CON: 14, INT: 8, SAB: 10, CAR: 9 },
   recursos: { PV: { atual: 30, maximo: 44 }, PV_TEMP: { atual: 5, maximo: null } },

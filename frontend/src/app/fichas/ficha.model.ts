@@ -1,3 +1,5 @@
+import { Referencia } from '../campanhas/campanha.model';
+
 /** Sistemas de RPG que a API conhece (2.1d). */
 export type Sistema = 'ORDEM_PARANORMAL' | 'DND';
 
@@ -22,6 +24,10 @@ export interface FichaResumo {
   idade: number | null;
   retratoVersao: number | null;
   recursos: RecursoResumo[];
+  /** Quem é o dono da ficha (na mesa, o cartão mostra de quem é). */
+  dono: Referencia;
+  /** A campanha da ficha, ou null quando está sem campanha. */
+  campanha: Referencia | null;
 }
 
 // ---- Descrição e habilidades (2.1g), comuns aos dois sistemas ----
@@ -255,6 +261,10 @@ export type CodigoRecurso = 'PV' | 'SAN' | 'PE';
 export interface FichaOrdem {
   id: number;
   sistema: 'ORDEM_PARANORMAL';
+  /** Versão da ficha: o PUT a devolve, e o servidor responde 409 se ela já mudou (2.3). */
+  versao: number;
+  dono: Referencia;
+  campanha: Referencia | null;
   jogador: string;
   personagem: string;
   genero: string;
@@ -308,6 +318,10 @@ export type PericiaDnd =
 export interface FichaDnd {
   id: number;
   sistema: 'DND';
+  /** Versão da ficha: o PUT a devolve, e o servidor responde 409 se ela já mudou (2.3). */
+  versao: number;
+  dono: Referencia;
+  campanha: Referencia | null;
   jogador: string;
   personagem: string;
   genero: string;
@@ -370,11 +384,14 @@ export type PedidoDeRolagem =
 
 /**
  * Corpo do POST e do PUT: a API não aceita `id` como dado (o da URL é que vale) nem
- * `retratoVersao` (o retrato tem rota própria) nem `descricao`, `habilidades`, `itens`, `moedas`, `magias`, `espacos`, `rituais` e `ataques` (rotas próprias, ADR 0018).
+ * `retratoVersao` (o retrato tem rota própria) nem `dono` e `campanha` (a campanha muda em `PUT /fichas/{id}/campanha`) nem `descricao`, `habilidades`, `itens`, `moedas`, `magias`, `espacos`, `rituais` e `ataques` (rotas próprias, ADR 0018).
  * O JSON estrito da API recusa chaves a mais.
  */
 type SoDaLeitura =
   | 'id'
+  | 'dono'
+  | 'campanha'
+  | 'versao'
   | 'retratoVersao'
   | 'descricao'
   | 'habilidades'
@@ -384,8 +401,9 @@ type SoDaLeitura =
   | 'espacos'
   | 'rituais'
   | 'ataques';
-export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura>;
-export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura>;
+/** `versao` é obrigatória no PUT e ignorada no POST (por isso opcional aqui). */
+export type FichaOrdemEntrada = Omit<FichaOrdem, SoDaLeitura> & { versao?: number };
+export type FichaDndEntrada = Omit<FichaDnd, SoDaLeitura> & { versao?: number };
 export type FichaEntrada = FichaOrdemEntrada | FichaDndEntrada;
 
 /** Corpo do PUT a partir de uma ficha carregada, sem as chaves que a API recusa. */
@@ -396,6 +414,8 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
   if (ficha.sistema === 'DND') {
     const {
       id: _id,
+      dono: _dono,
+      campanha: _campanha,
       retratoVersao: _retratoVersao,
       descricao: _descricao,
       habilidades: _habilidades,
@@ -415,6 +435,8 @@ export function paraEntradaDaFicha(ficha: Ficha): FichaEntrada {
   }
   const {
       id: _id,
+      dono: _dono,
+      campanha: _campanha,
       retratoVersao: _retratoVersao,
       descricao: _descricao,
       habilidades: _habilidades,
