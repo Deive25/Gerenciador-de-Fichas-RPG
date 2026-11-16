@@ -20,11 +20,11 @@ public class ItemService {
 
 	private static final Logger log = LoggerFactory.getLogger(ItemService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final ItensOrdem itensOrdem;
 	private final ItensDnd itensDnd;
 
-	public ItemService(FichasDoUsuario fichas, ItensOrdem itensOrdem, ItensDnd itensDnd) {
+	public ItemService(AcessoAFicha fichas, ItensOrdem itensOrdem, ItensDnd itensDnd) {
 		this.fichas = fichas;
 		this.itensOrdem = itensOrdem;
 		this.itensDnd = itensDnd;

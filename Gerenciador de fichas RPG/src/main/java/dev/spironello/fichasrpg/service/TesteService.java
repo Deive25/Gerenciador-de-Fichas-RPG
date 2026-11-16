@@ -19,11 +19,11 @@ public class TesteService {
 
 	private static final Logger log = LoggerFactory.getLogger(TesteService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final SistemasDeFicha sistemas;
 	private final Dado dado;
 
-	public TesteService(FichasDoUsuario fichas, SistemasDeFicha sistemas, Dado dado) {
+	public TesteService(AcessoAFicha fichas, SistemasDeFicha sistemas, Dado dado) {
 		this.fichas = fichas;
 		this.sistemas = sistemas;
 		this.dado = dado;

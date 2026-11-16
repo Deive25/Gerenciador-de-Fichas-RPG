@@ -118,7 +118,7 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 			atributos.put(atributo, 1);
 		}
 		return new FichaOrdemRequest(nome, nome, "F", null, null, null, 40, atributos, null,
-				Map.of(PericiaOrdem.ACROBACIA, GrauOrdem.TREINADO, PericiaOrdem.LUTA, GrauOrdem.VETERANO));
+				Map.of(PericiaOrdem.ACROBACIA, GrauOrdem.TREINADO, PericiaOrdem.LUTA, GrauOrdem.VETERANO), null);
 	}
 
 	private FichaDndRequest pedidoDnd(String nome) {
@@ -128,6 +128,6 @@ class ListagemSemNMaisUmTest extends IntegrationTestBase {
 		}
 		return new FichaDndRequest(nome, nome, "F", null, EdicaoDnd.D2024, null, null, null, 3, atributos, null, null,
 				null, Set.of(AtributoDnd.FOR),
-				Map.of(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE, PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA), null);
+				Map.of(PericiaDnd.ATLETISMO, GrauDnd.PROFICIENTE, PericiaDnd.ARCANISMO, GrauDnd.ESPECIALISTA), null, null);
 	}
 }
