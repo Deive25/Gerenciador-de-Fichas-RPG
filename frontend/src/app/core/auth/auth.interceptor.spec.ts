@@ -40,6 +40,11 @@ describe('authInterceptor', () => {
     expect(ctl.expectOne(`${API}/auth/login`).request.headers.has('Authorization')).toBe(false);
   });
 
+  it('não põe o cabeçalho num host que só começa com o endereço da API', () => {
+    http.get(`${API}.outro.exemplo/fichas`).subscribe();
+    expect(ctl.expectOne(`${API}.outro.exemplo/fichas`).request.headers.has('Authorization')).toBe(false);
+  });
+
   it('num 401 renova uma vez e repete a chamada com o token novo', async () => {
     let resposta: unknown;
     http.get(`${API}/fichas`).subscribe((r) => (resposta = r));
