@@ -53,6 +53,8 @@ Transformar o Gerenciador de Fichas numa ferramenta que o grupo de RPG do Arthur
 
 **Demonstração:** os usuários Mestre Demo e Jogadora Demo, com uma campanha pronta, são criados só quando o perfil `demo` está ativo, e nunca por migração.
 
+> **Mudou no 2.3** (spec `2026-11-16-j1-campanhas-design.md`): a campanha "Fichas importadas" saiu, porque desde o 2.2 as fichas antigas são do Arthur; a ficha pode ficar **sem campanha** (`campanha_id` nulo). A renomeação para nomes claros já tinha sido feita na V4. O perfil `demo` foi para o **2.6**.
+
 ## 4. Permissões
 
 | Ação | Mestre da campanha | Jogador da campanha | Fora da campanha |
@@ -71,6 +73,8 @@ Transformar o Gerenciador de Fichas numa ferramenta que o grupo de RPG do Arthur
 - membro sem permissão para a ação → **403**.
 
 Tudo em ProblemDetail, como hoje.
+
+> **Mudou no 2.3:** as fichas do mestre ficam **ocultas** para os jogadores (404); **só o dono exclui** a ficha; o retrato pode ser baixado por qualquer membro que vê o resumo. A matriz final está na §4 da spec do 2.3.
 
 ## 5. Autenticação
 
@@ -180,10 +184,10 @@ Cada incremento passa por: dev Sonnet → verificador Sonnet separado → docume
 |---|---|---|
 | **2.1** | Frontend novo (Angular atual, visual B, celular primeiro) cobrindo o que existe hoje: lista, ver, criar, editar e excluir fichas, e teste de perícia com 🎲. API sem mudança. CI do front no Node atual; o `frontend/` antigo sai. | O fluxo funciona no navegador em largura de celular e de computador; testes unitários verdes; `ng build` no CI. |
 | **2.2** | Login por e-mail/senha: usuários, JWT, refresh rotacionado, logout, Spring Security, dono da ficha (o legado fica com as antigas), telas de entrar e cadastrar, interceptor. Cada usuário vê, edita e rola só as próprias fichas; o compartilhamento chega no 2.3. | 401/403 testados; senha só como hash; migração testada com dados antigos; o front renova o token sozinho. |
-| **2.3** | Campanhas, convites e papéis: fichas por campanha, renomeação para `ficha` com nomes claros, campanha "Fichas importadas", perfil `demo`, telas Minhas campanhas, Campanha e Convite. | A matriz de permissões da §4 inteira está testada; renovar o convite invalida o código antigo; migração testada. |
+| **2.3** | Campanhas, convites e papéis: fichas por campanha (ou sem campanha), telas Minhas campanhas, Campanha e Convite, e `@Version` na ficha. A renomeação já estava feita (V4), a "Fichas importadas" saiu e o perfil `demo` foi para o 2.6. A edição da campanha é `PUT`, e não `PATCH`. | A matriz de permissões da §4 inteira está testada; renovar o convite invalida o código antigo; migração testada. |
 | **2.4** | Rolagens persistidas e ao vivo: tabela `rolagem`, histórico paginado, STOMP autenticado, aba Rolagens e coluna ao vivo no computador. | Teste de WebSocket entre dois clientes; teste de ponta a ponta com duas sessões no navegador. |
 | **2.5** | Login com Google (depende do Arthur criar o projeto OAuth gratuito no Google Cloud). | Ligação por e-mail verificado testada; token inválido é recusado; o botão funciona no ambiente local. |
-| **2.6** | Deploy gratuito: Dockerfile, Render, Neon, Cloudflare Pages, CORS, CSP, perfil `demo` em produção, publicação automática a cada merge, link no README (depende do Arthur criar as contas). | O link público funciona do login à rolagem ao vivo; nenhum segredo no repositório; aviso de "acordando o servidor". |
+| **2.6** | Deploy gratuito: Dockerfile, Render, Neon, Cloudflare Pages, CORS, CSP, perfil `demo` (criado aqui, desde a decisão do 2.3) em produção, publicação automática a cada merge, link no README (depende do Arthur criar as contas). | O link público funciona do login à rolagem ao vivo; nenhum segredo no repositório; aviso de "acordando o servidor". |
 
 **Entre o 2.1 e o 2.2** entram o **2.1b** (novo visual), o **2.1c** (retrato) e o **2.1d** (dado 3D). Eles estão descritos em `2026-11-04-j1-redesign-design.md`.
 
