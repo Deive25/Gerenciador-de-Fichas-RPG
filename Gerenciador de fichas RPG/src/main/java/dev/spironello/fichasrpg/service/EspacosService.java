@@ -21,9 +21,9 @@ public class EspacosService {
 
 	private static final Logger log = LoggerFactory.getLogger(EspacosService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 
-	public EspacosService(FichasDoUsuario fichas) {
+	public EspacosService(AcessoAFicha fichas) {
 		this.fichas = fichas;
 	}
 

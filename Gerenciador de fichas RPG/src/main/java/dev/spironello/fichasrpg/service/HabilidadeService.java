@@ -22,10 +22,10 @@ public class HabilidadeService {
 
 	private static final Logger log = LoggerFactory.getLogger(HabilidadeService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final HabilidadeFichaRepository habilidades;
 
-	public HabilidadeService(FichasDoUsuario fichas, HabilidadeFichaRepository habilidades) {
+	public HabilidadeService(AcessoAFicha fichas, HabilidadeFichaRepository habilidades) {
 		this.fichas = fichas;
 		this.habilidades = habilidades;
 	}

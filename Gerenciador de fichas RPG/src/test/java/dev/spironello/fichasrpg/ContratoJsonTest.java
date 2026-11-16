@@ -74,7 +74,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("GET /fichas/{id} devolve exatamente as 18 chaves da ficha de Ordem, com mapas por código")
+	@DisplayName("GET /fichas/{id} devolve exatamente as 21 chaves da ficha de Ordem, com mapas por código")
 	void chavesDaFicha() throws Exception {
 		FichaOrdem ficha = FichasDeTeste.ordem("Ana");
 		ficha.setAparencia("Alta");
@@ -94,11 +94,16 @@ class ContratoJsonTest extends IntegrationTestBase {
 		Map<String, Object> json = JsonPath.read(corpo, "$");
 
 		List<String> esperadas = List.of(
-				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao",
+				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao", "versao", "dono", "campanha",
 				"descricao", "habilidades", "ataques", "itens", "rituais", "classe", "origem", "nex", "atributos", "recursos", "pericias");
 
 		assertThat(json.keySet()).containsExactlyInAnyOrderElementsOf(esperadas);
 		assertThat(json.get("sistema")).isEqualTo("ORDEM_PARANORMAL");
+		// 2.3: a versão (trava otimista), o dono {id, nome} e a campanha (nula quando a ficha está sem campanha)
+		assertThat(json.get("versao")).isEqualTo(0);
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.dono").keySet()).containsExactlyInAnyOrder("id", "nome");
+		assertThat(JsonPath.<String>read(corpo, "$.dono.nome")).isEqualTo("Usuario de teste");
+		assertThat(json).containsEntry("campanha", null);
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.atributos").keySet())
 				.containsExactlyInAnyOrder("AGI", "FOR", "INT", "PRE", "VIG");
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$.recursos").keySet())
@@ -132,7 +137,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("GET /fichas devolve itens com exatamente as 7 chaves do resumo")
+	@DisplayName("GET /fichas devolve itens com exatamente as 9 chaves do resumo")
 	void chavesDoResumo() throws Exception {
 		repository.save(FichasDeTeste.ordem("Ana"));
 
@@ -143,13 +148,15 @@ class ContratoJsonTest extends IntegrationTestBase {
 		Map<String, Object> primeiro = JsonPath.read(corpo, "$[0]");
 
 		assertThat(primeiro.keySet()).containsExactlyInAnyOrder(
-				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "recursos");
+				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "dono", "campanha", "recursos");
+		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0].dono").keySet()).containsExactlyInAnyOrder("id", "nome");
+		assertThat(primeiro).containsEntry("campanha", null);
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0].recursos[0]").keySet())
 				.containsExactlyInAnyOrder("codigo", "atual", "maximo");
 	}
 
 	@Test
-	@DisplayName("GET /fichas/{id} de D&D devolve exatamente as 26 chaves, com mapas por código")
+	@DisplayName("GET /fichas/{id} de D&D devolve exatamente as 29 chaves, com mapas por código")
 	void chavesDaFichaDnd() throws Exception {
 		FichaDnd ficha = FichasDeTeste.dnd("Ana");
 		ficha.setHistoria("Ex-soldado");
@@ -172,7 +179,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 		Map<String, Object> json = JsonPath.read(corpo, "$");
 
 		assertThat(json.keySet()).containsExactlyInAnyOrder(
-				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao",
+				"id", "sistema", "jogador", "personagem", "genero", "idade", "retratoVersao", "versao", "dono", "campanha",
 				"descricao", "habilidades", "ataques", "itens", "magias", "espacos", "moedas", "edicao", "classe", "especie", "antecedente", "nivel", "atributoConjuracao", "atributos", "recursos", "ca",
 				"inspiracao", "salvaguardas", "pericias");
 		assertThat(json.get("sistema")).isEqualTo("DND");
@@ -211,7 +218,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("GET /fichas de D&D tem as 7 chaves do resumo e recursos só com PV")
+	@DisplayName("GET /fichas de D&D tem as 9 chaves do resumo e recursos só com PV")
 	void chavesDoResumoDnd() throws Exception {
 		FichaDnd ficha = FichasDeTeste.dnd("Ana");
 		ficha.setPvAtual(4);
@@ -223,7 +230,7 @@ class ContratoJsonTest extends IntegrationTestBase {
 				.andReturn().getResponse().getContentAsString();
 
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0]").keySet()).containsExactlyInAnyOrder(
-				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "recursos");
+				"id", "sistema", "jogador", "personagem", "idade", "retratoVersao", "dono", "campanha", "recursos");
 		assertThat(JsonPath.<List<Object>>read(corpo, "$[0].recursos")).hasSize(1);
 		assertThat(JsonPath.<String>read(corpo, "$[0].recursos[0].codigo")).isEqualTo("PV");
 		assertThat(JsonPath.<Map<String, Object>>read(corpo, "$[0].recursos[0]").keySet())

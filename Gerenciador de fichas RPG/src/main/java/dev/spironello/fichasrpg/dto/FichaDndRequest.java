@@ -43,7 +43,8 @@ public record FichaDndRequest(
 		Boolean inspiracao,
 		Set<AtributoDnd> salvaguardas,
 		Map<PericiaDnd, GrauDnd> pericias,
-		AtributoDnd atributoConjuracao) implements FichaRequest {
+		AtributoDnd atributoConjuracao,
+		Long versao) implements FichaRequest {
 
 	@Override
 	public Sistema sistema() {

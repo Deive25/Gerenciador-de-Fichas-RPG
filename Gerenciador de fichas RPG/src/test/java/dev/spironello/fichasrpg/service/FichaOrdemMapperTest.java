@@ -78,7 +78,7 @@ class FichaOrdemMapperTest {
 				RecursoOrdem.PV, new RecursoValor(10, 12),
 				RecursoOrdem.SAN, new RecursoValor(null, 20));
 
-		FichaOrdem ficha = mapper.criar(new FichaOrdemRequest("j", "p", "g", null, null, null, 5, atributos, recursos, null));
+		FichaOrdem ficha = mapper.criar(new FichaOrdemRequest("j", "p", "g", null, null, null, 5, atributos, recursos, null, null));
 
 		assertThat(ficha.getAgilidade()).isEqualTo(1);
 		assertThat(ficha.getForca()).isEqualTo(2);
@@ -140,6 +140,6 @@ class FichaOrdemMapperTest {
 		for (AtributoOrdem atributo : AtributoOrdem.values()) {
 			atributos.put(atributo, 1);
 		}
-		return new FichaOrdemRequest("x", "x", "x", null, null, null, 5, atributos, null, pericias);
+		return new FichaOrdemRequest("x", "x", "x", null, null, null, 5, atributos, null, pericias, null);
 	}
 }
