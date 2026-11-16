@@ -7,6 +7,7 @@ import { respostaDe } from '../core/auth/teste-auth';
 import { Cadastrar } from './cadastrar';
 
 const REGISTRO = 'http://localhost:8080/auth/registro';
+const SENHA = 'dragão vermelho na taverna';
 
 describe('Cadastrar', () => {
   let fixture: ComponentFixture<Cadastrar>;
@@ -23,7 +24,7 @@ describe('Cadastrar', () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
   }
-  function preencher(nome = 'Ana', email = 'ana@x.com', senha = 'segredo123') {
+  function preencher(nome = 'Ana', email = 'ana@x.com', senha = SENHA) {
     digitar('input[formcontrolname="nome"]', nome);
     digitar('input[type="email"]', email);
     digitar('input[formcontrolname="senha"]', senha);
@@ -55,10 +56,10 @@ describe('Cadastrar', () => {
     ctl.expectNone(REGISTRO);
   });
 
-  it('senha curta mostra o mínimo e não envia', () => {
+  it('senha curta mostra que os requisitos não foram atendidos e não envia', () => {
     preencher('Ana', 'ana@x.com', '1234567');
     enviar();
-    expect(el.textContent).toContain('Mínimo de 8 caracteres');
+    expect(el.textContent).toContain('Atenda aos requisitos abaixo');
     ctl.expectNone(REGISTRO);
   });
 
@@ -70,10 +71,10 @@ describe('Cadastrar', () => {
   });
 
   it('sucesso: já entra na conta e navega', () => {
-    preencher('  Ana  ', 'ana@x.com', 'segredo123');
+    preencher('  Ana  ', 'ana@x.com', SENHA);
     enviar();
     const req = ctl.expectOne(REGISTRO);
-    expect(req.request.body).toEqual({ nome: 'Ana', email: 'ana@x.com', senha: 'segredo123' });
+    expect(req.request.body).toEqual({ nome: 'Ana', email: 'ana@x.com', senha: SENHA });
     req.flush(respostaDe(), { status: 201, statusText: 'Created' });
     expect(TestBed.inject(Sessao).estaLogado()).toBe(true);
     expect(navegar).toHaveBeenCalledWith('/fichas');
@@ -134,5 +135,120 @@ describe('Cadastrar', () => {
     fixture.detectChanges();
     expect(el.querySelector<HTMLInputElement>('input[formcontrolname="senha"]')!.type).toBe('text');
     expect(botao.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  describe('requisitos da senha', () => {
+    const lista = () => el.querySelector('ul.requisitos');
+    const item = (texto: string) => [...el.querySelectorAll('ul.requisitos li')].find((li) => li.textContent?.includes(texto))!;
+    const marcador = (texto: string) => item(texto).querySelector('[aria-hidden="true"]')!.textContent?.trim();
+    const digitarSenha = (valor: string) => {
+      digitar('input[formcontrolname="senha"]', valor);
+      fixture.detectChanges();
+    };
+
+    it('a lista fica dentro de um contêiner aria-live=polite e só aparece depois de digitar a senha', () => {
+      expect(el.querySelector('[aria-live="polite"]')).not.toBeNull();
+      expect(lista()).toBeNull();
+      digitarSenha('d');
+      expect(lista()).not.toBeNull();
+      expect(el.querySelector('[aria-live="polite"] ul.requisitos')).not.toBeNull();
+    });
+
+    it('também aparece ao tentar enviar sem digitar a senha', () => {
+      enviar();
+      expect(lista()).not.toBeNull();
+    });
+
+    it('os itens mudam de ○ para ✓ conforme a senha atende (texto escondido pendente/atendido)', () => {
+      digitarSenha('abc');
+      expect(el.querySelectorAll('ul.requisitos li').length).toBe(3);
+      expect(marcador('15 caracteres')).toBe('○');
+      expect(item('15 caracteres').textContent).toContain('pendente');
+      digitarSenha(SENHA);
+      expect(marcador('15 caracteres')).toBe('✓');
+      expect(item('15 caracteres').textContent).toContain('atendido');
+      expect(item('15 caracteres').textContent).not.toContain('pendente');
+      expect(marcador('Sem sequências')).toBe('✓');
+      expect(marcador('Sem o seu nome')).toBe('✓');
+    });
+
+    it('o nome e o e-mail digitados alimentam a lista ao vivo', () => {
+      digitar('input[formcontrolname="nome"]', 'Arthur Spironello');
+      digitarSenha('o arthur rola dados demais');
+      expect(marcador('Sem o seu nome')).toBe('○');
+      digitar('input[formcontrolname="nome"]', 'Ana');
+      fixture.detectChanges();
+      expect(marcador('Sem o seu nome')).toBe('✓');
+      digitar('input[type="email"]', 'dados.mestre@x.com');
+      digitarSenha('rolo dados.mestre ontem');
+      expect(marcador('Sem o seu nome')).toBe('○');
+    });
+
+    it('a repetição e a sequência deixam o item "padrão" pendente', () => {
+      digitarSenha('abcabcabcabcabc');
+      expect(marcador('Sem sequências')).toBe('○');
+      digitarSenha('123456789012345');
+      expect(marcador('Sem sequências')).toBe('○');
+    });
+
+    it('o contador N/15 aparece no item de tamanho até chegar a 15', () => {
+      digitarSenha('dragao');
+      expect(item('15 caracteres').textContent).toContain('6/15');
+      digitarSenha('dragao na taver');
+      expect(item('15 caracteres').textContent).not.toContain('/15');
+    });
+
+    it('enviar com a senha inválida mostra "Atenda aos requisitos abaixo" e não chama a API', () => {
+      preencher('Ana', 'ana@x.com', 'abcabcabcabcabc');
+      enviar();
+      expect(el.querySelector('mat-form-field:has(input[formcontrolname="senha"]) mat-error')?.textContent).toContain(
+        'Atenda aos requisitos abaixo',
+      );
+      ctl.expectNone(REGISTRO);
+    });
+
+    it('o erro 400 do servidor (regra 6) aparece no campo, com prioridade', () => {
+      preencher();
+      enviar();
+      ctl.expectOne(REGISTRO).flush(
+        { title: 'Dados inválidos', errors: { senha: 'Essa senha é comum demais. Escolha outra' } },
+        { status: 400, statusText: 'x' },
+      );
+      fixture.detectChanges();
+      const erro = el.querySelector('mat-form-field:has(input[formcontrolname="senha"]) mat-error')?.textContent;
+      expect(erro).toContain('Essa senha é comum demais. Escolha outra');
+    });
+
+    it('mostra as dicas dos campos e o novo subtítulo', () => {
+      const texto = el.textContent ?? '';
+      expect(texto).toContain('Sua conta guarda as suas fichas. Leva menos de um minuto.');
+      expect(texto).toContain('Como a mesa vai te ver');
+      expect(texto).toContain('Só para entrar. Não mandamos nada.');
+      expect(texto).toContain('Uma frase funciona bem: três ou quatro palavras soltas. Espaços valem.');
+    });
+  });
+
+  describe('aviso de Caps Lock', () => {
+    const campo = () => el.querySelector<HTMLInputElement>('input[formcontrolname="senha"]')!;
+    const tecla = (tipo: string, capsLigado: boolean) => {
+      campo().dispatchEvent(new KeyboardEvent(tipo, { key: 'a', modifierCapsLock: capsLigado }));
+      fixture.detectChanges();
+    };
+    const aviso = () => el.querySelector('[role="status"]')?.textContent?.trim() ?? null;
+
+    it('aparece com o Caps Lock ligado e some ao desligar', () => {
+      expect(aviso()).toBeNull();
+      tecla('keydown', true);
+      expect(aviso()).toBe('Caps Lock está ligado');
+      tecla('keyup', false);
+      expect(aviso()).toBeNull();
+    });
+
+    it('some ao sair do campo', () => {
+      tecla('keydown', true);
+      campo().dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+      expect(aviso()).toBeNull();
+    });
   });
 });
