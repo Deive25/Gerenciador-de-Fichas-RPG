@@ -1,8 +1,13 @@
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { DOCUMENT } from '@angular/common';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
+import { Sessao } from '../core/auth/sessao';
+import { respostaDe } from '../core/auth/teste-auth';
 import { Shell } from './shell';
 
 function criarShell(desktop: boolean) {
@@ -11,9 +16,12 @@ function criarShell(desktop: boolean) {
     imports: [Shell],
     providers: [
       provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: BreakpointObserver, useValue: { observe: () => of(estado) } },
     ],
   });
+  TestBed.inject(Sessao).iniciar(respostaDe());
   const fixture = TestBed.createComponent(Shell);
   fixture.detectChanges();
   return fixture.nativeElement as HTMLElement;
@@ -53,9 +61,12 @@ describe('Shell', () => {
       imports: [Shell],
       providers: [
         provideRouter([{ path: '**', component: TelaContada }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: BreakpointObserver, useValue: { observe: () => largura } },
       ],
     });
+    TestBed.inject(Sessao).iniciar(respostaDe());
     const fixture = TestBed.createComponent(Shell);
     fixture.detectChanges();
     await TestBed.inject(Router).navigateByUrl('/fichas/nova');
@@ -68,5 +79,80 @@ describe('Shell', () => {
     fixture.detectChanges();
 
     expect(TelaContada.criadas).toBe(1);
+  });
+
+  describe('sessão no topo', () => {
+    const LOGOUT = 'http://localhost:8080/auth/logout';
+
+    /** Um DOCUMENT igual ao real, mas com `location` falso, para o teste não recarregar o jsdom. */
+    function montar() {
+      const assign = vi.fn();
+      const documentoFalso = new Proxy(document, {
+        get(alvo, chave) {
+          if (chave === 'location') {
+            return { assign };
+          }
+          const valor = Reflect.get(alvo, chave, alvo);
+          return typeof valor === 'function' ? valor.bind(alvo) : valor;
+        },
+      });
+      TestBed.configureTestingModule({
+        imports: [Shell],
+        providers: [
+          provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: DOCUMENT, useValue: documentoFalso },
+          { provide: BreakpointObserver, useValue: { observe: () => of({ matches: false, breakpoints: {} }) } },
+        ],
+      });
+      localStorage.clear();
+      const fixture = TestBed.createComponent(Shell);
+      fixture.detectChanges();
+      return { fixture, el: fixture.nativeElement as HTMLElement, assign, ctl: TestBed.inject(HttpTestingController) };
+    }
+
+    it('deslogado mostra só a marca', () => {
+      const { el } = montar();
+      expect(el.querySelector('header a.marca')).not.toBeNull();
+      expect(el.querySelector('header a[href="/fichas/nova"]')).toBeNull();
+      expect(el.querySelector('header button')).toBeNull();
+      expect(el.querySelector('.nome-usuario')).toBeNull();
+    });
+
+    it('muda quando a pessoa entra: aparecem Nova ficha, o nome e Sair', () => {
+      const { fixture, el } = montar();
+      TestBed.inject(Sessao).iniciar(respostaDe());
+      fixture.detectChanges();
+      expect(el.querySelector('header a[href="/fichas/nova"]')?.textContent).toContain('+ Nova ficha');
+      expect(el.querySelector('.nome-usuario')?.textContent).toContain('Ana');
+      expect(el.querySelector('header button')?.textContent).toContain('Sair');
+    });
+
+    it('Sair avisa a API, apaga a sessão e faz a navegação completa para /entrar', () => {
+      const { fixture, el, assign, ctl } = montar();
+      TestBed.inject(Sessao).iniciar(respostaDe());
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('header button')!.click();
+      fixture.detectChanges();
+      expect(el.querySelector<HTMLButtonElement>('header button')!.disabled).toBe(true);
+      const req = ctl.expectOne(LOGOUT);
+      expect(req.request.body).toEqual({ refreshToken: 'refresh-1' });
+      expect(assign).not.toHaveBeenCalled();
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(TestBed.inject(Sessao).estaLogado()).toBe(false);
+      expect(localStorage.getItem('fichas-rpg.refresh')).toBeNull();
+      expect(assign).toHaveBeenCalledWith('/entrar');
+    });
+
+    it('Sair ignora o erro da API e sai do mesmo jeito', () => {
+      const { fixture, el, assign, ctl } = montar();
+      TestBed.inject(Sessao).iniciar(respostaDe());
+      fixture.detectChanges();
+      el.querySelector<HTMLButtonElement>('header button')!.click();
+      ctl.expectOne(LOGOUT).error(new ProgressEvent('error'));
+      expect(TestBed.inject(Sessao).estaLogado()).toBe(false);
+      expect(assign).toHaveBeenCalledWith('/entrar');
+    });
   });
 });
