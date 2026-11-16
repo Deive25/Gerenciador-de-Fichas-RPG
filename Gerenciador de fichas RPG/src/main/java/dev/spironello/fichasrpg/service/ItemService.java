@@ -7,11 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.spironello.fichasrpg.dto.ItemRequest;
 import dev.spironello.fichasrpg.dto.ItemResponse;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
  * Criar, editar e excluir os itens do inventário de uma ficha. Cada sistema tem a sua tabela e as suas regras;
@@ -22,11 +20,11 @@ public class ItemService {
 
 	private static final Logger log = LoggerFactory.getLogger(ItemService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final ItensOrdem itensOrdem;
 	private final ItensDnd itensDnd;
 
-	public ItemService(FichaRepository fichas, ItensOrdem itensOrdem, ItensDnd itensDnd) {
+	public ItemService(FichasDoUsuario fichas, ItensOrdem itensOrdem, ItensDnd itensDnd) {
 		this.fichas = fichas;
 		this.itensOrdem = itensOrdem;
 		this.itensDnd = itensDnd;
@@ -66,6 +64,6 @@ public class ItemService {
 	}
 
 	private Ficha buscarFicha(Long fichaId) {
-		return fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		return fichas.buscar(fichaId);
 	}
 }

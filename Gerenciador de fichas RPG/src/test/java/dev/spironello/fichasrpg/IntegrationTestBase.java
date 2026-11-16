@@ -1,6 +1,15 @@
 package dev.spironello.fichasrpg;
 
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -20,7 +29,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(RelogioDeTesteConfig.class)
+@Import({ RelogioDeTesteConfig.class, AutenticacaoDeTesteConfig.class })
 public abstract class IntegrationTestBase {
 
 	// Mesma versão do docker-compose.yml, para testar no banco que se usa de verdade.
@@ -38,5 +47,28 @@ public abstract class IntegrationTestBase {
 		registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
+		// Segredo do JWT SO de teste (>= 32 bytes). O de verdade vem do .env (JWT_SEGREDO) e nunca vai para o repositorio.
+		registry.add("app.jwt.segredo", () -> "segredo-de-teste-nao-usar-em-producao-0123456789");
+	}
+
+	@Autowired
+	private JdbcTemplate jdbcDaBase;
+
+	/**
+	 * Todo teste roda como o usuário de teste (id fixo): a linha dele é garantida no banco (as fichas de teste têm
+	 * dono obrigatório) e o contexto de segurança vale também para quem chama os serviços direto, sem o MockMvc.
+	 */
+	@BeforeEach
+	void prepararUsuarioDeTeste() {
+		jdbcDaBase.update("insert into usuario (id, email, nome) values (?, 'teste@fichas-rpg.invalid', 'Usuario de teste') "
+				+ "on conflict do nothing", AutenticacaoDeTesteConfig.USUARIO_DE_TESTE_ID);
+		Jwt jwt = Jwt.withTokenValue("token-de-teste").header("alg", "HS256")
+				.subject(String.valueOf(AutenticacaoDeTesteConfig.USUARIO_DE_TESTE_ID)).build();
+		TestSecurityContextHolder.setAuthentication(new JwtAuthenticationToken(jwt, List.of()));
+	}
+
+	@AfterEach
+	void limparContextoDeSeguranca() {
+		TestSecurityContextHolder.clearContext();
 	}
 }

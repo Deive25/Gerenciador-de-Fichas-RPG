@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
 import dev.spironello.fichasrpg.dto.FichaOrdemResponse;
 import dev.spironello.fichasrpg.dto.RecursoValor;
@@ -46,6 +47,14 @@ import dev.spironello.fichasrpg.repository.FichaRepository;
 class FichaServiceTest {
 
 	private static final Long ID = 7L;
+	private static final Long DONO = 1000000L;
+	/** O usuário logado nos testes unitários: sem Spring Security, o id é fixo. */
+	private static final UsuarioAtual USUARIO = new UsuarioAtual() {
+		@Override
+		public Long id() {
+			return DONO;
+		}
+	};
 
 	@Mock
 	private FichaRepository repository;
@@ -54,7 +63,7 @@ class FichaServiceTest {
 
 	@BeforeEach
 	void criarServico() {
-		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))));
+		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), new FichasDoUsuario(repository, USUARIO), USUARIO);
 	}
 
 	/** Ficha de outro sistema, só para os testes: no 2.1d existe apenas Ordem, mas a regra do 409 já vale. */
@@ -68,7 +77,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("buscar com id inexistente lança FichaNaoEncontradaException")
 	void buscarInexistente() {
-		when(repository.findById(ID)).thenReturn(Optional.empty());
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.buscar(ID))
 				.isInstanceOf(FichaNaoEncontradaException.class)
@@ -78,7 +87,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("excluir com id inexistente lança e não chama delete")
 	void excluirInexistente() {
-		when(repository.existsById(ID)).thenReturn(false);
+		when(repository.existsByIdAndDonoId(ID, DONO)).thenReturn(false);
 
 		assertThatThrownBy(() -> service.excluir(ID))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -90,7 +99,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("excluir com id existente chama deleteById")
 	void excluirExistente() {
-		when(repository.existsById(ID)).thenReturn(true);
+		when(repository.existsByIdAndDonoId(ID, DONO)).thenReturn(true);
 
 		service.excluir(ID);
 
@@ -100,7 +109,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("atualizar com id inexistente lança e não salva nada")
 	void atualizarInexistente() {
-		when(repository.findById(ID)).thenReturn(Optional.empty());
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.atualizar(ID, requestComTudoPreenchido(0)))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -111,7 +120,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("atualizar uma ficha de outro sistema lança SistemaImutavelException (409) e não salva nada")
 	void atualizarDeOutroSistema() {
-		when(repository.findById(ID)).thenReturn(Optional.of(new FichaDeOutroSistema()));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(new FichaDeOutroSistema()));
 
 		assertThatThrownBy(() -> service.atualizar(ID, requestComTudoPreenchido(0)))
 				.isInstanceOf(SistemaImutavelException.class)
@@ -130,7 +139,7 @@ class FichaServiceTest {
 		mapper.copiar(requestComTudoPreenchido(0), existente);
 		existente.getPericias().put(PericiaOrdem.TATICA, GrauOrdem.TREINADO); // o pedido não a traz: precisa sumir
 		FichaOrdemRequest novo = requestComTudoPreenchido(1);
-		when(repository.findById(ID)).thenReturn(Optional.of(existente));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(existente));
 		when(repository.save(existente)).thenReturn(existente);
 
 		FichaOrdemResponse resposta = (FichaOrdemResponse) service.atualizar(ID, novo);
@@ -156,7 +165,7 @@ class FichaServiceTest {
 	void atualizarComGrauIncompativel() {
 		FichaOrdem existente = new FichaOrdem();
 		existente.setId(ID);
-		when(repository.findById(ID)).thenReturn(Optional.of(existente));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(existente));
 		FichaOrdemRequest veteranoComNexBaixo = new FichaOrdemRequest("a", "b", "c", null, null, null, 30,
 				atributos(1), null, Map.of(PericiaOrdem.ATLETISMO, GrauOrdem.VETERANO));
 

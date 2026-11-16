@@ -2,7 +2,6 @@ package dev.spironello.fichasrpg.controller;
 
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +15,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /** Espaços de magia de D&D: uma rota própria, fora do PUT da ficha (ADR 0018). */
-@CrossOrigin(origins = "http://localhost:4200")
 @Tag(name = "Espaços de magia", description = "Espaços de magia da ficha de D&D (níveis 1 a 9, total e usados)")
 @RestController
 @RequestMapping("/fichas/{id}/espacos")

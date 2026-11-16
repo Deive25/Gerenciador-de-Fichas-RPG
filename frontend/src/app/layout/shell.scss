@@ -60,3 +60,40 @@
   flex: 1;
   padding: 1rem 1rem 2.5rem;
 }
+
+.acoes-topo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+// Os botões do topo nunca quebram linha: quem encolhe é o nome do usuário (com reticências).
+.acoes-topo .botao,
+.acoes-topo .botao-neutro {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+// No celular estreito, a marca fica só com o selo (o link mantém o aria-label "Grimório — Fichas RPG"),
+// para caber "+ Nova ficha", o nome e "Sair" numa linha só.
+@media (max-width: 479.98px) {
+  .marca-texto {
+    display: none;
+  }
+}
+
+.nome-usuario {
+  min-width: 0;
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cor-texto-suave);
+}
+
+@media (min-width: 600px) {
+  .nome-usuario {
+    max-width: 14rem;
+  }
+}

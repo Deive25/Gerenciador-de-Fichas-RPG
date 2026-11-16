@@ -1,0 +1,81 @@
+<section class="bloco bloco-dourado cartao-auth">
+  <h1 class="titulo-auth">Criar conta</h1>
+  <p class="subtitulo-auth">Sua conta guarda as suas fichas. Leva menos de um minuto.</p>
+
+  <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nome</mat-label>
+      <input matInput type="text" formControlName="nome" autocomplete="name" />
+      <mat-hint>Como a mesa vai te ver</mat-hint>
+      @if (mensagem(form.controls.nome); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>E-mail</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email" inputmode="email" />
+      <mat-hint>Só para entrar. Não mandamos nada.</mat-hint>
+      @if (mensagem(form.controls.email); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Senha</mat-label>
+      <input
+        matInput
+        [type]="mostrarSenha() ? 'text' : 'password'"
+        formControlName="senha"
+        autocomplete="new-password"
+        (keydown)="atualizarCapsLock($event)"
+        (keyup)="atualizarCapsLock($event)"
+        (blur)="capsLigado.set(false)"
+      />
+      <button
+        type="button"
+        matSuffix
+        class="mostrar-senha"
+        aria-label="Mostrar senha"
+        [attr.aria-pressed]="mostrarSenha()"
+        [disabled]="enviando()"
+        (click)="mostrarSenha.set(!mostrarSenha())"
+      >
+        {{ mostrarSenha() ? 'Ocultar' : 'Mostrar' }}
+      </button>
+      <mat-hint>Uma frase funciona bem: três ou quatro palavras soltas. Espaços valem.</mat-hint>
+      @if (mensagem(form.controls.senha); as texto) {
+        <mat-error>{{ texto }}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (capsLigado()) {
+      <p class="aviso-caps" role="status">Caps Lock está ligado</p>
+    }
+
+    <div aria-live="polite">
+      @if (listaVisivel()) {
+        <ul class="requisitos">
+          @for (requisito of requisitos(); track requisito.id) {
+            <li [class.atendido]="requisito.ok">
+              <span class="marcador" aria-hidden="true">{{ requisito.ok ? '✓' : '○' }}</span>
+              <span class="so-leitor">{{ requisito.ok ? 'atendido' : 'pendente' }}:</span>
+              <span class="texto-requisito">{{ requisito.texto }}</span>
+              @if (requisito.id === 'tamanho' && !requisito.ok) {
+                <span class="contador" aria-hidden="true">{{ tamanho() }}/15</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (erroGeral(); as erro) {
+      <p class="erro-acao" role="alert">{{ erro }}</p>
+    }
+
+    <button type="submit" class="botao enviar" [disabled]="enviando()">{{ enviando() ? 'Criando…' : 'Criar conta' }}</button>
+  </form>
+
+  <p class="trocar">Já tem conta? <a routerLink="/entrar" [queryParams]="{ volta: volta() }">Entrar</a></p>
+</section>

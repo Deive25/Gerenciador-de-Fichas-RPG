@@ -10,10 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.spironello.fichasrpg.dto.MagiaRequest;
 import dev.spironello.fichasrpg.dto.MagiaResponse;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
  * Criar, editar e excluir as magias de uma ficha. Só D&D tem magias: no outro sistema o caso do switch lança 400
@@ -24,10 +22,10 @@ public class MagiaService {
 
 	private static final Logger log = LoggerFactory.getLogger(MagiaService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final MagiasDnd magiasDnd;
 
-	public MagiaService(FichaRepository fichas, MagiasDnd magiasDnd) {
+	public MagiaService(FichasDoUsuario fichas, MagiasDnd magiasDnd) {
 		this.fichas = fichas;
 		this.magiasDnd = magiasDnd;
 	}
@@ -66,7 +64,7 @@ public class MagiaService {
 	}
 
 	private Ficha buscarFicha(Long fichaId) {
-		return fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		return fichas.buscar(fichaId);
 	}
 
 	private static DadosInvalidosException naoExisteEmOrdem() {

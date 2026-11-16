@@ -115,6 +115,31 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problema;
 	}
 
+	/** Cadastro com e-mail repetido: 409 com a mensagem em errors.email (o front mostra no campo). */
+	@ExceptionHandler(EmailJaCadastradoException.class)
+	public ProblemDetail handleEmailJaCadastrado(EmailJaCadastradoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "E-mail já cadastrado");
+		problema.setTitle("E-mail já cadastrado");
+		problema.setProperty("errors", Map.of("email", "E-mail já cadastrado"));
+		return problema;
+	}
+
+	/** Login recusado: um 401 só, igual para e-mail inexistente e senha errada. */
+	@ExceptionHandler(CredenciaisInvalidasException.class)
+	public ProblemDetail handleCredenciaisInvalidas(CredenciaisInvalidasException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "E-mail ou senha incorretos");
+		problema.setTitle("Credenciais inválidas");
+		return problema;
+	}
+
+	/** Refresh inválido, vencido ou reutilizado. */
+	@ExceptionHandler(SessaoExpiradaException.class)
+	public ProblemDetail handleSessaoExpirada(SessaoExpiradaException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Sessão expirada. Entre de novo.");
+		problema.setTitle("Sessão expirada");
+		return problema;
+	}
+
 	private ProblemDetail problemaDadosInvalidos(Map<String, String> erros) {
 		// Só os NOMES dos campos: o valor rejeitado pode ser dado pessoal e não vai para o log.
 		log.warn("Validação falhou nos campos {}", erros.keySet());

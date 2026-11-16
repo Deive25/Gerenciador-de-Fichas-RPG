@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -9,7 +11,7 @@ function montar() {
   const listar = vi.fn(() => of([]));
   TestBed.configureTestingModule({
     imports: [App],
-    providers: [provideRouter([]), { provide: FichaApi, useValue: { listar, versaoFichas: signal(0) } }],
+    providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), { provide: FichaApi, useValue: { listar, versaoFichas: signal(0) } }],
   });
   const fixture = TestBed.createComponent(App);
   fixture.detectChanges();
