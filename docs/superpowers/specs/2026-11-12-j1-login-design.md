@@ -84,7 +84,14 @@ O JSON é estrito, como no resto da API (chave desconhecida dá 400), e os erros
 **Validação:**
 - `nome`: obrigatório, até 100 caracteres, sem espaços nas pontas.
 - `email`: obrigatório, formato de e-mail, até 255 caracteres; a API grava sem espaços e em minúsculas.
-- `senha`: de 8 a 72 caracteres. Uma senha com mais de 72 bytes em UTF-8 também dá 400, porque o BCrypt ignora o que passa disso.
+- `senha` (só no cadastro; o login aceita qualquer senha já gravada): **política da NIST SP 800-63B-4 e do OWASP ASVS 5.0**, escolhida pelo Arthur em 2026-11-16 no lugar do mínimo de 8 aprovado antes. A primeira regra que falhar dá 400 em `errors.senha`:
+  1. pelo menos **15 caracteres** (espaços contam, então uma frase serve) — "Use pelo menos 15 caracteres";
+  2. no máximo 72 bytes em UTF-8, porque o BCrypt ignora o que passa disso — "A senha pode ter no máximo 72 caracteres";
+  3. não é um mesmo trecho repetido (`senhasenhasenha`) — "Não repita o mesmo trecho";
+  4. não é uma sequência de teclado ou do alfabeto, nos dois sentidos (`123456789012345`, `qwertyuiopasdfg`) — "Não use sequências como 123456 ou qwerty";
+  5. não contém uma palavra do nome com 4 letras ou mais, nem a parte do e-mail antes do @ — "Não use o seu nome nem o seu e-mail";
+  6. as letras dela não formam uma senha comum de uma lista curta do projeto (`password2024!!!` vira `password`) — "Essa senha é comum demais. Escolha outra".
+  **Não** há exigência de maiúscula, número ou símbolo: a NIST proíbe essas regras de composição, que levam a senhas como `Senha@123`. A tela de cadastro repete as regras 1, 3, 4 e 5 numa lista de requisitos marcada enquanto a pessoa digita; a 6 fica só no servidor.
 
 **Rotas abertas:** as quatro de `/auth/*`, mais `/v3/api-docs/**` e `/swagger-ui/**`. **Todas as outras exigem o token.**
 
