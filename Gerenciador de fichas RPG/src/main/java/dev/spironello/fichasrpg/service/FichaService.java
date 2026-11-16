@@ -1,7 +1,10 @@
 package dev.spironello.fichasrpg.service;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.campanha.AcessoACampanha;
+import dev.spironello.fichasrpg.campanha.Papel;
+import dev.spironello.fichasrpg.campanha.Participacao;
 import dev.spironello.fichasrpg.dto.FichaRequest;
 import dev.spironello.fichasrpg.dto.FichaResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
@@ -120,6 +125,36 @@ public class FichaService {
 		FichaResponse trocada = resposta(gravar(ficha));
 		log.info("Campanha da ficha trocada id={}", id);
 		return trocada;
+	}
+
+	/**
+	 * As fichas que quem pede vê na mesa (spec §4): o mestre vê todas, inclusive as dele; o jogador, as dos jogadores. Recebe
+	 * a participação já conferida (o {@code CampanhaService} chama o {@code AcessoACampanha}) e faz uma consulta só.
+	 */
+	@Transactional(readOnly = true)
+	public List<FichaResumoResponse> listarDaCampanha(Participacao minha) {
+		List<Ficha> visiveis = minha.isMestre()
+				? repository.findAllByCampanhaIdOrderById(minha.getCampanhaId())
+				: repository.findDosJogadoresDaCampanha(minha.getCampanhaId(), Papel.MESTRE);
+		return visiveis.stream().map(this::resumo).toList();
+	}
+
+	/** Quantas fichas cada participação enxerga na campanha dela: a contagem de GET /campanhas. */
+	@Transactional(readOnly = true)
+	public Map<Long, Integer> contarVisiveis(Collection<Participacao> minhas) {
+		Map<Long, Integer> contagem = new HashMap<>();
+		minhas.forEach(p -> contagem.put(p.getCampanhaId(), 0));
+		if (minhas.isEmpty()) {
+			return contagem;
+		}
+		Map<Long, Participacao> porCampanha = minhas.stream().collect(Collectors.toMap(Participacao::getCampanhaId, p -> p));
+		for (Object[] linha : repository.contarPorCampanha(porCampanha.keySet(), Papel.MESTRE)) {
+			Long campanhaId = (Long) linha[0];
+			long total = (Long) linha[1];
+			long doMestre = (Long) linha[2];
+			contagem.put(campanhaId, (int) (porCampanha.get(campanhaId).isMestre() ? total : total - doMestre));
+		}
+		return contagem;
 	}
 
 	/** Só o dono exclui (spec §4): o mestre vê e edita as fichas da mesa, mas não as exclui. */
