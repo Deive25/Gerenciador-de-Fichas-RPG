@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 /**
  * Dados comuns a qualquer sistema de RPG. Herança JOINED: esta tabela (ficha) guarda o que é comum e a coluna
@@ -53,6 +54,24 @@ public abstract class Ficha {
 	// estrangeira do banco garante a integridade. Não aparece no JSON da ficha.
 	@Column(name = "dono_id", nullable = false)
 	private Long donoId;
+
+	// Campanha da ficha (2.3): coluna simples, como o donoId. Nula = "sem campanha". O banco garante, pela chave estrangeira
+	// composta (campanha_id, dono_id) -> participacao, que o dono participa da campanha, e a anula quando ele sai.
+	@Column(name = "campanha_id")
+	private Long campanhaId;
+
+	// Trava otimista (2.3, ADR 0025): o Hibernate sobe a versão a cada gravação da linha e recusa a gravação de quem leu uma velha.
+	@Version
+	@Column(nullable = false)
+	private Long versao;
+
+	// Nomes para o dono e a campanha nas respostas: subconsultas no mesmo SELECT (a listagem continua com uma consulta só).
+	// Só leitura; depois de gravar, o serviço faz refresh para trazê-los.
+	@Formula("(select u.nome from usuario u where u.id = dono_id)")
+	private String donoNome;
+
+	@Formula("(select c.nome from campanha c where c.id = campanha_id)")
+	private String campanhaNome;
 
 	/*
 	 * Versão do retrato (retrato_ficha.atualizado_em em milissegundos), ou null sem retrato (2.1c).
@@ -124,5 +143,20 @@ public abstract class Ficha {
 	}
 	public Long getRetratoVersao() {
 		return retratoVersao;
+	}
+	public Long getCampanhaId() {
+		return campanhaId;
+	}
+	public void setCampanhaId(Long campanhaId) {
+		this.campanhaId = campanhaId;
+	}
+	public Long getVersao() {
+		return versao;
+	}
+	public String getDonoNome() {
+		return donoNome;
+	}
+	public String getCampanhaNome() {
+		return campanhaNome;
 	}
 }
