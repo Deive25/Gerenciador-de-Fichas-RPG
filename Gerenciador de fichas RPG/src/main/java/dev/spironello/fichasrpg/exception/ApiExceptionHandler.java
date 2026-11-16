@@ -52,6 +52,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problema;
 	}
 
+	/** O usuário a remover não participa da campanha. */
+	@ExceptionHandler(MembroNaoEncontradoException.class)
+	public ProblemDetail handleMembroNaoEncontrado(MembroNaoEncontradoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Membro não encontrado");
+		problema.setTitle("Membro não encontrado");
+		return problema;
+	}
+
 	/** Código de convite inexistente, renovado ou desativado. */
 	@ExceptionHandler(ConviteInvalidoException.class)
 	public ProblemDetail handleConviteInvalido(ConviteInvalidoException ex) {
