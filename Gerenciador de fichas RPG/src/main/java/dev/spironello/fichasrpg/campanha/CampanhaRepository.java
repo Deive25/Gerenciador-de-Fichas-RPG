@@ -8,4 +8,6 @@ public interface CampanhaRepository extends JpaRepository<Campanha, Long> {
 
 	/** Convite pelo código; o serviço confere se está ativo. */
 	Optional<Campanha> findByCodigoConvite(String codigoConvite);
+
+	boolean existsByCodigoConvite(String codigoConvite);
 }
