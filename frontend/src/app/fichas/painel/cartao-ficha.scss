@@ -14,7 +14,8 @@
     border-color 0.15s,
     transform 0.15s;
 
-  &:hover {
+  // Só o cartão que é link reage ao ponteiro.
+  &:is(a):hover {
     border-color: rgba(201, 164, 92, 0.75);
     transform: translateY(-1px);
   }
@@ -44,6 +45,12 @@
   font-style: italic;
   font-size: 0.9rem;
   color: var(--cor-texto-suave);
+}
+
+.detalhe {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+  overflow-wrap: anywhere;
 }
 
 .etiquetas {
