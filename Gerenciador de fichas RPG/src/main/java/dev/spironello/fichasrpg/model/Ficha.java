@@ -49,6 +49,11 @@ public abstract class Ficha {
 	@Column(length = 4000)
 	private String anotacoes;
 
+	// Dono da ficha (2.2): coluna simples, sem @ManyToOne. A ficha nunca precisa carregar o usuário, e a chave
+	// estrangeira do banco garante a integridade. Não aparece no JSON da ficha.
+	@Column(name = "dono_id", nullable = false)
+	private Long donoId;
+
 	/*
 	 * Versão do retrato (retrato_ficha.atualizado_em em milissegundos), ou null sem retrato (2.1c).
 	 * É uma subconsulta dentro do mesmo SELECT da ficha: a listagem continua com uma consulta só
@@ -110,6 +115,12 @@ public abstract class Ficha {
 	}
 	public void setAnotacoes(String anotacoes) {
 		this.anotacoes = anotacoes;
+	}
+	public Long getDonoId() {
+		return donoId;
+	}
+	public void setDonoId(Long donoId) {
+		this.donoId = donoId;
 	}
 	public Long getRetratoVersao() {
 		return retratoVersao;
