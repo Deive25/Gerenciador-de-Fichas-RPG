@@ -1,6 +1,6 @@
 # J1 2.3: campanhas, convite por link e papéis Mestre/Jogador (design)
 
-- **Status:** aprovado em conversa pelo Arthur em 2026-11-16 (5 perguntas e a abordagem). Aguarda a revisão desta spec escrita.
+- **Status:** aprovado em conversa pelo Arthur em 2026-11-16 (5 perguntas e a abordagem), e a spec escrita aprovada no mesmo dia ("Aprovar a spec").
 - **Base:** `main` em `5ae7565` (o 2.2, PR #18, está mesclado). Backend com 517 testes, frontend com 782 testes em 61 arquivos, ADRs 0001 a 0023, banco na V10. As 5 fichas locais (ids 2, 7, 8, 9 e 13) são do Arthur.
 - **Relação com outras specs:** detalha o 2.3 da spec da fase 2 (`2026-11-04-j1-fase-2-design.md`, §3, §4, §6, §7 e §9). Muda cinco pontos dela:
   1. **a campanha "Fichas importadas" sai.** Ela pressupunha as fichas antigas nas mãos do `legado`, mas desde o 2.2 elas são do Arthur. Agora uma ficha pode ficar **sem campanha**;
