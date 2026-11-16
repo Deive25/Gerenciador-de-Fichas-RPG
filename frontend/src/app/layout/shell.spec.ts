@@ -129,6 +129,19 @@ describe('Shell', () => {
       expect(el.querySelector('header button')?.textContent).toContain('Sair');
     });
 
+    it('logado mostra os links Fichas e Campanhas; deslogado, nenhum', () => {
+      const { fixture, el } = montar();
+      expect(el.querySelector('header nav')).toBeNull();
+      TestBed.inject(Sessao).iniciar(respostaDe());
+      fixture.detectChanges();
+      const links = Array.from(el.querySelectorAll('header nav a'));
+      expect(links.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
+        ['Fichas', '/fichas'],
+        ['Campanhas', '/campanhas'],
+      ]);
+      expect(el.querySelector('header nav')?.getAttribute('aria-label')).toBe('Principal');
+    });
+
     it('Sair avisa a API, apaga a sessão e faz a navegação completa para /entrar', () => {
       const { fixture, el, assign, ctl } = montar();
       TestBed.inject(Sessao).iniciar(respostaDe());

@@ -9,6 +9,13 @@
       <a routerLink="/fichas">Voltar para as fichas</a>
     </div>
   }
+  @case ('sem-permissao') {
+    <div class="aviso-erro" role="alert">
+      <strong>Você não tem permissão para abrir esta ficha.</strong>
+      <p>Só o dono e o mestre da campanha podem abri-la.</p>
+      <a routerLink="/fichas">Voltar para as fichas</a>
+    </div>
+  }
   @case ('erro') {
     <div class="aviso-erro" role="alert">
       <strong>{{ erro()?.titulo }}</strong>
@@ -23,7 +30,9 @@
         <button type="button" class="mais" aria-label="Mais ações" [matMenuTriggerFor]="acoes">⋮</button>
         <mat-menu #acoes="matMenu" xPosition="before">
           <a mat-menu-item [routerLink]="['/fichas', f.id, 'editar']">Editar</a>
-          <button mat-menu-item type="button" (click)="confirmandoExclusao.set(true)">Excluir</button>
+          @if (ehDono()) {
+            <button mat-menu-item type="button" (click)="confirmandoExclusao.set(true)">Excluir</button>
+          }
         </mat-menu>
       </nav>
 
@@ -66,6 +75,14 @@
           <app-medalhao tamanho="grande" [nome]="f.personagem" [semente]="f.id" [retratoVersao]="f.retratoVersao" />
           <h1 class="nome-versalete">{{ f.personagem }}</h1>
           <p class="legenda">{{ legenda(f) }}</p>
+          @if (ehDono()) {
+            <app-seletor-campanha [ficha]="f" (atualizada)="ficha.set($event)" />
+          } @else {
+            <p class="dono-ficha">Ficha de {{ f.dono.nome }}</p>
+            @if (f.campanha; as campanha) {
+              <p class="campanha-ficha">Campanha: {{ campanha.nome }}</p>
+            }
+          }
           <div class="acoes-retrato">
             <input #seletorArquivo type="file" accept="image/*" hidden (change)="aoEscolherArquivo($event)" />
             @if (confirmandoRemocaoRetrato()) {
@@ -98,7 +115,7 @@
         </section>
 
         <section class="status bloco" [attr.aria-label]="f.sistema === 'DND' ? 'Vida e PV temporário' : 'Vida, sanidade e esforço'">
-          <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" />
+          <app-recursos-ficha [ficha]="f" (atualizada)="ficha.set($event)" (conflito)="recarregarAposConflito()" />
         </section>
       </div>
 

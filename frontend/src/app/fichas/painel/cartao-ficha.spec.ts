@@ -4,7 +4,7 @@ import { FichaResumo, RecursoResumo } from '../ficha.model';
 import { CartaoFicha } from './cartao-ficha';
 
 const BASE: FichaResumo = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Jack Moreau', idade: 34, retratoVersao: null,
+  id: 7, sistema: 'ORDEM_PARANORMAL', dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Jack Moreau', idade: 34, retratoVersao: null,
   recursos: [
     { codigo: 'PV', atual: 9, maximo: 12 },
     { codigo: 'SAN', atual: 48, maximo: 60 },
@@ -30,6 +30,42 @@ function com(codigo: string, atual: number, maximo: number): RecursoResumo[] {
 describe('CartaoFicha', () => {
   it('o cartao inteiro e um link para a ficha', () => {
     expect(criar().querySelector('a.cartao-ficha')?.getAttribute('href')).toBe('/fichas/7');
+  });
+
+  it('sem podeAbrir o cartao nao e link: e um div so com o resumo', () => {
+    const fixture = TestBed.createComponent(CartaoFicha);
+    fixture.componentRef.setInput('ficha', BASE);
+    fixture.componentRef.setInput('podeAbrir', false);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('a')).toBeNull();
+    const cartao = el.querySelector('div.cartao-ficha');
+    expect(cartao?.textContent).toContain('Jack Moreau');
+    expect(cartao?.querySelector('app-barra-status')).not.toBeNull();
+  });
+
+  it('mostra o nome da campanha quando ha, e nada quando nao ha', () => {
+    expect(criar({ campanha: { id: 3, nome: 'Mesa do Arthur' } }).querySelector('.campanha')?.textContent).toContain(
+      'Mesa do Arthur',
+    );
+    expect(criar({ campanha: null }).querySelector('.campanha')).toBeNull();
+  });
+
+  it('mostrarDono acrescenta o dono; por padrao nao aparece', () => {
+    expect(criar().querySelector('.dono')).toBeNull();
+    const fixture = TestBed.createComponent(CartaoFicha);
+    fixture.componentRef.setInput('ficha', { ...BASE, dono: { id: 2, nome: 'Bia' } });
+    fixture.componentRef.setInput('mostrarDono', true);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.dono')?.textContent).toContain('Bia');
+  });
+
+  it('mostrarCampanha=false esconde a campanha (dentro da propria campanha seria repeticao)', () => {
+    const fixture = TestBed.createComponent(CartaoFicha);
+    fixture.componentRef.setInput('ficha', { ...BASE, campanha: { id: 3, nome: 'Mesa' } });
+    fixture.componentRef.setInput('mostrarCampanha', false);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.campanha')).toBeNull();
   });
 
   it('mostra o jogador e a idade', () => {

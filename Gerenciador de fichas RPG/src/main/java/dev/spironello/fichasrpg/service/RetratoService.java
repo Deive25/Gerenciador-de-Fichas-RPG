@@ -28,11 +28,11 @@ public class RetratoService {
 	private static final Logger log = LoggerFactory.getLogger(RetratoService.class);
 
 	private final RetratoFichaRepository retratos;
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final ValidadorRetrato validador;
 	private final Clock relogio;
 
-	public RetratoService(RetratoFichaRepository retratos, FichasDoUsuario fichas, ValidadorRetrato validador,
+	public RetratoService(RetratoFichaRepository retratos, AcessoAFicha fichas, ValidadorRetrato validador,
 			Clock relogio) {
 		this.retratos = retratos;
 		this.fichas = fichas;
@@ -64,7 +64,8 @@ public class RetratoService {
 
 	@Transactional(readOnly = true)
 	public RetratoFicha buscar(Long fichaId) {
-		exigirFicha(fichaId);
+		// o cartão do resumo mostra o retrato dos outros jogadores: aqui basta a ficha estar visível para quem pede
+		fichas.exigirVisivel(fichaId);
 		return retratos.findById(fichaId).orElseThrow(() -> new RetratoNaoEncontradoException(fichaId));
 	}
 

@@ -1,0 +1,57 @@
+<div class="cabecalho">
+  <h1 class="titulo nome-versalete">Minhas campanhas</h1>
+  @if (!criando()) {
+    <button type="button" class="botao" (click)="abrirFormulario()">+ Nova campanha</button>
+  }
+</div>
+
+@if (criando()) {
+  <section class="bloco bloco-dourado nova" aria-label="Nova campanha">
+    <app-formulario-campanha
+      rotulo="Criar campanha"
+      [enviando]="salvando()"
+      [erro]="erroAoCriar()"
+      (enviar)="criar($event)"
+      (cancelar)="criando.set(false)"
+    />
+  </section>
+}
+
+@switch (estado()) {
+  @case ('carregando') {
+    <div class="grade" role="status">
+      <span class="so-leitor">Carregando campanhas…</span>
+      @for (i of [1, 2, 3]; track i) {
+        <div class="esqueleto bloco" aria-hidden="true"></div>
+      }
+    </div>
+  }
+  @case ('erro') {
+    <div class="aviso-erro" role="alert">
+      <strong>{{ erro()?.titulo }}</strong>
+      <p>{{ erro()?.detalhe }}</p>
+      <button type="button" class="botao" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+  @default {
+    @if (campanhas().length === 0) {
+      <div class="vazio bloco">
+        <p>Você ainda não participa de nenhuma campanha.</p>
+        @if (!criando()) {
+          <button type="button" class="botao" (click)="abrirFormulario()">Criar a primeira campanha</button>
+        }
+      </div>
+    } @else {
+      <div class="grade">
+        @for (c of campanhas(); track c.id) {
+          <a class="cartao-campanha bloco bloco-dourado" [routerLink]="['/campanhas', c.id]">
+            <span class="nome nome-versalete">{{ c.nome }}</span>
+            <span class="papel" [class.mestre]="c.papel === 'MESTRE'">{{ papeis[c.papel] }}</span>
+            <span class="detalhe">Mestre: {{ c.mestre.nome }}</span>
+            <span class="detalhe">{{ textoFichas(c.fichas) }}</span>
+          </a>
+        }
+      </div>
+    }
+  }
+}

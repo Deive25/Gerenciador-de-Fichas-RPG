@@ -2,9 +2,9 @@
   @case ('pronto') {
     @let atual = ficha()!;
     @if (atual.sistema === 'DND') {
-      <app-formulario-dnd [ficha]="atual" />
+      <app-formulario-dnd [ficha]="atual" (recarregar)="carregar(+id())" />
     } @else {
-      <app-formulario-ordem [ficha]="atual" />
+      <app-formulario-ordem [ficha]="atual" (recarregar)="carregar(+id())" />
     }
   }
   @case ('carregando') {

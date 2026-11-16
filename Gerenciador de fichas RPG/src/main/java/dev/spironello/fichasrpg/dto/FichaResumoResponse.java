@@ -16,5 +16,7 @@ public record FichaResumoResponse(
 		String personagem,
 		Integer idade,
 		Long retratoVersao,
+		Referencia dono,
+		Referencia campanha,
 		List<RecursoResumo> recursos) {
 }

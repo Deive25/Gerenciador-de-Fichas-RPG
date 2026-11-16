@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BarraStatus } from '../componentes/barra-status';
@@ -12,15 +13,23 @@ const APRESENTACAO_RECURSO: Record<string, { rotulo: string; tipo: 'vida' | 'san
   PE: { rotulo: 'Esforço', tipo: 'esforco' },
 };
 
-/** Cartão de uma ficha no painel. O cartão inteiro é o link para a ficha. */
+/**
+ * Cartão de uma ficha. O cartão inteiro é o link para a ficha; com `podeAbrir` falso (a ficha de outro
+ * jogador, na mesa) vira um bloco só com o resumo, sem link.
+ */
 @Component({
   selector: 'app-cartao-ficha',
-  imports: [RouterLink, BarraStatus, Medalhao],
+  imports: [RouterLink, NgTemplateOutlet, BarraStatus, Medalhao],
   templateUrl: './cartao-ficha.html',
   styleUrl: './cartao-ficha.scss',
 })
 export class CartaoFicha {
   readonly ficha = input.required<FichaResumo>();
+  readonly podeAbrir = input(true);
+  /** Na mesa de uma campanha, mostra de quem é a ficha. */
+  readonly mostrarDono = input(false);
+  /** Mostra a campanha da ficha, quando houver (dentro da própria campanha seria repetição). */
+  readonly mostrarCampanha = input(true);
 
   readonly legenda = computed(() => {
     const f = this.ficha();

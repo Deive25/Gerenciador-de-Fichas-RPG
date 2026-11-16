@@ -19,6 +19,13 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/cadastrar').then((m) => m.Cadastrar),
     title: 'Criar conta · Fichas RPG',
   },
+  // O convite fica FORA dos guards: quem chega pelo link pode ainda não ter conta. A própria tela mostra a
+  // prévia pública e, sem sessão, leva a /entrar ou /cadastrar com ?volta=/convite/:codigo.
+  {
+    path: 'convite/:codigo',
+    loadComponent: () => import('./campanhas/convite').then((m) => m.ConviteTela),
+    title: 'Convite · Fichas RPG',
+  },
   // Todas as rotas de fichas ficam sob uma rota-mãe sem caminho com o guard: sem sessão, ninguém entra.
   {
     path: '',
@@ -26,6 +33,16 @@ export const routes: Routes = [
     children: [
       // O painel é a tela de entrada: vai no pacote inicial para abrir sem uma segunda requisição.
       { path: 'fichas', component: Painel, title: 'Fichas · Fichas RPG' },
+      {
+        path: 'campanhas',
+        loadComponent: () => import('./campanhas/minhas-campanhas').then((m) => m.MinhasCampanhas),
+        title: 'Campanhas · Fichas RPG',
+      },
+      {
+        path: 'campanhas/:id',
+        loadComponent: () => import('./campanhas/campanha-tela').then((m) => m.CampanhaTela),
+        title: 'Campanha · Fichas RPG',
+      },
       // 'fichas/nova' antes de 'fichas/:id', senão "nova" seria lido como id.
       // Nova ficha começa pela escolha do sistema; cada sistema tem o seu formulário.
       {

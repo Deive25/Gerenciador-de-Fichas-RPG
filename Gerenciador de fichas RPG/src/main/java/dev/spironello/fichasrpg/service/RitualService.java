@@ -22,10 +22,10 @@ public class RitualService {
 
 	private static final Logger log = LoggerFactory.getLogger(RitualService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final RituaisOrdem rituaisOrdem;
 
-	public RitualService(FichasDoUsuario fichas, RituaisOrdem rituaisOrdem) {
+	public RitualService(AcessoAFicha fichas, RituaisOrdem rituaisOrdem) {
 		this.fichas = fichas;
 		this.rituaisOrdem = rituaisOrdem;
 	}

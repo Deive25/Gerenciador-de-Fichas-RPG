@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+// Um cartão estreito e centrado, como as telas de conta (feito para o celular a 375 px).
+.cartao-convite {
+  max-width: 26rem;
+  margin: 1.5rem auto 0;
+  padding: 1.25rem 1rem 1.5rem;
+
+  h1 {
+    margin: 0 0 0.75rem;
+    font-size: 1.4rem;
+  }
+}
+
+.resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0 0 1rem;
+}
+
+.campanha {
+  font-family: var(--fonte-titulo);
+  font-size: 1.3rem;
+  color: var(--cor-titulo);
+  overflow-wrap: anywhere;
+}
+
+.mestre {
+  color: var(--cor-texto-suave);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.erro-acao {
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: 8px;
+  background: var(--cor-fundo-erro);
+  color: #f0a597;
+}

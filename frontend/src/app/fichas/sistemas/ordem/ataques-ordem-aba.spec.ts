@@ -22,7 +22,7 @@ const PISTOLA = ataque({
 /** Luta treinada (+5) e Pontaria destreinada. */
 function fichaCom(ataques: AtaqueOrdem[], pericias: FichaOrdem['pericias'] = { LUTA: 'TREINADO' }): FichaOrdem {
   return {
-    id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
+    id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
     retratoVersao: null, classe: 'COMBATENTE', origem: null, nex: 10,
     atributos: { AGI: 3, FOR: 2, INT: 4, PRE: 2, VIG: 0 },
     recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 48, maximo: 60 }, PE: { atual: 5, maximo: 10 } },

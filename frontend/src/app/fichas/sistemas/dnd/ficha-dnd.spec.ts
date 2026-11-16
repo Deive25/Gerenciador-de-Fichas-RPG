@@ -4,7 +4,7 @@ import { FichaDndCorpo } from './ficha-dnd';
 import { espacosZerados } from '../../testes/espacos-zerados';
 
 const FICHA: FichaDnd = {
-  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+  id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
   edicao: 'D2024', classe: 'Ladino', especie: 'Halfling', antecedente: 'Criminoso', nivel: 5,
   atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 0, maximo: null } },
