@@ -1,6 +1,5 @@
 package dev.spironello.fichasrpg.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /** Moedas de D&D: uma rota própria, fora do PUT da ficha (ADR 0018). */
-@CrossOrigin(origins = "http://localhost:4200")
 @Tag(name = "Moedas", description = "Moedas da ficha de D&D (pc, pp, pe, po e pl)")
 @RestController
 @RequestMapping("/fichas/{id}/moedas")

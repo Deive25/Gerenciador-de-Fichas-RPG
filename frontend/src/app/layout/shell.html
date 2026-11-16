@@ -1,9 +1,15 @@
 <header class="barra-topo">
   <div class="barra-interna">
     <a class="marca" routerLink="/fichas" aria-label="Grimório — Fichas RPG, ir para o painel">
-      <span class="selo" aria-hidden="true">✦</span> Grimório
+      <span class="selo" aria-hidden="true">✦</span><span class="marca-texto"> Grimório</span>
     </a>
-    <a class="botao" routerLink="/fichas/nova">+ Nova ficha</a>
+    @if (sessao.usuario(); as usuario) {
+      <div class="acoes-topo">
+        <a class="botao" routerLink="/fichas/nova">+ Nova ficha</a>
+        <span class="nome-usuario" [attr.title]="usuario.nome">{{ usuario.nome }}</span>
+        <button type="button" class="botao-neutro" [disabled]="saindo()" (click)="sair()">Sair</button>
+      </div>
+    }
   </div>
 </header>
 

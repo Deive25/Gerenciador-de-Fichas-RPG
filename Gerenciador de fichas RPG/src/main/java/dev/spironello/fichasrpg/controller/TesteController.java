@@ -1,6 +1,5 @@
 package dev.spironello.fichasrpg.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "http://localhost:4200")
 @Tag(name = "Testes", description = "Rolagem de testes de perícia e de atributo de uma ficha")
 @RestController
 @RequestMapping("/fichas/{id}/testes")

@@ -43,8 +43,8 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 2.1h | Inventário (aba nova nos dois sistemas): itens, moedas em D&D e a carga usada contra o limite, com migração V7 e rotas próprias ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-09-j1-2.1h-inventario.md), [ADR 0019](docs/decisoes/0019-totais-de-exibicao-calculados-no-front.md)) | Concluído (PR #14) |
 | 2.1j | Magias (D&D) e rituais (Ordem), cada um numa aba nova: lista, espaços de magia com descanso longo, atributo de conjuração, CD, ataque mágico, custo em PE e DT, com migração V8 e rotas próprias ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1j-magias-rituais.md)) | Concluído (PR #15) |
 | 2.1f | Dado animado em 3D: um d20 por dado rolado pelo servidor (1 a 5 em Ordem, 2 com vantagem ou desvantagem em D&D), o mantido dourado, carregado só na primeira rolagem e com plano B automático ([spec §5](docs/superpowers/specs/2026-11-04-j1-redesign-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1f-dado-animado.md), [ADR 0020](docs/decisoes/0020-dado-3d-sob-demanda-com-plano-b.md)) | Concluído (PR #16) |
-| 2.1i | Ataques (aba nova nos dois sistemas) com rolagem de ataque e dano e o crítico de cada sistema, mais a **rolagem livre** (aba Dados, por botões ou pela notação), tudo rolado no servidor e mostrado no dado 3D (d4 a d100), com migração V9 ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1i-ataques-e-rolagem-livre.md), [ADR 0021](docs/decisoes/0021-notacao-de-dados-no-servidor.md)) | Em revisão (PR) |
-| 2.2 | Login com e-mail e senha (JWT + refresh rotacionado), dono da ficha | Planejado |
+| 2.1i | Ataques (aba nova nos dois sistemas) com rolagem de ataque e dano e o crítico de cada sistema, mais a **rolagem livre** (aba Dados, por botões ou pela notação), tudo rolado no servidor e mostrado no dado 3D (d4 a d100), com migração V9 ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1i-ataques-e-rolagem-livre.md), [ADR 0021](docs/decisoes/0021-notacao-de-dados-no-servidor.md)) | Concluído (PR #17) |
+| 2.2 | Login com e-mail e senha: JWT de acesso de 15 min e refresh de 30 dias rotacionado por família, telas de entrar e cadastrar, e o dono da ficha (cada pessoa vê, edita e rola só as próprias; a de outra pessoa dá 404), com migração V10 ([spec](docs/superpowers/specs/2026-11-12-j1-login-design.md), [plano](docs/superpowers/plans/2026-11-12-j1-2.2-login.md), [ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md), [ADR 0023](docs/decisoes/0023-tokens-no-navegador.md)) | Em revisão (PR) |
 | 2.3 | Campanhas, convite por link, papéis Mestre/Jogador | Planejado |
 | 2.4 | Rolagens gravadas e ao vivo (WebSocket STOMP) | Planejado |
 | 2.5 | Login com Google | Planejado |
@@ -54,7 +54,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 
 | Camada | Stack do repositório |
 | --- | --- |
-| Back-end | Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA (Hibernate 7) |
+| Back-end | Java 21, Spring Boot 4.1.2, Spring Web MVC, Spring Data JPA (Hibernate 7), Spring Security (resource server com JWT, BCrypt) |
 | Banco de dados | PostgreSQL 17 (Docker), migrações com Flyway 12 |
 | Front-end | Angular 22 (standalone, signals, zoneless), Angular Material 22, TypeScript 6; dado 3D com `open-dice-dnd` 1.13 (`three` 0.130 e `cannon-es` 0.20, todas MIT), carregado sob demanda |
 | Documentação de API | springdoc-openapi (OpenAPI 3 e Swagger UI) |
@@ -62,6 +62,22 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | Build e CI | Maven e Angular CLI; GitHub Actions (job `backend` com `./mvnw -B verify` e job `frontend` com build e testes em Node 24) |
 
 ## Funcionalidades da API
+
+### Conta e login (2.2)
+
+O `AuthController` cuida da conta ([ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md)). **Todas as outras rotas exigem `Authorization: Bearer <accessToken>`**, menos a documentação (`/v3/api-docs`, `/swagger-ui`). Sem token, com token inválido ou vencido, a resposta é 401 em ProblemDetail ("Faça login para continuar.") com `WWW-Authenticate: Bearer`.
+
+| Método | Rota | Corpo | Respostas |
+| --- | --- | --- | --- |
+| POST | `/auth/registro` | `{nome, email, senha}` | 201 com `Location: /me` e `{accessToken, refreshToken, usuario}` (já entra na conta); 400 por campo; 409 "E-mail já cadastrado" em `errors.email` |
+| POST | `/auth/login` | `{email, senha}` | 200 com o mesmo corpo; 401 "E-mail ou senha incorretos", igual para senha errada e e-mail inexistente |
+| POST | `/auth/refresh` | `{refreshToken}` | 200 com um **par novo** (o refresh é trocado a cada uso); 401 "Sessão expirada. Entre de novo." se o refresh venceu, não existe ou já foi usado (nesse caso, a sessão inteira daquele login é revogada) |
+| POST | `/auth/logout` | `{refreshToken}` | 204, sempre (revoga o refresh; o token de acesso vale até vencer, em no máximo 15 min) |
+| GET | `/me` | — | 200 `{id, nome, email}`; 401 |
+
+O e-mail é gravado sem espaços e em minúsculas. **A senha do cadastro segue a NIST SP 800-63B-4 e o OWASP ASVS 5.0:** pelo menos 15 caracteres (espaços valem, então uma frase serve), sem exigir maiúscula, número ou símbolo, e recusando um trecho repetido (`senhasenhasenha`), sequências (`123456…`, `qwerty…`), o próprio nome ou e-mail e as senhas comuns de uma lista curta do projeto (`password2024!!!` conta como `password`); cada motivo volta em `errors.senha`. O login aceita qualquer senha já cadastrada. O token de acesso é um JWT HS256 de 15 min; o refresh vale 30 dias a partir da última renovação, e o banco guarda só o hash dele. **Cada pessoa só alcança as próprias fichas:** a ficha de outra pessoa (e tudo o que está dentro dela: itens, retrato, rolagens...) responde 404, como se não existisse, e `GET /fichas` lista só as suas.
+
+### Fichas
 
 O controlador `FichaController` expõe o recurso `/fichas`. O campo `sistema` do corpo escolhe o tipo da ficha ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)); os valores aceitos são `ORDEM_PARANORMAL` e `DND`:
 
@@ -584,12 +600,13 @@ Estrutura de pastas:
 
 ### Banco de dados e API
 
-As credenciais do banco **não ficam no código**: a aplicação as lê das variáveis `DB_URL`, `DB_USERNAME` e `DB_PASSWORD`. Para desenvolvimento, elas ficam em um arquivo `.env` local, que não é versionado.
+As credenciais do banco e a chave do login **não ficam no código**: a aplicação lê `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` e `JWT_SEGREDO` do ambiente. Para desenvolvimento, elas ficam em um arquivo `.env` local, que não é versionado.
 
-1. Na raiz do repositório, crie o seu `.env` a partir do modelo e troque as senhas de exemplo:
+1. Na raiz do repositório, crie o seu `.env` a partir do modelo, troque as senhas de exemplo e gere a chave do JWT (pelo menos 32 bytes; o `.env.example` traz o campo vazio de propósito, e **a API não sobe sem ela**):
 
    ```sh
    cp .env.example .env
+   openssl rand -base64 48   # cole o resultado em JWT_SEGREDO=
    ```
 
    No PowerShell: `Copy-Item .env.example .env`.
@@ -616,12 +633,19 @@ As credenciais do banco **não ficam no código**: a aplicação as lê das vari
    - O esquema é criado pelo Flyway na primeira subida da API (`src/main/resources/db/migration`); o Hibernate só confere (`ddl-auto=validate`).
    - **Migração aplicada não se edita**: o Flyway guarda o checksum de cada arquivo em `flyway_schema_history` e recusa subir se um arquivo já aplicado mudar. Para corrigir, crie uma nova versão (V4, V5...). Se o seu banco **local** de desenvolvimento ficar com checksum divergente, `docker compose down -v` recria o volume, mas **apaga os dados locais**.
 
+**Fichas de antes do login (2.2).** A migração V10 passa as fichas que já existiam para o usuário de sistema `legado@fichas-rpg.invalid`, que não consegue entrar. Para trazê-las para a sua conta, cadastre-se no site e rode, trocando o e-mail (se o e-mail não existir, a subconsulta dá nulo e o banco recusa o comando sem mudar nada):
+
+```sh
+docker compose exec postgres psql -U <DB_USERNAME> -d <DB_NAME> -c "update ficha set dono_id = (select id from usuario where email = 'voce@exemplo.com') where dono_id = (select id from usuario where email = 'legado@fichas-rpg.invalid');"
+```
+
 Para parar o banco: `docker compose down` (acrescente `-v` para apagar também os dados). Para um ambiente isolado, use um nome de projeto: `docker compose -p meu-teste up -d` (o `docker-compose.yml` não fixa o nome do container, então o projeto isola de verdade).
 
 ### Interface
 
 A interface é um projeto Angular 22 em `frontend/`, no visual "Moderno com alma gótica". A organização é de app moderno (busca, filtros, blocos) e a aparência é de grimório: fundo grafite com névoa púrpura, dourado, títulos em EB Garamond (fonte de licença aberta servida pelo próprio app) e retrato em medalhão. É pensada primeiro para o celular, e é a mesma tela no computador, só com mais colunas:
 
+- **Entrar (`/entrar`) e Criar conta (`/cadastrar`) (2.2):** o mesmo cartão nas duas telas, com um link de uma para a outra, o botão de mostrar a senha, o aviso de Caps Lock ligado e os erros no campo certo (e-mail já cadastrado no e-mail; senha errada numa mensagem geral). No cadastro, uma dica sugere usar uma frase, e a lista de requisitos da senha (15 caracteres ou mais com o contador, sem o nome nem o e-mail, sem sequências nem repetições) vai sendo marcada enquanto a pessoa digita e é anunciada ao leitor de tela; a senha comum é recusada pelo servidor, no próprio campo. O cadastro já entra na conta. Quem abre uma ficha sem estar logado vai para o login e volta para ela depois (`?volta=`, que só aceita caminho interno). O token de acesso fica só na memória e o refresh no `localStorage`; recarregar a página ou abrir outra aba continua logado, e a renovação acontece sozinha, uma de cada vez mesmo com várias abas ([ADR 0023](docs/decisoes/0023-tokens-no-navegador.md)). O topo mostra o nome e "Sair", que revoga o refresh e recarrega a página em `/entrar`; no celular estreito, a marca fica só com o selo ✦.
 - **Painel (`/fichas`):** contadores (investigadores, feridos e sanidade baixa), busca por personagem ou jogador sem diferenciar acentos, filtros "Feridos" e "Sanidade baixa" (PV ou SAN atual ≤ metade do máximo) e um cartão por ficha, com medalhão, o **selo do sistema** e uma barra para cada recurso (PV, SAN e PE). O painel lê o resumo da API, igual para qualquer sistema.
 - **Nova ficha (`/fichas/nova`):** primeiro a **escolha do sistema**, com 3 links: Ordem Paranormal (`/fichas/nova/ordem-paranormal`), D&D 5e (`/fichas/nova/dnd-2014`) e D&D 2024 (`/fichas/nova/dnd-2024`). As duas edições de D&D usam a mesma tela, que recebe a edição pela rota. O sistema não muda depois.
 - **Formulário de Ordem (criar e editar):** as mesmas regras da API, com o erro do servidor mostrado no campo certo (a interface normaliza `atributos[AGI]` para `atributos.AGI`). Os graus de cada perícia ficam **limitados pelo NEX** (Veterano a partir de 35, Expert a partir de 70). Uma ficha nova começa em NEX 5 com os atributos em 1.
@@ -693,7 +717,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
 
-**Front-end:** 693 testes unitários em 54 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.1i (eram 495 em 42 arquivos no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
+**Front-end:** 782 testes unitários em 61 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.2 (eram 693 em 54 arquivos no 2.1i, 495 em 42 no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
@@ -707,15 +731,20 @@ cd "Gerenciador de fichas RPG"
 - o retrato: a conta do recorte 4:5, o diálogo (salvar, cancelar, imagem que não abre), o cache de URLs locais e trocar e remover na ficha.
 - Abas, descrição e habilidades (2.1g): `lista-editavel.spec` (lista vazia, adicionar, editar um item por vez, remover só depois da confirmação), `habilidades-aba.spec` (os tipos de cada sistema, criar, editar e excluir pela API, erro do servidor no campo, clique duplo, limite de 4000), `descricao-aba.spec` (contador N/4000, botão desabilitado sem mudança, campos bloqueados enquanto salva, aviso de salvo, quebras de linha) e `abas-da-ficha.spec` (a aba pedida na URL e a aba desconhecida), além dos casos novos de `ficha-detalhe.spec` (troca de aba) e `ficha-api.spec` (as rotas novas).
 - Dado animado (2.1f): `config-dos-dados.spec` (um d20 por valor, só o mantido dourado, Ordem com 5 dados, atributo 0 e vantagem em D&D), `dado-animado.spec` (plano B com movimento reduzido, sem WebGL e com falha no `import()`; o pedaço 3D baixado uma vez só), `camada-dos-dados.spec` (a camada lança exatamente os `dados`, espera os dados pararem e mais 0,6 s, pula no toque e no Esc, limite de 5 s, falha da animação, emite uma vez só) e os casos novos de `ficha-detalhe.spec` (o cartão só depois da animação, "Rolar" desabilitado até lá, plano B direto, `POST` com erro sem dados, sair ou trocar de ficha no meio da rolagem). A cena 3D real não roda no jsdom e é conferida no navegador.
+- Login (2.2): `sessao.spec` (o `localStorage` indisponível não quebra nada), `renovacao.spec` (duas chamadas juntas geram um só `POST /auth/refresh`; com a trava falsa, o refresh gravado por outra aba é relido; rede fora ou 5xx mantém o refresh e 401 o apaga), `auth.interceptor.spec` (o Bearer só na API e nunca em `/auth/`, nem num host que só começa com o endereço da API; 401 renova e repete uma vez, sem laço; o 401 da senha errada não renova), `guards.spec` (recarregar `/fichas/2` com refresh guardado renova e continua lá; sem sessão vai para `/entrar?volta=`; `voltaSegura('//mal.com')` dá `/fichas`), `politica-de-senha.spec` (os mesmos exemplos do servidor para tamanho, repetição, sequência, nome e e-mail), `entrar.spec` e `cadastrar.spec` (validação, 400 por campo, 409 no e-mail, 401 em `role="alert"`, bloqueio durante o envio, mostrar senha com `aria-pressed`, a lista de requisitos que aparece ao digitar e vai de ○ para ✓ com o contador N/15, a senha fora da regra que não chama a API, e o aviso de Caps Lock) e os casos novos de `shell.spec` (nome e "Sair" só com sessão; o "Sair" chama a API, limpa e recarrega em `/entrar`, mesmo com erro).
 - Ataques e rolagem livre (2.1i): `notacao-de-dados.spec` (a mesma gramática do servidor: válidos, inválidos e as mensagens), `dados-aba.spec` (botões que escrevem a notação, texto que atualiza os contadores, "Rolar" desabilitado com notação inválida, "Limpar"), `ataques-ordem-aba.spec` e `ataques-dnd-aba.spec` (os campos de cada sistema, criar, editar e remover, erro no campo, o resumo com o bônus), `resultado-ataque.spec` e `resultado-livre.spec` (o ataque, o dano, o selo "Crítico" e o "20 natural"), `seletor-de-modo.spec`, os casos novos de `config-dos-dados.spec` (o d10 e o d100 convertidos como na mesa, as três cores e o limite de 20 dados) e de `ficha-detalhe.spec` (ataque com crítico, vantagem, rolagem livre, plano B com mais de 20 dados e as abas novas na URL).
 - Inventário (2.1h): `inventario-ordem-aba.spec` (carga e limite, aviso só acima do limite, categoria, criar, editar e remover pela API, erro do servidor no campo), `inventario-dnd-aba.spec` (peso total contra a capacidade, vírgula e ponto no peso, equipado, o zero como valor válido) e `moedas-dnd.spec` (as cinco moedas, salvar só o que mudou, o que foi digitado não se perde quando a ficha muda). Os casos novos de `catalogo-ordem.spec` (limite com Força 0, 1 e 5; espaços usados por quantidade), `regras-dnd.spec` (capacidade de 7,5 kg por ponto de Força; peso total sem ruído de ponto flutuante) e `formulario-comum.spec` (a conversão de vírgula e ponto em número) cobrem as contas e o campo de peso.
 - Magias e rituais (2.1j): `magias-dnd-aba.spec` (CD e ataque mágico, "—" sem atributo, criar, editar e remover, ordem por nível), `espacos-dnd.spec` (marcar e desmarcar, salvar totais cortando os usados, descanso longo, erro do servidor no campo do nível) e `rituais-ordem-aba.spec` (custo em PE e DT no cartão, criar, editar e remover, ordem por círculo). Os casos novos de `regras-dnd.spec` (CD e ataque mágico nos níveis 1, 5 e 17 e sem atributo), `catalogo-ordem.spec` (custo nos 4 círculos; DT com NEX 5, 35 e 99), `formulario-dnd.spec` (o seletor do atributo de conjuração) e `abas-da-ficha.spec` (as abas de cada sistema) cobrem as contas e a navegação.
 - D&D (2.1e): `regras-dnd.spec` (modificador com 9 dando −1, proficiência por nível, bônus de perícia, especialização e salvaguarda, nas fronteiras), `catalogo-dnd.spec` (6 atributos, 18 perícias, rótulo "Raça" e "Espécie"), `ficha-dnd.spec` (bônus na tela, "Rolar", seletor de modo que volta a Normal, "−" no bônus negativo, "20 natural", anéis Vida e Temporário), `ficha-ordem.spec` (a ficha de Ordem, agora um componente por sistema), `formulario-dnd.spec` (valores iniciais, limites, erro do servidor no campo, edição), `edicao-ficha.spec` (a rota de edição abre o formulário do sistema da ficha) e `formulario-comum.spec` (o que os dois formulários repartem).
 
-**Back-end:** são 466 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.1i; eram 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
+**Back-end:** são 517 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.2; eram 466 no 2.1i, 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
 
 | Grupo | O que cobre |
 | --- | --- |
+| `PoliticaDeSenhaTest` | Unitário, sem Spring: cada regra da senha nas bordas (14 caracteres recusado e 15 aceito, espaços contam, trecho repetido, sequências nos dois sentidos, nome e e-mail sem diferenciar acento nem caixa, senha comum com números e símbolos em volta, como `Senha@2026!!!!!!!`) e uma frase válida |
+| `AuthControllerTest` | Login (2.2), com tokens reais: cadastro (201, e-mail gravado em minúsculas e sem espaços, 409, senha curta ou comum com a mensagem no campo, mais de 72 bytes), uma conta antiga com senha de 8 caracteres que continua entrando, login (o mesmo 401 para senha errada, e-mail inexistente e o `legado`), a rotação do refresh, o reuso que revoga a família inteira e só ela, a revogação que continua gravada depois do 401, duas renovações simultâneas (uma 200 e uma 401), logout, token vencido avançando o relógio 17 min, 401 sem token com `WWW-Authenticate`, e senha e refresh guardados só como hash |
+| `DonoDaFichaTest` | Com a ficha de A acessada por B: 404 no `GET`, `PUT` e `DELETE`, num item, no retrato e na rolagem; a listagem só traz as próprias fichas; o `POST` grava o dono; e o usuário do pedido prevalece sobre o usuário padrão dos testes |
+| `MigracaoLoginTest`, `SegredoJwtTest` | A V10 com fichas dos dois sistemas na V9 (todas vão para o `legado`, e `dono_id` nulo é recusado); a API recusa subir com a chave do JWT ausente ou com menos de 32 bytes |
 | `FichaControllerTest` | As rotas `GET`, `POST`, `PUT` e `DELETE` de `/fichas`: o resumo da listagem (PV, SAN e PE nessa ordem), a ficha completa, criar (201 + `Location`), atualizar (inclusive campos omitidos viram `null`), excluir (204), ids inexistentes (404 ProblemDetail), e a ida e volta das perícias pelo banco |
 | `FichaValidacaoTest` | 400 com `errors` por campo, limite de 255, chave desconhecida, tipo errado, JSON malformado, `id` no corpo ignorado, código de perícia ou grau inexistente, atributos fora de 0–5 (`atributos[AGI]`) ou ausentes (`atributos.VIG`), NEX fora de 5–99, Veterano e Expert abaixo do NEX mínimo (`pericias.X`), sistema `DND` ou ausente (400), e valor rejeitado fora do log |
 | `RecursosControllerTest` | `PATCH /fichas/{id}/recursos`: muda só o que foi enviado, PV, SAN e PE juntos, código desconhecido, valor negativo ou nulo (400), 404 |
@@ -783,6 +812,8 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0019 Totais de exibição calculados no front](docs/decisoes/0019-totais-de-exibicao-calculados-no-front.md): a carga do inventário (espaços em Ordem, peso em D&D) é conta do front, com funções puras e testes de borda; o servidor guarda só os dados brutos, e o app só avisa acima do limite.
 - [0020 Dado 3D sob demanda, atrás de uma interface e com plano B](docs/decisoes/0020-dado-3d-sob-demanda-com-plano-b.md): a `open-dice-dnd` mostra os d20 que o servidor sorteou, num pedaço baixado só na primeira rolagem; a interface `LancadorDeDados` deixa a cena 3D fora dos testes, e o resultado aparece direto com movimento reduzido, sem WebGL ou se o carregamento falhar.
 - [0021 Uma notação de dados no servidor](docs/decisoes/0021-notacao-de-dados-no-servidor.md): o dano dos ataques e a rolagem livre usam a mesma notação, lida e rolada no servidor (até 8 termos e 20 dados, sem subtrair dados); o front repete a gramática só para validar no campo.
+- [0022 Autenticação própria com JWT e refresh rotacionado](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md): JWT HS256 de 15 min validado pelo *resource server* do Spring, refresh de 256 bits guardado só como SHA-256 e rotacionado por família (reuso revoga a família), a revogação que sobrevive ao 401, a ficha de outro usuário dando 404, e por que não sessão com cookie nem Keycloak.
+- [0023 Onde o navegador guarda os tokens](docs/decisoes/0023-tokens-no-navegador.md): acesso só na memória, refresh no `localStorage`, renovação única entre abas com `navigator.locks`, e o cookie *httpOnly* como alternativa quando houver domínio próprio.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -915,7 +946,7 @@ Para manter a mesma garantia do inventário: o `switch` sem `default` obriga a d
 Com a classe base `AbaDeLista`, que reúne o salvar e o remover das abas de lista (habilidades e os dois inventários). Fiz a extração antes de copiar o código para o inventário, como refatoração sem mudança de comportamento, protegida pelos testes da aba de habilidades que já existiam. Cada aba só diz o que muda nela (o formulário e as chamadas da API).
 
 **O que acontece se duas pessoas gravarem a mesma ficha ao mesmo tempo?**
-Hoje a última gravação vence, porque a API não tem controle de concorrência. Aceito isso porque cada ficha tem um usuário só. O controle entra junto com o login e as campanhas (2.2 e 2.3), quando a ficha puder ser editada por mais de uma pessoa.
+Hoje a última gravação vence, porque a API não tem controle de concorrência. Aceito isso porque, desde o login (2.2), cada ficha tem um dono só, e só ele a edita. O controle (`@Version`, bloqueio otimista) entra com as campanhas (2.3), quando o mestre também puder editar a ficha do jogador.
 
 **Se o servidor sorteia, como o dado 3D cai no número certo?**
 A biblioteca (`open-dice-dnd`) recebe o valor de cada dado. Ela simula o lançamento antes, descobre qual face vai ficar para cima e pinta o valor do servidor nessa face, então a física é real e o número é o da API. Antes de planejar o resto, fiz um teste rápido para conferir isso: 5 d20 forçados pararam nos valores certos, no computador e no celular emulado. O resultado da biblioteca também informa quando um dado visível diverge do esperado, e nos testes essa lista veio vazia.
@@ -932,14 +963,35 @@ Porque são o mesmo problema: ler "2d6+1d4+3", sortear cada dado e somar. Uma fu
 **Como o crítico funciona nos dois sistemas?**
 Em D&D, é um 20 natural no dado que ficou (com desvantagem, um 20 no outro dado não conta), e os dados do dano dobram. Em Ordem, a arma tem margem e multiplicador: se o dado que ficou for maior ou igual à margem, os dados do dano são multiplicados. A regra fica em funções puras, testadas nas bordas (margem 19 com 19 e com 18), e o resultado volta com `critico: true` para o cartão mostrar o selo.
 
+**Por que fez o próprio login em vez de usar um Keycloak ou Auth0?**
+Porque só a minha API emite e confere o token, e um provedor externo seria mais um serviço para hospedar ou um plano pago, para um app de um grupo de RPG. O token de acesso é um JWT HS256 de 15 min, validado pelo *resource server* do Spring. O refresh é um valor aleatório de 256 bits, guardado só como SHA-256 (ele é longo e aleatório, então não precisa de um hash lento como a senha, que usa BCrypt) e trocado a cada uso ([ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md)).
+
+**O que acontece se alguém roubar um refresh token?**
+Cada login é uma "família" de tokens. Se um refresh que já foi usado aparecer de novo, a API revoga a família inteira: o ladrão cai, e o dono daquela sessão também precisa entrar de novo, mas as outras sessões dele (o celular, o PC) continuam. Um detalhe que testei: a renovação devolve um resultado (`Renovado` ou `Recusado`) em vez de lançar uma exceção dentro da transação, porque a exceção faria rollback e desfaria a própria revogação. O 401 sai depois do commit.
+
+**Por que a ficha de outra pessoa dá 404, e não 403?**
+Porque o 403 diria que a ficha existe. Com 404, a API não revela quais ids estão em uso. Um componente só (`FichasDoUsuario`) busca a ficha por id **e** dono, e todos os serviços passam por ele, então uma rota nova não nasce com o furo. O 403 aparece no 2.3, quando um jogador da mesa tentar editar a ficha de outro.
+
+**Por que o refresh fica no `localStorage`, se um XSS pode lê-lo?**
+No deploy, o site e a API ficam em domínios diferentes, e um cookie *httpOnly* seria de terceiro, que o Safari bloqueia. Guardo o token de acesso só na memória e o refresh no `localStorage`, e mitigo com o Angular escapando todo texto, a rotação com detecção de roubo e uma CSP rígida no deploy. Com um domínio próprio, o refresh iria para um cookie *httpOnly* ([ADR 0023](docs/decisoes/0023-tokens-no-navegador.md)).
+
+**Por que a senha pede 15 caracteres e não exige símbolo nem número?**
+Porque é o que a NIST SP 800-63B-4 (2025) e o OWASP ASVS 5.0 pedem hoje quando a senha é o único fator. Regras de composição levam a senhas previsíveis, como `Senha@123`, e a NIST passou a proibi-las; o que aumenta a força de verdade é o comprimento. Por isso a tela sugere uma frase, e o servidor recusa o que um atacante tenta primeiro: trecho repetido, sequências de teclado, o próprio nome ou e-mail e senhas comuns (`password2024!!!` conta como `password`). A regra vale só no cadastro, então ninguém perde o acesso a uma conta antiga. A lista é curta, escrita no projeto; com o deploy, ela pode dar lugar à API do Have I Been Pwned, que recebe só os 5 primeiros caracteres do hash.
+
+**E se duas abas renovarem o token ao mesmo tempo?**
+As duas reapresentariam o mesmo refresh, e o servidor acharia que foi roubo. Por isso a renovação é única: na mesma aba, as chamadas que recebem 401 juntas esperam a mesma promessa, e entre abas o `navigator.locks` põe as renovações em fila, e cada uma relê o refresh do `localStorage` já dentro da trava. Conferi no navegador com duas abas recarregando juntas: as duas continuaram logadas, e o banco ficou com uma família só, sem revogação.
+
+**Como os 466 testes antigos continuaram passando com todas as rotas exigindo token?**
+O MockMvc da base de testes já vai autenticado como um usuário de teste fixo, e as fichas de teste são gravadas com esse dono. Assim nenhuma asserção mudou. Os testes novos sobrescrevem o usuário por pedido ou montam o próprio MockMvc com tokens reais. O validador do JWT usa o mesmo `Clock` injetado da aplicação, então vencer um token no teste é só avançar o relógio 17 minutos.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f) e os ataques com a rolagem livre (2.1i) já estão prontos.
-- **2.2 Login** com e-mail e senha: hoje qualquer um que alcance a API lê e edita qualquer ficha.
-- **2.3 Campanhas** com convite e papéis Mestre/Jogador.
-- **Limitação conhecida:** a API ainda não tem controle de concorrência entre gravações na mesma ficha; a última gravação vence. Ele entra junto com o login e as campanhas.
+- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f), os ataques com a rolagem livre (2.1i) e o **login (2.2)** já estão prontos.
+- **2.3 Campanhas** com convite e papéis Mestre/Jogador: o mestre passa a ver as fichas da mesa.
+- **Limitação conhecida:** a API ainda não tem controle de concorrência entre gravações na mesma ficha; a última gravação vence. Ele entra com as campanhas, quando a ficha puder ser editada por mais de uma pessoa.
+- **Riscos registrados para o deploy:** sem limite de tentativas de login, e os refresh vencidos não são apagados ([ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md)).
 - **2.4 Rolagens ao vivo** para toda a mesa (WebSocket).
 - **2.5 Login com Google** e **2.6 deploy** gratuito, com link público.
 
@@ -964,6 +1016,7 @@ A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 - Magias e rituais: listas de um sistema só com o mesmo `switch` exaustivo, espaços de magia como mapa por nível com a regra `usados ≤ total` no banco e na API, e backend e front desenvolvidos em paralelo sobre um contrato fechado no plano.
 - Ataques nos dois sistemas e rolagem livre com uma notação de dados única no servidor (dano, crítico e rolagem livre), validada também no front, e o dado 3D generalizado de d4 a d100.
 - Dado 3D com física que mostra o resultado sorteado pelo servidor: biblioteca validada num teste rápido antes do plano, carregada sob demanda, atrás de uma interface testável sem WebGL e com plano B para movimento reduzido.
+- Autenticação com Spring Security: JWT de acesso curto, refresh rotacionado por família com detecção de reuso, senha em BCrypt, dono da ficha num ponto só (404 para a ficha de outra pessoa) e, no Angular, interceptor e guards com renovação única entre abas (`navigator.locks`), sem mudar nenhuma asserção dos 466 testes que já existiam.
 
 ## Contexto do portfólio
 
