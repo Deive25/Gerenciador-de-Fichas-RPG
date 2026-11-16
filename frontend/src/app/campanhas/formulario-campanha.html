@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="enviarForm()" novalidate>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Nome da campanha</mat-label>
+    <input matInput formControlName="nome" maxlength="100" autocomplete="off" />
+    @if (mensagem(form.controls.nome); as texto) {
+      <mat-error>{{ texto }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Descrição (opcional)</mat-label>
+    <textarea matInput formControlName="descricao" rows="3" maxlength="1000"></textarea>
+    @if (mensagem(form.controls.descricao); as texto) {
+      <mat-error>{{ texto }}</mat-error>
+    }
+  </mat-form-field>
+
+  @if (erroGeral(); as texto) {
+    <p class="erro-acao" role="alert">{{ texto }}</p>
+  }
+
+  <div class="acoes">
+    <button type="button" class="botao-neutro" (click)="cancelar.emit()">Cancelar</button>
+    <button type="submit" class="botao" [disabled]="enviando()">{{ enviando() ? 'Salvando…' : rotulo() }}</button>
+  </div>
+</form>
