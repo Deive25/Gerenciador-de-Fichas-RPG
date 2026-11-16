@@ -4,7 +4,7 @@ import { FichaResumo, RecursoResumo } from '../ficha.model';
 import { CartaoFicha } from './cartao-ficha';
 
 const BASE: FichaResumo = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Jack Moreau', idade: 34, retratoVersao: null,
+  id: 7, sistema: 'ORDEM_PARANORMAL', dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Jack Moreau', idade: 34, retratoVersao: null,
   recursos: [
     { codigo: 'PV', atual: 9, maximo: 12 },
     { codigo: 'SAN', atual: 48, maximo: 60 },

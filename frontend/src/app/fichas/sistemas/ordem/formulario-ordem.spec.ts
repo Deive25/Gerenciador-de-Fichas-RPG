@@ -10,7 +10,7 @@ import { FichaOrdem, FichaOrdemEntrada } from '../../ficha.model';
 import { FormularioOrdem, paraEntrada, valorVazio } from './formulario-ordem';
 
 const FICHA: FichaOrdem = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
+  id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
   retratoVersao: 1772366400250, classe: 'OCULTISTA', origem: 'Acadêmica', nex: 35,
   atributos: { AGI: 1, FOR: 1, INT: 3, PRE: 2, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: 4, maximo: 5 } },
@@ -24,7 +24,7 @@ const FICHA: FichaOrdem = {
 
 /** Ficha vinda da conversão do d100: sem classe, PE vazio, sem perícias, NEX 5 e atributos 1. */
 const CONVERTIDA: FichaOrdem = {
-  id: 8, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Antigo', genero: 'M', idade: null,
+  id: 8, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Antigo', genero: 'M', idade: null,
   retratoVersao: null, classe: null, origem: null, nex: 5,
   atributos: { AGI: 1, FOR: 1, INT: 1, PRE: 1, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: null, maximo: null } },

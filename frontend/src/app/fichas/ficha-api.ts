@@ -60,6 +60,11 @@ export class FichaApi {
     return this.alterou(this.tratar(this.http.delete<void>(`${this.base}/${id}`)));
   }
 
+  /** Só o dono troca a ficha de campanha (ou a tira de uma, com null). Não envia versão: a API sobe a dela. */
+  trocarCampanha(id: number, campanhaId: number | null): Observable<Ficha> {
+    return this.alterou(this.tratar(this.http.put<Ficha>(`${this.base}/${id}/campanha`, { campanhaId })));
+  }
+
   /** O corpo é o próprio JPEG (já recortado e reduzido no navegador), sem JSON. */
   enviarRetrato(id: number, jpeg: Blob): Observable<void> {
     return this.alterou(

@@ -15,7 +15,7 @@ import { d20sDoTeste } from '../dado/dados-lancados';
 import { LancadorDeDados } from '../dado/lancador-de-dados';
 
 const FICHA: FichaOrdem = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
+  id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
   retratoVersao: null, classe: 'OCULTISTA', origem: 'Acadêmica', nex: 10,
   atributos: { AGI: 3, FOR: 1, INT: 4, PRE: 2, VIG: 0 },
   recursos: {
@@ -36,7 +36,7 @@ const RESULTADO: TesteResultado = {
 };
 
 const FICHA_DND: FichaDnd = {
-  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+  id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
   edicao: 'D2024', classe: 'Ladino', especie: 'Halfling', antecedente: 'Criminoso', nivel: 5,
   atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },
