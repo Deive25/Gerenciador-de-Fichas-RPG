@@ -18,6 +18,8 @@ import dev.spironello.fichasrpg.campanha.Participacao;
 import dev.spironello.fichasrpg.dto.FichaRequest;
 import dev.spironello.fichasrpg.dto.FichaResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
+import dev.spironello.fichasrpg.exception.DadosInvalidosException;
+import dev.spironello.fichasrpg.exception.FichaDesatualizadaException;
 import dev.spironello.fichasrpg.exception.SistemaImutavelException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.repository.FichaRepository;
@@ -86,13 +88,20 @@ public class FichaService {
 
 	/**
 	 * Substituição completa (ADR 0008): todos os campos do pedido são copiados, inclusive os nulos.
-	 * O sistema da ficha não muda: pedido de outro sistema dá 409.
+	 * O sistema da ficha não muda: pedido de outro sistema dá 409. A versão do pedido é obrigatória (400) e tem de ser a
+	 * do banco, senão alguém gravou antes e o resultado é 409 (ADR 0025).
 	 */
 	@Transactional
 	public FichaResponse atualizar(Long id, FichaRequest request) {
 		Ficha ficha = fichas.buscar(id);
 		if (ficha.getSistema() != request.sistema()) {
 			throw new SistemaImutavelException();
+		}
+		if (request.versao() == null) {
+			throw new DadosInvalidosException(Map.of("versao", "é obrigatória"));
+		}
+		if (!request.versao().equals(ficha.getVersao())) {
+			throw new FichaDesatualizadaException();
 		}
 		sistemas.de(request.sistema()).copiar(request, ficha);
 		FichaResponse atualizada = resposta(gravar(ficha));
