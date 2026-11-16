@@ -130,6 +130,13 @@
   color: var(--cor-texto-suave);
 }
 
+.dono-ficha,
+.campanha-ficha {
+  margin: 0.25rem 0 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+}
+
 .status {
   display: flex;
   flex-direction: column;

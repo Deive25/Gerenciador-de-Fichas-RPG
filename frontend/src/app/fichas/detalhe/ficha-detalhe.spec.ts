@@ -6,6 +6,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
+import { CampanhaApi } from '../../campanhas/campanha-api';
+import { Sessao } from '../../core/auth/sessao';
+import { respostaDe } from '../../core/auth/teste-auth';
 import { FichaApi } from '../ficha-api';
 import { AtaqueResultado, FichaDnd, FichaOrdem, RolagemLivre, TesteResultado } from '../ficha.model';
 import { FichaDetalhe } from './ficha-detalhe';
@@ -62,11 +65,15 @@ function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[
     providers: [
       provideRouter([]),
       { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } },
+      { provide: CampanhaApi, useValue: { listar: () => of([]) } },
       // Por padrão, plano B (sem dado 3D): o cartão aparece direto, como antes do 2.1f.
       { provide: DadoAnimado, useValue: { preparar: () => Promise.resolve(null) } },
       ...extras,
     ],
   });
+  // Quem está logado é o dono das fichas de teste (usuário 1): só o dono vê Excluir e o seletor de campanha.
+  localStorage.clear();
+  TestBed.inject(Sessao).iniciar({ ...respostaDe(), usuario: { id: 1, nome: 'Arthur', email: 'arthur@x.com' } });
   const router = TestBed.inject(Router);
   const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(FichaDetalhe);
@@ -1128,5 +1135,81 @@ describe('FichaDetalhe · abas Ataques e Dados', () => {
 
     expect(el.textContent).toContain('Espada');
     expect(buscarFicha).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('FichaDetalhe · campanhas (2.3)', () => {
+  const DE_BIA: FichaOrdem = { ...FICHA, dono: { id: 2, nome: 'Bia' }, campanha: { id: 3, nome: 'Mesa de sexta' } };
+
+  it('o dono vê o seletor de campanha e o Excluir', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    expect(el.querySelector('app-seletor-campanha select')).not.toBeNull();
+    expect(el.textContent).not.toContain('Ficha de ');
+    abrirMenu(fixture);
+    expect(itensDoMenu().map((i) => i.textContent?.trim())).toEqual(['Editar', 'Excluir']);
+  });
+
+  it('o mestre, na ficha de um jogador, vê "Ficha de {dono}", edita e não vê Excluir nem o seletor', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(DE_BIA)) });
+    expect(el.querySelector('.dono-ficha')?.textContent).toContain('Ficha de Bia');
+    expect(el.querySelector('app-seletor-campanha')).toBeNull();
+    abrirMenu(fixture);
+    expect(itensDoMenu().map((i) => i.textContent?.trim())).toEqual(['Editar']);
+  });
+
+  it('mostra a campanha da ficha no cabeçalho de quem não é o dono (o dono tem o seletor)', () => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of(DE_BIA)) });
+    expect(el.querySelector('.campanha-ficha')?.textContent).toContain('Mesa de sexta');
+  });
+
+  it('o dono não tem a linha de campanha: o seletor já mostra a campanha', () => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of({ ...FICHA, campanha: { id: 3, nome: 'Mesa de sexta' } })) });
+    expect(el.querySelector('.campanha-ficha')).toBeNull();
+  });
+
+  it('trocar a campanha pelo seletor atualiza a ficha na tela', () => {
+    const nova: FichaOrdem = { ...FICHA, versao: 4, campanha: { id: 3, nome: 'Mesa de sexta' } };
+    const trocarCampanha = vi.fn(() => of(nova));
+    const campanhas = { listar: () => of([{ id: 3, nome: 'Mesa de sexta', papel: 'JOGADOR', mestre: { id: 2, nome: 'Bia' }, fichas: 1 }]) };
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(FICHA)), trocarCampanha }, [
+      { provide: CampanhaApi, useValue: campanhas },
+    ]);
+    const seletor = el.querySelector('select') as HTMLSelectElement;
+    seletor.value = '3';
+    seletor.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(trocarCampanha).toHaveBeenCalledWith(7, 3);
+    expect((el.querySelector('select') as HTMLSelectElement).value).toBe('3');
+    expect(el.querySelector('app-seletor-campanha')?.textContent).toContain('Campanha alterada.');
+  });
+
+  it('403 mostra a mensagem de permissão, com volta para as fichas', () => {
+    const erro: ApiError = { status: 403, titulo: 'Sem permissão', detalhe: 'Você não tem permissão para isso nesta campanha.', campos: {} };
+    const { el } = montar({ buscarFicha: vi.fn(() => throwError(() => erro)) });
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Você não tem permissão para abrir esta ficha.');
+    expect(el.querySelector('a[href="/fichas"]')).not.toBeNull();
+  });
+
+  it('409 na edição rápida de PV recarrega a ficha (a mensagem fica na própria edição rápida)', async () => {
+    vi.useFakeTimers();
+    try {
+      const conflito: ApiError = {
+        status: 409, titulo: 'Conflito', detalhe: 'Esta ficha mudou enquanto você editava. Recarregue para ver a versão nova.', campos: {},
+      };
+      const nova: FichaOrdem = { ...FICHA, versao: 4, recursos: { ...FICHA.recursos, PV: { atual: 3, maximo: 12 } } };
+      const buscarFicha = vi.fn().mockReturnValueOnce(of(FICHA)).mockReturnValueOnce(of(nova));
+      const { fixture, el } = montar({ buscarFicha, atualizarRecursos: vi.fn(() => throwError(() => conflito)) });
+
+      (el.querySelector('button[aria-label="Aumentar vida"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      vi.advanceTimersByTime(1000);
+      fixture.detectChanges();
+
+      expect(buscarFicha).toHaveBeenCalledTimes(2);
+      expect(el.textContent).toContain('Esta ficha mudou enquanto você editava');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

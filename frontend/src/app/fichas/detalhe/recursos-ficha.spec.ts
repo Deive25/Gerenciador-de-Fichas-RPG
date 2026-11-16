@@ -178,6 +178,34 @@ describe('RecursosFicha', () => {
     expect(el.querySelector('[role="alert"]')?.textContent).toContain('Servidor indisponível: Tente de novo.');
   });
 
+  it('409 (a ficha mudou em outro lugar) mostra a mensagem e avisa a tela para recarregar a ficha', () => {
+    const erro: ApiError = {
+      status: 409, titulo: 'Conflito', detalhe: 'Esta ficha mudou enquanto você editava. Recarregue para ver a versão nova.', campos: {},
+    };
+    const { fixture, el } = montar(vi.fn(() => throwError(() => erro)));
+    const conflitos = vi.fn();
+    fixture.componentInstance.conflito.subscribe(conflitos);
+
+    clicar(fixture, 'Diminuir vida', 1);
+    vi.advanceTimersByTime(800);
+    fixture.detectChanges();
+
+    expect(conflitos).toHaveBeenCalledTimes(1);
+    expect(el.querySelector('[role="alert"]')?.textContent).toContain('Esta ficha mudou enquanto você editava');
+  });
+
+  it('erro que não é 409 não pede recarga', () => {
+    const erro: ApiError = { status: 0, titulo: 'Servidor indisponível', detalhe: 'Tente de novo.', campos: {} };
+    const { fixture } = montar(vi.fn(() => throwError(() => erro)));
+    const conflitos = vi.fn();
+    fixture.componentInstance.conflito.subscribe(conflitos);
+
+    clicar(fixture, 'Diminuir vida', 1);
+    vi.advanceTimersByTime(800);
+
+    expect(conflitos).not.toHaveBeenCalled();
+  });
+
   it('um toque durante o salvamento salva de novo depois, sem ser apagado pela resposta', () => {
     const primeira = new Subject<FichaOrdem>();
     const { fixture, el } = montar(

@@ -81,6 +81,8 @@ export class RecursosFicha {
   readonly ficha = input.required<Ficha>();
   /** A ficha como o servidor devolveu depois de salvar. */
   readonly atualizada = output<Ficha>();
+  /** O PATCH levou 409: a ficha mudou em outro lugar. A tela da ficha recarrega a versão nova. */
+  readonly conflito = output<void>();
 
   readonly aneis = computed(() => ANEIS_POR_SISTEMA[this.ficha().sistema]);
   readonly valores = signal<Valores>({});
@@ -178,6 +180,9 @@ export class RecursosFicha {
         }
         this.valores.set({ ...this.ultimoSalvo });
         this.erro.set(erro);
+        if (erro.status === 409 && !this.destruido) {
+          this.conflito.emit();
+        }
       },
     });
   }
