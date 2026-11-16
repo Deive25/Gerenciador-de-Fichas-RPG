@@ -25,6 +25,15 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
+		<!-- Login (2.2): Spring Security + resource server (Nimbus) para emitir e validar o JWT de acesso -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+		</dependency>
 		<!-- Bean Validation (Hibernate Validator): @NotBlank, @Size etc. nos DTOs de entrada -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -62,6 +71,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- jwt() e springSecurity() para o MockMvc -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- Testes de integracao com PostgreSQL real em container (versao do Testcontainers gerenciada pelo Boot) -->
