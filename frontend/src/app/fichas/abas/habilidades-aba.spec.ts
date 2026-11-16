@@ -11,7 +11,7 @@ import { espacosZerados } from '../testes/espacos-zerados';
 const EXISTENTE: Habilidade = { id: 3, nome: 'Ataque especial', tipo: 'CLASSE', descricao: 'Gasta 2 PE.\nCausa +1d6.' };
 
 const ORDEM: FichaOrdem = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
+  id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
   retratoVersao: null, classe: 'OCULTISTA', origem: null, nex: 10,
   atributos: { AGI: 3, FOR: 1, INT: 4, PRE: 2, VIG: 0 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 48, maximo: 60 }, PE: { atual: 5, maximo: 10 } },
@@ -24,7 +24,7 @@ const ORDEM: FichaOrdem = {
 };
 
 const DND: FichaDnd = {
-  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'F', idade: null, retratoVersao: null,
+  id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Kael', genero: 'F', idade: null, retratoVersao: null,
   edicao: 'D2014', classe: 'Ladino', especie: 'Halfling', antecedente: null, nivel: 5,
   atributos: { FOR: 8, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 16 },
   recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 0, maximo: null } },

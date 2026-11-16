@@ -18,10 +18,10 @@ public class RolagemService {
 
 	private static final Logger log = LoggerFactory.getLogger(RolagemService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final Dado dado;
 
-	public RolagemService(FichasDoUsuario fichas, Dado dado) {
+	public RolagemService(AcessoAFicha fichas, Dado dado) {
 		this.fichas = fichas;
 		this.dado = dado;
 	}

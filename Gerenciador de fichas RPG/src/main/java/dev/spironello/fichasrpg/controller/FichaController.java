@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.spironello.fichasrpg.dto.FichaRequest;
 import dev.spironello.fichasrpg.dto.FichaResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
+import dev.spironello.fichasrpg.dto.TrocaDeCampanhaRequest;
 import dev.spironello.fichasrpg.service.FichaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,7 +68,13 @@ public class FichaController {
 		return service.atualizarRecursos(id, atuais);
 	}
 
-	@Operation(summary = "Exclui a ficha com o id informado")
+	@Operation(summary = "Leva a ficha a uma campanha de que o dono participa, ou a tira de uma (campanhaId nulo); só o dono")
+	@PutMapping("/{id}/campanha")
+	public FichaResponse trocarCampanha(@PathVariable Long id, @RequestBody TrocaDeCampanhaRequest request) {
+		return service.trocarCampanha(id, request.campanhaId());
+	}
+
+	@Operation(summary = "Exclui a ficha com o id informado (só o dono)")
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void excluir(@PathVariable Long id) {

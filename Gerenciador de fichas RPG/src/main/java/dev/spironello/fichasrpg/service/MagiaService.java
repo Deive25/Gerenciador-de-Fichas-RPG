@@ -22,10 +22,10 @@ public class MagiaService {
 
 	private static final Logger log = LoggerFactory.getLogger(MagiaService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final MagiasDnd magiasDnd;
 
-	public MagiaService(FichasDoUsuario fichas, MagiasDnd magiasDnd) {
+	public MagiaService(AcessoAFicha fichas, MagiasDnd magiasDnd) {
 		this.fichas = fichas;
 		this.magiasDnd = magiasDnd;
 	}

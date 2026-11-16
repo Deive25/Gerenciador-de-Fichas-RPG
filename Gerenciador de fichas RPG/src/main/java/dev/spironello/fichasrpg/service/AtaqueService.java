@@ -22,12 +22,12 @@ public class AtaqueService {
 
 	private static final Logger log = LoggerFactory.getLogger(AtaqueService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 	private final AtaquesOrdem ataquesOrdem;
 	private final AtaquesDnd ataquesDnd;
 	private final Dado dado;
 
-	public AtaqueService(FichasDoUsuario fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado) {
+	public AtaqueService(AcessoAFicha fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado) {
 		this.fichas = fichas;
 		this.ataquesOrdem = ataquesOrdem;
 		this.ataquesDnd = ataquesDnd;

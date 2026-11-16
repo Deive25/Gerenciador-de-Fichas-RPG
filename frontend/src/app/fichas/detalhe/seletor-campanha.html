@@ -1,0 +1,11 @@
+<label class="rotulo" for="seletor-campanha">Campanha</label>
+<select id="seletor-campanha" class="seletor" [disabled]="trocando()" (change)="trocar($event)">
+  <option value="" [selected]="valorAtual() === ''">Sem campanha</option>
+  @for (c of opcoes(); track c.id) {
+    <option [value]="c.id" [selected]="valorAtual() === '' + c.id">{{ c.nome }}</option>
+  }
+</select>
+<p class="mensagem" role="status">{{ aviso() }}</p>
+@if (erro(); as e) {
+  <p class="erro" role="alert">{{ e.titulo }}: {{ e.detalhe }}</p>
+}

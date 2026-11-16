@@ -14,7 +14,7 @@ function ficha(
 ): FichaResumo {
   const { vida = [9, 12], sanidade = [48, 60], ...resto } = parcial;
   return {
-    id, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem, idade: null, retratoVersao: null,
+    id, sistema: 'ORDEM_PARANORMAL', dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem, idade: null, retratoVersao: null,
     recursos: [
       { codigo: 'PV', atual: vida[0], maximo: vida[1] },
       { codigo: 'SAN', atual: sanidade[0], maximo: sanidade[1] },

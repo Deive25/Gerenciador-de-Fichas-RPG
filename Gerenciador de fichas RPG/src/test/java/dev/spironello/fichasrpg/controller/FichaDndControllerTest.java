@@ -190,7 +190,7 @@ class FichaDndControllerTest extends IntegrationTestBase {
 		// Segundo PUT sem perícias, salvaguardas nem recursos: tudo é apagado.
 		mockMvc.perform(put("/fichas/{id}", ficha.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(FichasDeTeste.corpoDnd())))
+				.content(objectMapper.writeValueAsString(comVersao(FichasDeTeste.corpoDnd(), 1))))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.edicao").value("D2024"))
 				.andExpect(jsonPath("$.pericias").isEmpty())
@@ -327,6 +327,7 @@ class FichaDndControllerTest extends IntegrationTestBase {
 		for (String atributo : List.of("INT", "SAB", "CAR")) {
 			Map<String, Object> corpo = FichasDeTeste.corpoDnd();
 			corpo.put("atributoConjuracao", atributo);
+			corpo.put("versao", List.of("INT", "SAB", "CAR").indexOf(atributo)); // cada PUT sobe a versão
 
 			mockMvc.perform(put("/fichas/{id}", ficha.getId())
 					.contentType(MediaType.APPLICATION_JSON)
@@ -554,5 +555,11 @@ class FichaDndControllerTest extends IntegrationTestBase {
 					assertThat(depois.getPersonagem()).isEqualTo("Original");
 					assertThat(depois.getNex()).isEqualTo(5);
 				});
+	}
+
+	/** O mesmo corpo com a versão que a ficha tem agora (cada PUT que grava sobe a versão). */
+	private static Map<String, Object> comVersao(Map<String, Object> corpo, long versao) {
+		corpo.put("versao", versao);
+		return corpo;
 	}
 }

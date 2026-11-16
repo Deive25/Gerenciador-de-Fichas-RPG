@@ -21,7 +21,7 @@ const ARCO = ataque({ id: 4, nome: 'Arco curto', atributo: 'DES', proficiente: f
 /** Nivel 5 (proficiencia +3), FOR 16 (+3) e DES 14 (+2). */
 function fichaCom(ataques: AtaqueDnd[], atributos: FichaDnd['atributos'] = { FOR: 16, DES: 14, CON: 12, INT: 10, SAB: 9, CAR: 10 }): FichaDnd {
   return {
-    id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+    id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
     edicao: 'D2024', classe: 'Guerreiro', especie: 'Humano', antecedente: 'Soldado', nivel: 5,
     atributos,
     recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 0, maximo: null } },

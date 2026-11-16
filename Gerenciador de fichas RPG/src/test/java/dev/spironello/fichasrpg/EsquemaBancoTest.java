@@ -17,10 +17,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
- * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item, ficha_dnd_item, ficha_dnd_magia, ficha_dnd_espaco, ficha_ordem_ritual, ficha_ordem_ataque, ficha_dnd_ataque, usuario e refresh_token), que vem das migrações
+ * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item, ficha_dnd_item, ficha_dnd_magia, ficha_dnd_espaco, ficha_ordem_ritual, ficha_ordem_ataque, ficha_dnd_ataque, usuario, refresh_token, campanha e participacao), que vem das migrações
  * Flyway e não do Hibernate: com ddl-auto=validate ele só confere.
  * O teste protege os nomes de coluna e a nulabilidade que as entidades esperam, e também mostra que
- * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 10 aplicadas).
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 11 aplicadas).
  */
 @DisplayName("Esquema do banco (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
@@ -39,7 +39,7 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(tabelas).extracting(t -> t.get("table_name")).containsExactlyInAnyOrder(
 				"ficha", "ficha_ordem", "ficha_ordem_pericia", "ficha_dnd", "ficha_dnd_pericia", "retrato_ficha",
 				"ficha_habilidade", "ficha_ordem_item", "ficha_dnd_item", "ficha_dnd_magia", "ficha_dnd_espaco",
-				"ficha_ordem_ritual", "ficha_ordem_ataque", "ficha_dnd_ataque", "usuario", "refresh_token", "flyway_schema_history");
+				"ficha_ordem_ritual", "ficha_ordem_ataque", "ficha_dnd_ataque", "usuario", "refresh_token", "campanha", "participacao", "flyway_schema_history");
 	}
 
 	@Test
@@ -56,8 +56,36 @@ class EsquemaBancoTest extends IntegrationTestBase {
 			esperado.put(c, "character varying/YES");
 		}
 		esperado.put("dono_id", "bigint/NO");
+		esperado.put("campanha_id", "bigint/YES");
+		esperado.put("versao", "bigint/NO");
 
 		assertThat(colunas("ficha")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("a tabela campanha tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDaCampanha() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("id", "bigint/NO");
+		esperado.put("nome", "character varying/NO");
+		esperado.put("descricao", "character varying/YES");
+		esperado.put("codigo_convite", "character varying/NO");
+		esperado.put("convite_ativo", "boolean/NO");
+		esperado.put("criado_em", "timestamp with time zone/NO");
+
+		assertThat(colunas("campanha")).containsExactlyInAnyOrderEntriesOf(esperado);
+	}
+
+	@Test
+	@DisplayName("a tabela participacao tem as colunas, os tipos e a nulabilidade esperados")
+	void esquemaDaParticipacao() {
+		Map<String, String> esperado = new LinkedHashMap<>();
+		esperado.put("campanha_id", "bigint/NO");
+		esperado.put("usuario_id", "bigint/NO");
+		esperado.put("papel", "character varying/NO");
+		esperado.put("entrou_em", "timestamp with time zone/NO");
+
+		assertThat(colunas("participacao")).containsExactlyInAnyOrderEntriesOf(esperado);
 	}
 
 
@@ -374,11 +402,11 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7, V8, V9 e V10 com sucesso")
+	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7, V8, V9, V10 e V11 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(10);
+		assertThat(historico).hasSize(11);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
@@ -418,6 +446,10 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(historico.get(9))
 				.containsEntry("version", "10")
 				.containsEntry("description", "usuarios e dono da ficha")
+				.containsEntry("success", true);
+		assertThat(historico.get(10))
+				.containsEntry("version", "11")
+				.containsEntry("description", "campanhas")
 				.containsEntry("success", true);
 	}
 

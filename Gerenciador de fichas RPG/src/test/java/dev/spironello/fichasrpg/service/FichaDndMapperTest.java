@@ -41,7 +41,7 @@ class FichaDndMapperTest {
 	private static FichaDndRequest pedido(Map<RecursoDnd, RecursoValor> recursos, Boolean inspiracao,
 			Set<AtributoDnd> salvaguardas, Map<PericiaDnd, GrauDnd> pericias, AtributoDnd atributoConjuracao) {
 		return new FichaDndRequest("Arthur", "Ana", "F", 30, EdicaoDnd.D2014, "Mago", "Elfo", "Sábio", 5,
-				atributos(), recursos, 13, inspiracao, salvaguardas, pericias, atributoConjuracao);
+				atributos(), recursos, 13, inspiracao, salvaguardas, pericias, atributoConjuracao, null);
 	}
 
 	private static FichaDndRequest pedido(Map<RecursoDnd, RecursoValor> recursos, Boolean inspiracao,

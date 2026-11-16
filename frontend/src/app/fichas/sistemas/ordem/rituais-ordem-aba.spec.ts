@@ -23,7 +23,7 @@ const CIRCULO_2 = ritual({
 /** NEX 10 e Presença 2: DT 10 + 2 + 2 = 14. */
 function fichaCom(rituais: RitualOrdem[], nex = 10, presenca = 2): FichaOrdem {
   return {
-    id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
+    id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: null,
     retratoVersao: null, classe: 'OCULTISTA', origem: null, nex,
     atributos: { AGI: 3, FOR: 2, INT: 4, PRE: presenca, VIG: 0 },
     recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 48, maximo: 60 }, PE: { atual: 5, maximo: 10 } },

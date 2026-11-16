@@ -11,6 +11,10 @@ import { routes } from './app.routes';
 import { Sessao } from './core/auth/sessao';
 import { EscolhaSistema } from './fichas/criacao/escolha-sistema';
 import { EdicaoFicha } from './fichas/edicao/edicao-ficha';
+import { CampanhaApi } from './campanhas/campanha-api';
+import { CampanhaTela } from './campanhas/campanha-tela';
+import { ConviteTela } from './campanhas/convite';
+import { MinhasCampanhas } from './campanhas/minhas-campanhas';
 import { FichaApi } from './fichas/ficha-api';
 import { Painel } from './fichas/painel/painel';
 import { FormularioDnd } from './fichas/sistemas/dnd/formulario-dnd';
@@ -25,6 +29,10 @@ beforeEach(() => {
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: FichaApi, useValue: { listar: vi.fn(() => of([])), buscarFicha: vi.fn(() => NEVER), versaoFichas: signal(0) } },
+      {
+        provide: CampanhaApi,
+        useValue: { listar: vi.fn(() => of([])), buscar: vi.fn(() => NEVER), membros: vi.fn(() => NEVER), fichas: vi.fn(() => NEVER), previa: vi.fn(() => NEVER) },
+      },
     ],
   });
   TestBed.inject(Sessao).iniciar({ accessToken: 'a', refreshToken: 'r', usuario: { id: 1, nome: 'Ana', email: 'ana@x.com' } });
@@ -70,6 +78,17 @@ describe('routes', () => {
     expect(tela.id()).toBe('9');
   });
 
+  it('a rota /campanhas abre Minhas campanhas', async () => {
+    const harness = await RouterTestingHarness.create();
+    expect(await harness.navigateByUrl('/campanhas', MinhasCampanhas)).toBeInstanceOf(MinhasCampanhas);
+  });
+
+  it('a rota /campanhas/3 abre a campanha, com o id da URL', async () => {
+    const harness = await RouterTestingHarness.create();
+    const tela = await harness.navigateByUrl('/campanhas/3', CampanhaTela);
+    expect(tela.id()).toBe('3');
+  });
+
   it('a rota vazia redireciona para /fichas', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/');
@@ -91,6 +110,20 @@ describe('routes', () => {
       expect(TestBed.inject(Router).url).toBe('/entrar?volta=%2Ffichas%2F2%2Feditar');
     });
 
+    it('as rotas de campanhas também exigem sessão', async () => {
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl('/campanhas/3');
+      expect(TestBed.inject(Router).url).toBe('/entrar?volta=%2Fcampanhas%2F3');
+    });
+
+    it('/convite/:codigo fica fora dos guards: abre o convite mesmo sem sessão (Foco 5)', async () => {
+      const harness = await RouterTestingHarness.create();
+      const tela = await harness.navigateByUrl('/convite/Abc123', ConviteTela);
+      expect(tela).toBeInstanceOf(ConviteTela);
+      expect(tela.codigo()).toBe('Abc123');
+      expect(TestBed.inject(Router).url).toBe('/convite/Abc123');
+    });
+
     it('/entrar abre a tela de entrar', async () => {
       const harness = await RouterTestingHarness.create();
       const tela = await harness.navigateByUrl('/entrar', Entrar);
@@ -108,6 +141,11 @@ describe('routes', () => {
       const tela = await harness.navigateByUrl('/entrar?volta=%2Ffichas%2F2', Entrar);
       expect(tela.volta()).toBe('/fichas/2');
     });
+  });
+
+  it('logado, /convite/:codigo também abre o convite', async () => {
+    const harness = await RouterTestingHarness.create();
+    expect(await harness.navigateByUrl('/convite/Abc123', ConviteTela)).toBeInstanceOf(ConviteTela);
   });
 
   it('logado, /entrar e /cadastrar mandam para /fichas', async () => {

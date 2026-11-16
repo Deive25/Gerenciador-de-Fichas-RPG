@@ -28,6 +28,7 @@ import dev.spironello.fichasrpg.model.AtributoOrdem;
 import dev.spironello.fichasrpg.model.FichaOrdem;
 import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
+import dev.spironello.fichasrpg.campanha.ParticipacaoRepository;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /** Testes unitários do serviço de rolagem: Mockito puro, sem Spring e sem Docker. */
@@ -49,13 +50,16 @@ class TesteServiceTest {
 	private FichaRepository repository;
 
 	@Mock
+	private ParticipacaoRepository participacoes;
+
+	@Mock
 	private Dado dado;
 
 	private TesteService service;
 
 	@BeforeEach
 	void criarServico() {
-		service = new TesteService(new FichasDoUsuario(repository, USUARIO), new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
+		service = new TesteService(new AcessoAFicha(repository, participacoes, USUARIO), new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
 	}
 
 	private FichaOrdem fichaComIntelecto3() {
@@ -68,7 +72,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("perícia usa o atributo-base e o grau da ficha")
 	void periciaUsaAtributoEGrau() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		TesteResponse resposta = service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "INVESTIGACAO", null));
@@ -80,7 +84,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("atributo rola sem bônus e devolve o nome do atributo")
 	void atributoSemBonus() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		TesteResponse resposta = service.testar(ID, new TesteRequest(AlvoTeste.ATRIBUTO, "INT", ModoTeste.NORMAL));
@@ -93,7 +97,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("ficha inexistente lança FichaNaoEncontradaException")
 	void fichaInexistente() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
+		when(repository.findById(ID)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "LUTA", null)))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -102,7 +106,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("salvaguarda, modo diferente de NORMAL e código inválido viram erros por campo")
 	void erros() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
 
 		assertThatThrownBy(() -> service.testar(ID, new TesteRequest(AlvoTeste.SALVAGUARDA, "VOAR", ModoTeste.VANTAGEM)))
 				.isInstanceOfSatisfying(DadosInvalidosException.class, e ->
@@ -115,7 +119,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("o log traz id, código e total, e nunca a lista de dados")
 	void logSemOsDados(CapturedOutput saida) {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "INVESTIGACAO", null));

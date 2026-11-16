@@ -5,6 +5,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, finalize, map } from 'rxjs';
 import { ApiError } from '../../core/api-error';
+import { Sessao } from '../../core/auth/sessao';
 import { ABAS_POR_SISTEMA, abaValida } from '../abas/abas-da-ficha';
 import { FichaDndCorpo } from '../sistemas/dnd/ficha-dnd';
 import { FichaOrdemCorpo } from '../sistemas/ordem/ficha-ordem';
@@ -18,6 +19,7 @@ import { AtaquesOrdemAba } from '../sistemas/ordem/ataques-ordem-aba';
 import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
 import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
 import { RecursosFicha } from './recursos-ficha';
+import { SeletorCampanha } from './seletor-campanha';
 import { Medalhao } from '../componentes/medalhao';
 import { ResultadoAtaque } from '../componentes/resultado-ataque';
 import { ResultadoLivre } from '../componentes/resultado-livre';
@@ -49,7 +51,7 @@ import {
 import { RetratoCache } from '../retrato-cache';
 import { DadosRecorte, RecorteRetrato } from '../retrato/recorte-retrato';
 
-type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
+type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'sem-permissao' | 'erro';
 
 /** O que o cartão do topo mostra: o resultado da última rolagem, de um teste, de um ataque ou livre. */
 export type UltimoResultado =
@@ -65,6 +67,7 @@ export type UltimoResultado =
     MatTabsModule,
     Medalhao,
     RecursosFicha,
+    SeletorCampanha,
     HabilidadesAba,
     DadosAba,
     AtaquesOrdemAba,
@@ -90,6 +93,7 @@ export class FichaDetalhe {
   private readonly dialog = inject(MatDialog);
   private readonly retratos = inject(RetratoCache);
   private readonly dado = inject(DadoAnimado);
+  private readonly sessao = inject(Sessao);
 
   /**
    * Conta as "vidas" da tela: sobe ao recarregar ou sair da ficha. Uma rolagem que volta depois disso
@@ -119,6 +123,14 @@ export class FichaDetalhe {
 
   readonly estado = signal<Estado>('carregando');
   readonly ficha = signal<Ficha | null>(null);
+  /**
+   * Só o dono exclui a ficha e troca a campanha dela; o mestre da campanha a vê e edita (a API é quem
+   * decide, com 403 e 404: aqui só se esconde o que daria erro).
+   */
+  readonly ehDono = computed(() => {
+    const ficha = this.ficha();
+    return ficha !== null && ficha.dono.id === this.sessao.usuario()?.id;
+  });
   readonly erro = signal<ApiError | null>(null);
   readonly ultimoResultado = signal<UltimoResultado | null>(null);
   /** Há uma rolagem em andamento: da ida ao servidor até o cartão aparecer (a animação conta). */
@@ -154,8 +166,28 @@ export class FichaDetalhe {
       },
       error: (erro: ApiError) => {
         this.erro.set(erro);
-        this.estado.set(erro.status === 404 ? 'nao-encontrada' : 'erro');
+        this.estado.set(erro.status === 404 ? 'nao-encontrada' : erro.status === 403 ? 'sem-permissao' : 'erro');
       },
+    });
+  }
+
+  /**
+   * A edição rápida levou 409 (a ficha mudou em outro lugar): traz a versão nova sem esconder a tela.
+   * A mensagem já aparece junto dos anéis; os valores que a pessoa tinha tocado são descartados.
+   */
+  recarregarAposConflito(): void {
+    const ficha = this.ficha();
+    if (!ficha) {
+      return;
+    }
+    const geracao = this.geracao;
+    this.api.buscarFicha(ficha.id).subscribe({
+      next: (nova) => {
+        if (geracao === this.geracao) {
+          this.ficha.set(nova);
+        }
+      },
+      error: (erro: ApiError) => this.erro.set(erro),
     });
   }
 

@@ -46,7 +46,7 @@ describe('FichaApi', () => {
     api.listar().subscribe((r) => (resumo = r));
     const corpo: FichaResumo[] = [
       {
-        id: 1, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', idade: null, retratoVersao: null,
+        id: 1, sistema: 'ORDEM_PARANORMAL', dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Lia', idade: null, retratoVersao: null,
         recursos: [{ codigo: 'PV', atual: 9, maximo: 12 }],
       },
     ];
@@ -78,6 +78,21 @@ describe('FichaApi', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
   });
+  it('trocarCampanha faz PUT /fichas/7/campanha com o campanhaId (ou null) e avisa que mudou', () => {
+    const antes = api.versaoFichas();
+    api.trocarCampanha(7, 3).subscribe();
+    const req = http.expectOne(`${API}/fichas/7/campanha`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ campanhaId: 3 });
+    req.flush({});
+    expect(api.versaoFichas()).toBe(antes + 1);
+
+    api.trocarCampanha(7, null).subscribe();
+    const tira = http.expectOne(`${API}/fichas/7/campanha`);
+    expect(tira.request.body).toEqual({ campanhaId: null });
+    tira.flush({});
+  });
+
   it('buscarFicha faz GET /fichas/7', () => {
     api.buscarFicha(7).subscribe();
     const req = http.expectOne(`${API}/fichas/7`);

@@ -11,7 +11,7 @@ import { EdicaoFicha } from './edicao-ficha';
 import { espacosZerados } from '../testes/espacos-zerados';
 
 const ORDEM: FichaOrdem = {
-  id: 7, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
+  id: 7, sistema: 'ORDEM_PARANORMAL', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Detetive Lia', genero: 'F', idade: 34,
   retratoVersao: null, classe: 'OCULTISTA', origem: 'Acadêmica', nex: 35,
   atributos: { AGI: 1, FOR: 1, INT: 3, PRE: 2, VIG: 1 },
   recursos: { PV: { atual: 9, maximo: 12 }, SAN: { atual: 8, maximo: 10 }, PE: { atual: 4, maximo: 5 } },
@@ -24,7 +24,7 @@ const ORDEM: FichaOrdem = {
 };
 
 const DND: FichaDnd = {
-  id: 9, sistema: 'DND', jogador: 'Arthur', personagem: 'Brann', genero: 'M', idade: null, retratoVersao: null,
+  id: 9, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Brann', genero: 'M', idade: null, retratoVersao: null,
   edicao: 'D2024', classe: 'Guerreiro', especie: 'Anão', antecedente: null, nivel: 5,
   atributos: { FOR: 16, DES: 12, CON: 14, INT: 8, SAB: 10, CAR: 9 },
   recursos: { PV: { atual: 30, maximo: 44 }, PV_TEMP: { atual: 0, maximo: null } },
@@ -57,6 +57,21 @@ describe('EdicaoFicha', () => {
       .componentInstance as FormularioOrdem;
     expect(ordem.form.controls.personagem.value).toBe('Detetive Lia');
     expect(el.querySelector('app-formulario-dnd')).toBeNull();
+  });
+
+  it('Recarregar (do aviso de 409) busca a ficha de novo e reabre o formulario com os dados novos', () => {
+    const nova = { ...ORDEM, versao: 4, personagem: 'Lia do outro lado' };
+    const buscarFicha = vi.fn().mockReturnValueOnce(of(ORDEM as Ficha)).mockReturnValueOnce(of(nova as Ficha));
+    const { fixture } = montar(buscarFicha);
+    const antes = fixture.debugElement.query((d) => d.componentInstance instanceof FormularioOrdem);
+
+    (antes.componentInstance as FormularioOrdem).recarregar.emit();
+    fixture.detectChanges();
+
+    expect(buscarFicha).toHaveBeenCalledTimes(2);
+    const depois = fixture.debugElement.query((d) => d.componentInstance instanceof FormularioOrdem)
+      .componentInstance as FormularioOrdem;
+    expect(depois.form.controls.personagem.value).toBe('Lia do outro lado');
   });
 
   it('ficha de D&D abre o formulario de D&D, sem cair no de Ordem', () => {

@@ -13,6 +13,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,59 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND,
 				"Não existe ficha com o id " + ex.getId() + ".");
 		problema.setTitle("Ficha não encontrada");
+		return problema;
+	}
+
+	/** Campanha que não existe ou de que quem pede não participa: 404 (a API não revela quais ids existem). */
+	@ExceptionHandler(CampanhaNaoEncontradaException.class)
+	public ProblemDetail handleCampanhaNaoEncontrada(CampanhaNaoEncontradaException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Campanha não encontrada");
+		problema.setTitle("Campanha não encontrada");
+		return problema;
+	}
+
+	/** O usuário a remover não participa da campanha. */
+	@ExceptionHandler(MembroNaoEncontradoException.class)
+	public ProblemDetail handleMembroNaoEncontrado(MembroNaoEncontradoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Membro não encontrado");
+		problema.setTitle("Membro não encontrado");
+		return problema;
+	}
+
+	/** Código de convite inexistente, renovado ou desativado. */
+	@ExceptionHandler(ConviteInvalidoException.class)
+	public ProblemDetail handleConviteInvalido(ConviteInvalidoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Convite inválido ou desativado");
+		problema.setTitle("Convite inválido ou desativado");
+		return problema;
+	}
+
+	/** Membro da campanha sem o papel exigido (ou ficha de outro jogador): 403. */
+	@ExceptionHandler(SemPermissaoException.class)
+	public ProblemDetail handleSemPermissao(SemPermissaoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+				"Você não tem permissão para isso nesta campanha.");
+		problema.setTitle("Sem permissão");
+		return problema;
+	}
+
+	@ExceptionHandler(MestreNaoSaiException.class)
+	public ProblemDetail handleMestreNaoSai(MestreNaoSaiException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"O mestre não sai da campanha. Para encerrá-la, exclua a campanha.");
+		problema.setTitle("O mestre não sai da campanha");
+		return problema;
+	}
+
+	/**
+	 * Duas pessoas editando a mesma ficha: a versão do PUT é velha (FichaDesatualizadaException) ou dois pedidos se
+	 * sobrepuseram no servidor (a trava otimista do Hibernate). Os dois viram o mesmo 409 (ADR 0025).
+	 */
+	@ExceptionHandler({ FichaDesatualizadaException.class, ObjectOptimisticLockingFailureException.class })
+	public ProblemDetail handleFichaDesatualizada(Exception ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+				"Esta ficha mudou enquanto você editava. Recarregue para ver a versão nova.");
+		problema.setTitle("Ficha desatualizada");
 		return problema;
 	}
 
