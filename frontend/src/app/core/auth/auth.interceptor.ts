@@ -15,7 +15,8 @@ const comToken = (req: HttpRequest<unknown>, token: string | null): HttpRequest<
  * A repetição vai direto ao `next`, sem passar de novo por esta lógica, então não há laço.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const daApi = req.url.startsWith(environment.apiUrl) && !req.url.startsWith(`${environment.apiUrl}/auth/`);
+  // Compara com a barra final: sem ela, um host como "http://localhost:8080.outro.com" receberia o token.
+  const daApi = req.url.startsWith(`${environment.apiUrl}/`) && !req.url.startsWith(`${environment.apiUrl}/auth/`);
   if (!daApi) {
     return next(req);
   }

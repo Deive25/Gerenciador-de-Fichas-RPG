@@ -23,9 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
-import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.FichaOrdemResponse;
-import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.RecursoValor;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
 import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
