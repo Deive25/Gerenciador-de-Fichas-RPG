@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -32,6 +33,8 @@ public class SecurityConfig {
 				.sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(rotas -> rotas
 						.requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						// a prévia do convite é pública (só o GET); aceitar exige token
+						.requestMatchers(HttpMethod.GET, "/convites/*").permitAll()
 						.anyRequest().authenticated())
 				.exceptionHandling(erros -> erros.authenticationEntryPoint(problema))
 				.oauth2ResourceServer(recurso -> recurso.jwt(Customizer.withDefaults())
