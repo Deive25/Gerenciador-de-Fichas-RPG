@@ -11,7 +11,7 @@ function rec(codigo: string, [atual, maximo]: Par): RecursoResumo {
 function ficha(parcial: Partial<FichaResumo> & { vida?: Par; sanidade?: Par } = {}): FichaResumo {
   const { vida = [12, 12], sanidade = [60, 60], ...resto } = parcial;
   return {
-    id: 1, sistema: 'ORDEM_PARANORMAL', jogador: 'Arthur', personagem: 'Lia', idade: null, retratoVersao: null,
+    id: 1, sistema: 'ORDEM_PARANORMAL', dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Lia', idade: null, retratoVersao: null,
     recursos: [rec('PV', vida), rec('SAN', sanidade), rec('PE', [5, 5])],
     ...resto,
   };

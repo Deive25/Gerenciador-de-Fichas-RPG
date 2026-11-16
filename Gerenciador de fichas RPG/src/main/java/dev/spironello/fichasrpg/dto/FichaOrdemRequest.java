@@ -36,7 +36,8 @@ public record FichaOrdemRequest(
 		@NotNull(message = "é obrigatório") @Min(value = 5, message = "deve estar entre 5 e 99") @Max(value = 99, message = "deve estar entre 5 e 99") Integer nex,
 		@NotNull(message = "é obrigatório") Map<AtributoOrdem, @NotNull(message = "é obrigatório") @Min(value = 0, message = "deve estar entre 0 e 5") @Max(value = 5, message = "deve estar entre 0 e 5") Integer> atributos,
 		Map<RecursoOrdem, @Valid RecursoValor> recursos,
-		Map<PericiaOrdem, GrauOrdem> pericias) implements FichaRequest {
+		Map<PericiaOrdem, GrauOrdem> pericias,
+		Long versao) implements FichaRequest {
 
 	@Override
 	public Sistema sistema() {

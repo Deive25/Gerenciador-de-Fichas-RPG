@@ -24,7 +24,7 @@ const BOLA = magia({
 /** Nível 5 e INT 16: proficiência 3 e modificador +3, então CD 14 e ataque +6. */
 function fichaCom(magias: MagiaDnd[], atributoConjuracao: AtributoConjuracao | null = 'INT'): FichaDnd {
   return {
-    id: 7, sistema: 'DND', jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
+    id: 7, sistema: 'DND', versao: 3, dono: { id: 1, nome: 'Arthur' }, campanha: null, jogador: 'Arthur', personagem: 'Kael', genero: 'M', idade: 27, retratoVersao: null,
     edicao: 'D2024', classe: 'Mago', especie: 'Elfo', antecedente: 'Sábio', nivel: 5,
     atributos: { FOR: 10, DES: 14, CON: 12, INT: 16, SAB: 9, CAR: 10 },
     recursos: { PV: { atual: 30, maximo: 38 }, PV_TEMP: { atual: 4, maximo: null } },

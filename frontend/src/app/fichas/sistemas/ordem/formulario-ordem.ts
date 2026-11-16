@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -27,6 +28,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
+import { CampanhaApi } from '../../../campanhas/campanha-api';
 import { FichaApi } from '../../ficha-api';
 import {
   AtributoOrdem,
@@ -190,6 +192,25 @@ export class FormularioOrdem {
   readonly ficha = input<FichaOrdem | undefined>();
   readonly editando = computed(() => this.ficha() !== undefined);
 
+  /** Vem do `?campanha=` da rota de criação: a ficha nasce dentro dessa campanha. */
+  readonly campanha = input<string | undefined>();
+  private readonly campanhaId = computed(() => {
+    const numero = Number(this.campanha());
+    return Number.isInteger(numero) && numero > 0 ? numero : null;
+  });
+  /** Para onde "Cancelar" volta: a ficha (edição), a campanha de origem ou o painel. */
+  readonly voltarPara = computed<(string | number | undefined)[]>(() => {
+    const ficha = this.ficha();
+    const campanha = this.campanhaId();
+    return ficha ? ['/fichas', ficha.id] : campanha !== null ? ['/campanhas', campanha] : ['/fichas'];
+  });
+  /** O servidor recusou o PUT porque a ficha mudou enquanto se editava (409): a tela pede para recarregar. */
+  readonly conflito = signal<ApiError | null>(null);
+  /** "Recarregar": a EdicaoFicha busca a ficha de novo e reabre o formulário (o que foi digitado se perde). */
+  readonly recarregar = output<void>();
+  /** A versão que o próximo PUT envia: a da ficha carregada e, depois de cada gravação, a da resposta. */
+  private readonly versaoAtual = signal<number | undefined>(undefined);
+
   readonly atributos = ATRIBUTOS_ORDEM;
   readonly pericias = PERICIAS_ORDEM;
   readonly recursos = RECURSOS;
@@ -228,7 +249,10 @@ export class FormularioOrdem {
     effect(() => {
       const ficha = this.ficha();
       if (ficha !== undefined) {
-        untracked(() => this.form.setValue(paraValor(ficha)));
+        untracked(() => {
+          this.form.setValue(paraValor(ficha));
+          this.versaoAtual.set(ficha.versao);
+        });
       }
     });
     // Um erro "Veterano exige NEX 35%" colado numa perícia deixaria o formulário inválido
@@ -295,14 +319,32 @@ export class FormularioOrdem {
     }
     this.erroGeral.set(null);
     this.salvando.set(true);
-    const entrada = paraEntrada(this.form.getRawValue());
+    const base = paraEntrada(this.form.getRawValue());
     const ficha = this.ficha();
-    const requisicao: Observable<Ficha> =
-      ficha === undefined ? this.api.criar(entrada) : this.api.atualizar(ficha.id, entrada);
+    const campanhaId = this.campanhaId();
+    this.conflito.set(null);
+    let requisicao: Observable<Ficha>;
+    if (ficha !== undefined) {
+      // PUT é substituição completa e leva a versão que a pessoa viu: se a ficha mudou, o servidor responde 409.
+      requisicao = this.api.atualizar(ficha.id, { ...base, versao: this.versaoAtual() });
+    } else if (campanhaId !== null) {
+      // O CampanhaApi é pedido só aqui: o formulário sem campanha nunca o instancia.
+      requisicao = this.injector.get(CampanhaApi).criarFicha(campanhaId, base);
+    } else {
+      requisicao = this.api.criar(base);
+    }
     // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
     // permitiria um segundo envio (ficha duplicada) enquanto a navegação termina.
     requisicao.subscribe({
-      next: (ficha) => void this.router.navigate(['/fichas', ficha.id]),
+      next: (ficha) => {
+        // Se a navegação não acontecer (cancelada), a pessoa segue na tela: o próximo PUT usa a versão nova.
+        this.versaoAtual.set(ficha.versao);
+        void this.router.navigate(['/fichas', ficha.id]).then((navegou) => {
+          if (!navegou) {
+            this.salvando.set(false);
+          }
+        });
+      },
       error: (erro: ApiError) => {
         this.salvando.set(false);
         this.mostrarErro(erro);
@@ -311,6 +353,10 @@ export class FormularioOrdem {
   }
 
   private mostrarErro(erro: ApiError): void {
+    if (erro.status === 409) {
+      this.conflito.set(erro);
+      return;
+    }
     if (aplicarErrosDoServidor(this.form, erro)) {
       focarPrimeiroInvalidoDepois(this.host.nativeElement, this.injector, this.cdr);
     } else {

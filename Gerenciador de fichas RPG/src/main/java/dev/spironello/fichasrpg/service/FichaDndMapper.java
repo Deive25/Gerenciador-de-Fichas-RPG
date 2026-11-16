@@ -13,6 +13,7 @@ import dev.spironello.fichasrpg.dto.FichaDndResponse;
 import dev.spironello.fichasrpg.dto.MoedasDnd;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
 import dev.spironello.fichasrpg.dto.RecursoResumo;
+import dev.spironello.fichasrpg.dto.Referencia;
 import dev.spironello.fichasrpg.dto.RecursoValor;
 import dev.spironello.fichasrpg.model.AtributoDnd;
 import dev.spironello.fichasrpg.model.FichaDnd;
@@ -88,6 +89,9 @@ public class FichaDndMapper {
 				ficha.getGenero(),
 				ficha.getIdade(),
 				ficha.getRetratoVersao(),
+				ficha.getVersao(),
+				Referencia.doDono(ficha),
+				Referencia.daCampanha(ficha),
 				comuns.descricao(),
 				comuns.habilidades(),
 				listas.ataques(),
@@ -118,6 +122,8 @@ public class FichaDndMapper {
 				ficha.getPersonagem(),
 				ficha.getIdade(),
 				ficha.getRetratoVersao(),
+				Referencia.doDono(ficha),
+				Referencia.daCampanha(ficha),
 				List.of(new RecursoResumo(RecursoDnd.PV.name(), ficha.getPvAtual(), ficha.getPvMax())));
 	}
 

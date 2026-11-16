@@ -29,4 +29,7 @@ public sealed interface FichaRequest permits FichaOrdemRequest, FichaDndRequest 
 	String genero();
 
 	Integer idade();
+
+	/** Versão da ficha que o cliente leu: obrigatória no PUT (trava otimista, ADR 0025) e ignorada no POST. */
+	Long versao();
 }

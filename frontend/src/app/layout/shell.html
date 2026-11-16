@@ -4,6 +4,10 @@
       <span class="selo" aria-hidden="true">✦</span><span class="marca-texto"> Grimório</span>
     </a>
     @if (sessao.usuario(); as usuario) {
+      <nav class="links-topo" aria-label="Principal">
+        <a routerLink="/fichas" routerLinkActive="ativo" ariaCurrentWhenActive="page">Fichas</a>
+        <a routerLink="/campanhas" routerLinkActive="ativo" ariaCurrentWhenActive="page">Campanhas</a>
+      </nav>
       <div class="acoes-topo">
         <a class="botao" routerLink="/fichas/nova">+ Nova ficha</a>
         <span class="nome-usuario" [attr.title]="usuario.nome">{{ usuario.nome }}</span>

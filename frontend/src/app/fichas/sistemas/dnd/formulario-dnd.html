@@ -191,7 +191,13 @@
     @if (erroGeral(); as erro) {
       <p class="erro-salvar" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
     }
-    <a class="botao-neutro" [routerLink]="editando() ? ['/fichas', ficha()?.id] : ['/fichas']">Cancelar</a>
-    <button type="submit" class="botao" [disabled]="salvando()">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
+    @if (conflito(); as aviso) {
+      <div class="erro-salvar" role="alert">
+        <p><strong>{{ aviso.titulo }}</strong> {{ aviso.detalhe }}</p>
+        <button type="button" class="botao" (click)="recarregar.emit()">Recarregar</button>
+      </div>
+    }
+    <a class="botao-neutro" [routerLink]="voltarPara()">Cancelar</a>
+    <button type="submit" class="botao" [disabled]="salvando() || conflito() !== null">{{ salvando() ? 'Salvando…' : 'Salvar ficha' }}</button>
   </div>
 </form>

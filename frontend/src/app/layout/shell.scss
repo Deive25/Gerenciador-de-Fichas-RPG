@@ -21,15 +21,24 @@
   box-sizing: border-box;
 }
 
+// Grade em vez de flex-wrap: no celular são duas linhas (marca e ações em cima; os links "Fichas" e
+// "Campanhas" embaixo) e a coluna das ações é `minmax(0, 1fr)`, então quem encolhe é o nome do usuário
+// (com reticências), nunca a página: sem rolagem horizontal a 375 px. Com 600 px ou mais é uma linha só.
 .barra-interna {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  column-gap: 1rem;
   padding: 0.5rem 1rem;
+
+  @media (min-width: 600px) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
 }
 
 .marca {
+  grid-column: 1;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -61,11 +70,52 @@
   padding: 1rem 1rem 2.5rem;
 }
 
+.links-topo {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  gap: 0.25rem;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    border-bottom: 2px solid transparent;
+    color: var(--cor-texto-suave);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--cor-texto);
+    }
+
+    &.ativo {
+      border-bottom-color: var(--cor-acao);
+      color: var(--cor-acao);
+    }
+  }
+}
+
+@media (min-width: 600px) {
+  .links-topo {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
 .acoes-topo {
   display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+
+  @media (min-width: 600px) {
+    grid-column: 3;
+  }
 }
 
 // Os botões do topo nunca quebram linha: quem encolhe é o nome do usuário (com reticências).

@@ -19,9 +19,9 @@ public class MoedasService {
 
 	private static final Logger log = LoggerFactory.getLogger(MoedasService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 
-	public MoedasService(FichasDoUsuario fichas) {
+	public MoedasService(AcessoAFicha fichas) {
 		this.fichas = fichas;
 	}
 

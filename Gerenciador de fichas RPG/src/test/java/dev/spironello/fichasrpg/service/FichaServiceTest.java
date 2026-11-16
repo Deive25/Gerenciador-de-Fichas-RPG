@@ -22,6 +22,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.spironello.fichasrpg.auth.UsuarioAtual;
+import dev.spironello.fichasrpg.campanha.AcessoACampanha;
+import dev.spironello.fichasrpg.campanha.ParticipacaoRepository;
 import dev.spironello.fichasrpg.dto.FichaOrdemRequest;
 import dev.spironello.fichasrpg.dto.FichaOrdemResponse;
 import dev.spironello.fichasrpg.dto.RecursoValor;
@@ -37,6 +39,7 @@ import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.model.RecursoOrdem;
 import dev.spironello.fichasrpg.model.Sistema;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import jakarta.persistence.EntityManager;
 
 /**
  * Testes unitários do serviço: só Mockito, sem Spring e sem Docker. O repository é um mock;
@@ -48,6 +51,8 @@ class FichaServiceTest {
 
 	private static final Long ID = 7L;
 	private static final Long DONO = 1000000L;
+	/** A versão que a ficha existente tem e que o pedido de PUT traz (a trava otimista confere as duas). */
+	private static final Long VERSAO = 4L;
 	/** O usuário logado nos testes unitários: sem Spring Security, o id é fixo. */
 	private static final UsuarioAtual USUARIO = new UsuarioAtual() {
 		@Override
@@ -58,12 +63,16 @@ class FichaServiceTest {
 
 	@Mock
 	private FichaRepository repository;
+	@Mock
+	private ParticipacaoRepository participacoes;
+	@Mock
+	private EntityManager entityManager;
 
 	private FichaService service;
 
 	@BeforeEach
 	void criarServico() {
-		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), new FichasDoUsuario(repository, USUARIO), USUARIO);
+		service = new FichaService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), new AcessoAFicha(repository, participacoes, USUARIO), USUARIO, new AcessoACampanha(participacoes, USUARIO), entityManager);
 	}
 
 	/** Ficha de outro sistema, só para os testes: no 2.1d existe apenas Ordem, mas a regra do 409 já vale. */
@@ -77,7 +86,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("buscar com id inexistente lança FichaNaoEncontradaException")
 	void buscarInexistente() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
+		when(repository.findById(ID)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.buscar(ID))
 				.isInstanceOf(FichaNaoEncontradaException.class)
@@ -87,7 +96,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("excluir com id inexistente lança e não chama delete")
 	void excluirInexistente() {
-		when(repository.existsByIdAndDonoId(ID, DONO)).thenReturn(false);
+		when(repository.findById(ID)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.excluir(ID))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -99,7 +108,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("excluir com id existente chama deleteById")
 	void excluirExistente() {
-		when(repository.existsByIdAndDonoId(ID, DONO)).thenReturn(true);
+		when(repository.findById(ID)).thenReturn(Optional.of(doDono(new FichaOrdem())));
 
 		service.excluir(ID);
 
@@ -109,7 +118,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("atualizar com id inexistente lança e não salva nada")
 	void atualizarInexistente() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
+		when(repository.findById(ID)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.atualizar(ID, requestComTudoPreenchido(0)))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -120,7 +129,7 @@ class FichaServiceTest {
 	@Test
 	@DisplayName("atualizar uma ficha de outro sistema lança SistemaImutavelException (409) e não salva nada")
 	void atualizarDeOutroSistema() {
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(new FichaDeOutroSistema()));
+		when(repository.findById(ID)).thenReturn(Optional.of(doDono(new FichaDeOutroSistema())));
 
 		assertThatThrownBy(() -> service.atualizar(ID, requestComTudoPreenchido(0)))
 				.isInstanceOf(SistemaImutavelException.class)
@@ -135,11 +144,12 @@ class FichaServiceTest {
 		// Ficha existente com tudo preenchido; o pedido traz outros valores e uma perícia nula.
 		FichaOrdem existente = new FichaOrdem();
 		existente.setId(ID);
+		org.springframework.test.util.ReflectionTestUtils.setField(existente, "versao", VERSAO);
 		FichaOrdemMapper mapper = new FichaOrdemMapper();
 		mapper.copiar(requestComTudoPreenchido(0), existente);
 		existente.getPericias().put(PericiaOrdem.TATICA, GrauOrdem.TREINADO); // o pedido não a traz: precisa sumir
 		FichaOrdemRequest novo = requestComTudoPreenchido(1);
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(existente));
+		when(repository.findById(ID)).thenReturn(Optional.of(doDono(existente)));
 		when(repository.save(existente)).thenReturn(existente);
 
 		FichaOrdemResponse resposta = (FichaOrdemResponse) service.atualizar(ID, novo);
@@ -165,9 +175,10 @@ class FichaServiceTest {
 	void atualizarComGrauIncompativel() {
 		FichaOrdem existente = new FichaOrdem();
 		existente.setId(ID);
-		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(existente));
+		org.springframework.test.util.ReflectionTestUtils.setField(existente, "versao", VERSAO);
+		when(repository.findById(ID)).thenReturn(Optional.of(doDono(existente)));
 		FichaOrdemRequest veteranoComNexBaixo = new FichaOrdemRequest("a", "b", "c", null, null, null, 30,
-				atributos(1), null, Map.of(PericiaOrdem.ATLETISMO, GrauOrdem.VETERANO));
+				atributos(1), null, Map.of(PericiaOrdem.ATLETISMO, GrauOrdem.VETERANO), VERSAO);
 
 		assertThatThrownBy(() -> service.atualizar(ID, veteranoComNexBaixo))
 				.isInstanceOfSatisfying(DadosInvalidosException.class, e -> assertThat(e.getErros())
@@ -198,7 +209,7 @@ class FichaServiceTest {
 	void criarComAtributoFaltando() {
 		FichaOrdemRequest semVigor = new FichaOrdemRequest("a", "b", "c", null, null, null, 5,
 				Map.of(AtributoOrdem.AGI, 1, AtributoOrdem.FOR, 1, AtributoOrdem.INT, 1, AtributoOrdem.PRE, 1),
-				null, null);
+				null, null, null);
 
 		assertThatThrownBy(() -> service.criar(semVigor))
 				.isInstanceOfSatisfying(DadosInvalidosException.class,
@@ -208,6 +219,12 @@ class FichaServiceTest {
 	}
 
 	// ---------- apoio ----------
+
+	/** A ficha do usuário logado dos testes (só o dono passa pelo AcessoAFicha sem consultar campanhas). */
+	private static <F extends Ficha> F doDono(F ficha) {
+		ficha.setDonoId(DONO);
+		return ficha;
+	}
 
 	private static Map<AtributoOrdem, Integer> atributos(int valor) {
 		Map<AtributoOrdem, Integer> atributos = new EnumMap<>(AtributoOrdem.class);
@@ -231,6 +248,6 @@ class FichaServiceTest {
 		pericias.put(PericiaOrdem.CRIME, GrauOrdem.VETERANO);
 		pericias.put(PericiaOrdem.LUTA, null);
 		return new FichaOrdemRequest("nome-jogador", "nome-personagem", "nome-genero", 20 + base,
-				ClasseOrdem.values()[base], "nome-origem", 40 + base, atributos(2 + base), recursos, pericias);
+				ClasseOrdem.values()[base], "nome-origem", 40 + base, atributos(2 + base), recursos, pericias, VERSAO);
 	}
 }
