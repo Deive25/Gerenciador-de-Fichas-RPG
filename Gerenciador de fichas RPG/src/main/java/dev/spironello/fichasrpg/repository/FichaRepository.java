@@ -1,20 +1,18 @@
 package dev.spironello.fichasrpg.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import dev.spironello.fichasrpg.model.Ficha;
 
+/**
+ * Só o {@code AcessoAFicha} e o {@code FichaService} usam este repository (ADR 0024): quem decide quem pode ver uma
+ * ficha é o {@code AcessoAFicha}, e uma consulta feita aqui fora dele fugiria da regra.
+ */
 @Repository
 public interface FichaRepository extends JpaRepository<Ficha, Long> {
-
-	/** Ficha do usuário: quando o id existe mas o dono é outro, volta vazio (404, nunca 403). */
-	Optional<Ficha> findByIdAndDonoId(Long id, Long donoId);
-
-	boolean existsByIdAndDonoId(Long id, Long donoId);
 
 	List<Ficha> findAllByDonoId(Long donoId);
 }

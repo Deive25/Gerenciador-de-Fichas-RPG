@@ -14,9 +14,9 @@ public class DescricaoService {
 
 	private static final Logger log = LoggerFactory.getLogger(DescricaoService.class);
 
-	private final FichasDoUsuario fichas;
+	private final AcessoAFicha fichas;
 
-	public DescricaoService(FichasDoUsuario fichas) {
+	public DescricaoService(AcessoAFicha fichas) {
 		this.fichas = fichas;
 	}
 
