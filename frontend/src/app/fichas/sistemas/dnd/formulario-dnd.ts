@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -19,6 +20,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
+import { CampanhaApi } from '../../../campanhas/campanha-api';
 import { FichaApi } from '../../ficha-api';
 import {
   AtributoConjuracao,
@@ -207,6 +209,25 @@ export class FormularioDnd {
   /** A ficha a editar, já carregada pela EdicaoFicha; sem ela o formulário é de uma ficha nova. */
   readonly ficha = input<FichaDnd | undefined>();
   readonly editando = computed(() => this.ficha() !== undefined);
+
+  /** Vem do `?campanha=` da rota de criação: a ficha nasce dentro dessa campanha. */
+  readonly campanha = input<string | undefined>();
+  private readonly campanhaId = computed(() => {
+    const numero = Number(this.campanha());
+    return Number.isInteger(numero) && numero > 0 ? numero : null;
+  });
+  /** Para onde "Cancelar" volta: a ficha (edição), a campanha de origem ou o painel. */
+  readonly voltarPara = computed<(string | number | undefined)[]>(() => {
+    const ficha = this.ficha();
+    const campanha = this.campanhaId();
+    return ficha ? ['/fichas', ficha.id] : campanha !== null ? ['/campanhas', campanha] : ['/fichas'];
+  });
+  /** O servidor recusou o PUT porque a ficha mudou enquanto se editava (409): a tela pede para recarregar. */
+  readonly conflito = signal<ApiError | null>(null);
+  /** "Recarregar": a EdicaoFicha busca a ficha de novo e reabre o formulário (o que foi digitado se perde). */
+  readonly recarregar = output<void>();
+  /** A versão que o próximo PUT envia: a da ficha carregada e, depois de cada gravação, a da resposta. */
+  private readonly versaoAtual = signal<number | undefined>(undefined);
   /** Na edição manda a edição da própria ficha (o formulário não oferece trocá-la). */
   readonly edicaoAtual = computed<EdicaoDnd>(() => this.ficha()?.edicao ?? this.edicao() ?? 'D2024');
   readonly nomeEdicao = computed(() => NOMES_EDICAO[this.edicaoAtual()]);
@@ -245,7 +266,10 @@ export class FormularioDnd {
     effect(() => {
       const ficha = this.ficha();
       if (ficha !== undefined) {
-        untracked(() => this.form.setValue(paraValor(ficha)));
+        untracked(() => {
+          this.form.setValue(paraValor(ficha));
+          this.versaoAtual.set(ficha.versao);
+        });
       }
     });
   }
@@ -302,14 +326,32 @@ export class FormularioDnd {
     }
     this.erroGeral.set(null);
     this.salvando.set(true);
-    const entrada = paraEntradaDnd(this.form.getRawValue(), this.edicaoAtual());
+    const base = paraEntradaDnd(this.form.getRawValue(), this.edicaoAtual());
     const ficha = this.ficha();
-    const requisicao: Observable<Ficha> =
-      ficha === undefined ? this.api.criar(entrada) : this.api.atualizar(ficha.id, entrada);
+    const campanhaId = this.campanhaId();
+    this.conflito.set(null);
+    let requisicao: Observable<Ficha>;
+    if (ficha !== undefined) {
+      // PUT é substituição completa e leva a versão que a pessoa viu: se a ficha mudou, o servidor responde 409.
+      requisicao = this.api.atualizar(ficha.id, { ...base, versao: this.versaoAtual() });
+    } else if (campanhaId !== null) {
+      // O CampanhaApi é pedido só aqui: o formulário sem campanha nunca o instancia.
+      requisicao = this.injector.get(CampanhaApi).criarFicha(campanhaId, base);
+    } else {
+      requisicao = this.api.criar(base);
+    }
     // Só libera o botão se der erro: no sucesso a tela navega, e liberar antes disso
     // permitiria um segundo envio (ficha duplicada) enquanto a navegação termina.
     requisicao.subscribe({
-      next: (salva) => void this.router.navigate(['/fichas', salva.id]),
+      next: (salva) => {
+        // Se a navegação não acontecer (cancelada), a pessoa segue na tela: o próximo PUT usa a versão nova.
+        this.versaoAtual.set(salva.versao);
+        void this.router.navigate(['/fichas', salva.id]).then((navegou) => {
+          if (!navegou) {
+            this.salvando.set(false);
+          }
+        });
+      },
       error: (erro: ApiError) => {
         this.salvando.set(false);
         this.mostrarErro(erro);
@@ -318,6 +360,10 @@ export class FormularioDnd {
   }
 
   private mostrarErro(erro: ApiError): void {
+    if (erro.status === 409) {
+      this.conflito.set(erro);
+      return;
+    }
     // O PV temporário só tem o campo "atual" na tela: o erro do máximo aparece nele.
     const campos = Object.fromEntries(
       Object.entries(erro.campos).map(([chave, texto]) => [

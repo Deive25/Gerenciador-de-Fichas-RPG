@@ -5,6 +5,7 @@ import { MatSelectHarness } from '@angular/material/select/testing';
 import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
+import { CampanhaApi } from '../../../campanhas/campanha-api';
 import { FichaApi } from '../../ficha-api';
 import { FichaOrdem, FichaOrdemEntrada } from '../../ficha.model';
 import { FormularioOrdem, paraEntrada, valorVazio } from './formulario-ordem';
@@ -37,15 +38,26 @@ const CONVERTIDA: FichaOrdem = {
 };
 
 /** `ficha` presente = modo editar (EdicaoFicha passa a ficha ja carregada); ausente = nova ficha. */
-function montar(api: Partial<Record<keyof FichaApi, unknown>>, ficha?: FichaOrdem) {
+function montar(
+  api: Partial<Record<keyof FichaApi, unknown>>,
+  ficha?: FichaOrdem,
+  extra: { campanha?: string; campanhaApi?: unknown } = {},
+) {
   TestBed.configureTestingModule({
     imports: [FormularioOrdem],
-    providers: [provideRouter([]), { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } }],
+    providers: [
+      provideRouter([]),
+      { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } },
+      { provide: CampanhaApi, useValue: extra.campanhaApi ?? {} },
+    ],
   });
   const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   const fixture = TestBed.createComponent(FormularioOrdem);
   if (ficha) {
     fixture.componentRef.setInput('ficha', ficha);
+  }
+  if (extra.campanha) {
+    fixture.componentRef.setInput('campanha', extra.campanha);
   }
   fixture.detectChanges();
   const el = fixture.nativeElement as HTMLElement;
@@ -409,3 +421,94 @@ describe('FormularioOrdem: graus e NEX', () => {
     expect(graus.get('Expert')?.desabilitada).toBe(false);
   });
 });
+
+describe('FormularioOrdem · campanhas e versão (2.3)', () => {
+  it('editar envia a versão da ficha carregada', () => {
+    const atualizar = vi.fn(() => of(FICHA));
+    const edicao = montar({ atualizar }, FICHA, {});
+    edicao.salvar();
+    const [, entrada] = atualizar.mock.calls[0] as unknown as [number, FichaOrdemEntrada];
+    expect(entrada.versao).toBe(3);
+  });
+
+  it('criar não envia versão', () => {
+    const criar = vi.fn(() => of({ ...FICHA, id: 50 }));
+    const { salvar, componente } = montar({ criar }, undefined, {});
+    preencherObrigatorios(componente);
+    salvar();
+    const [entrada] = criar.mock.calls[0] as unknown as [FichaOrdemEntrada];
+    expect('versao' in entrada).toBe(false);
+  });
+
+  it('dois PUT seguidos na mesma tela: o segundo usa a versão da resposta do primeiro (sem 409)', async () => {
+    const atualizar = vi
+      .fn()
+      .mockReturnValueOnce(of({ ...FICHA, versao: 4 }))
+      .mockReturnValueOnce(of({ ...FICHA, versao: 5 }));
+    const { fixture, navegar, salvar } = montar({ atualizar }, FICHA, {});
+    // A navegação não aconteceu (cancelada): a pessoa continua na tela e salva de novo.
+    navegar.mockResolvedValue(false);
+
+    salvar();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    salvar();
+
+    expect(atualizar).toHaveBeenCalledTimes(2);
+    const [, primeira] = atualizar.mock.calls[0] as unknown as [number, FichaOrdemEntrada];
+    const [, segunda] = atualizar.mock.calls[1] as unknown as [number, FichaOrdemEntrada];
+    expect(primeira.versao).toBe(3);
+    expect(segunda.versao).toBe(4);
+  });
+
+  it('409 mostra o aviso com Recarregar, trava o Salvar e Recarregar avisa a tela', () => {
+    const erro: ApiError = {
+      status: 409, titulo: 'Conflito', detalhe: 'Esta ficha mudou enquanto você editava. Recarregue para ver a versão nova.', campos: {},
+    };
+    const atualizar = vi.fn(() => throwError(() => erro));
+    const { fixture, el, salvar, componente } = montar({ atualizar }, FICHA, {});
+    const recarregou = vi.fn();
+    componente.recarregar.subscribe(recarregou);
+
+    salvar();
+
+    const aviso = el.querySelector('.acoes [role="alert"]');
+    expect(aviso?.textContent).toContain('Esta ficha mudou enquanto você editava');
+    expect((el.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true);
+    const recarregar = Array.from(el.querySelectorAll('.acoes button')).find((b) => b.textContent?.includes('Recarregar')) as HTMLButtonElement;
+    recarregar.click();
+    fixture.detectChanges();
+    expect(recarregou).toHaveBeenCalledTimes(1);
+  });
+
+  it('com ?campanha=3 criar usa a rota da campanha, e não a de /fichas', () => {
+    const criar = vi.fn();
+    const criarFicha = vi.fn((_campanhaId: number, _entrada: unknown) => of({ ...FICHA, id: 51 }));
+    const { salvar, componente, navegar } = montar({ criar }, undefined, { campanha: '3', campanhaApi: { criarFicha } });
+    preencherObrigatorios(componente);
+    salvar();
+
+    expect(criarFicha).toHaveBeenCalledTimes(1);
+    expect(criarFicha.mock.calls[0][0]).toBe(3);
+    expect(criarFicha.mock.calls[0][1]).toMatchObject({ jogador: "Arthur" });
+    expect(criar).not.toHaveBeenCalled();
+    expect(navegar).toHaveBeenCalledWith(['/fichas', 51]);
+  });
+
+  it('?campanha= inválido é ignorado: criar usa a rota normal', () => {
+    const criar = vi.fn(() => of({ ...FICHA, id: 52 }));
+    const criarFicha = vi.fn();
+    const { salvar, componente } = montar({ criar }, undefined, { campanha: 'abc', campanhaApi: { criarFicha } });
+    preencherObrigatorios(componente);
+    salvar();
+    expect(criar).toHaveBeenCalledTimes(1);
+    expect(criarFicha).not.toHaveBeenCalled();
+  });
+
+  it('Cancelar volta para a campanha quando a ficha nasce dentro dela', () => {
+    const { el } = montar({}, undefined, { campanha: '3', campanhaApi: {} });
+    expect(el.querySelector('.acoes a.botao-neutro')?.getAttribute('href')).toBe('/campanhas/3');
+  });
+});
+
