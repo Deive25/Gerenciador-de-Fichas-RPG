@@ -116,4 +116,34 @@ describe('Entrar', () => {
     expect(campo.type).toBe('text');
     expect(botao.getAttribute('aria-pressed')).toBe('true');
   });
+
+  describe('aviso de Caps Lock', () => {
+    const campo = () => el.querySelector<HTMLInputElement>('input[formcontrolname="senha"]')!;
+    const tecla = (tipo: string, capsLigado: boolean) => {
+      campo().dispatchEvent(new KeyboardEvent(tipo, { key: 'a', modifierCapsLock: capsLigado }));
+      fixture.detectChanges();
+    };
+    const aviso = () => el.querySelector('[role="status"]')?.textContent?.trim() ?? null;
+
+    it('aparece com o Caps Lock ligado e some ao desligar', () => {
+      expect(aviso()).toBeNull();
+      tecla('keydown', true);
+      expect(aviso()).toBe('Caps Lock está ligado');
+      tecla('keyup', false);
+      expect(aviso()).toBeNull();
+    });
+
+    it('some ao sair do campo', () => {
+      tecla('keyup', true);
+      expect(aviso()).toBe('Caps Lock está ligado');
+      campo().dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+      expect(aviso()).toBeNull();
+    });
+  });
+
+  it('mostra o novo subtítulo e não tem lista de requisitos', () => {
+    expect(el.textContent).toContain('Bem-vindo de volta. As suas fichas estão te esperando.');
+    expect(el.querySelector('ul.requisitos')).toBeNull();
+  });
 });

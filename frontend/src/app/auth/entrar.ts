@@ -29,11 +29,17 @@ export class Entrar {
   protected readonly mostrarSenha = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly mensagem = mensagemAuth;
+  protected readonly capsLigado = signal(false);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
     senha: ['', [Validators.required]],
   });
+
+  /** Caps Lock ligado? A pessoa não vê a senha, então o aviso evita um "senha incorreta" à toa. */
+  protected atualizarCapsLock(evento: KeyboardEvent): void {
+    this.capsLigado.set(evento.getModifierState('CapsLock'));
+  }
 
   protected enviar(): void {
     if (this.enviando()) {
