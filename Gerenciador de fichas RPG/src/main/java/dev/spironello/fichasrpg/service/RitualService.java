@@ -10,10 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.spironello.fichasrpg.dto.RitualRequest;
 import dev.spironello.fichasrpg.dto.RitualResponse;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaOrdem;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
  * Criar, editar e excluir os rituais de uma ficha. Só Ordem Paranormal tem rituais: em D&D o caso do switch lança
@@ -24,10 +22,10 @@ public class RitualService {
 
 	private static final Logger log = LoggerFactory.getLogger(RitualService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final RituaisOrdem rituaisOrdem;
 
-	public RitualService(FichaRepository fichas, RituaisOrdem rituaisOrdem) {
+	public RitualService(FichasDoUsuario fichas, RituaisOrdem rituaisOrdem) {
 		this.fichas = fichas;
 		this.rituaisOrdem = rituaisOrdem;
 	}
@@ -66,7 +64,7 @@ public class RitualService {
 	}
 
 	private Ficha buscarFicha(Long fichaId) {
-		return fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		return fichas.buscar(fichaId);
 	}
 
 	private static DadosInvalidosException naoExisteEmDnd() {

@@ -10,10 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.spironello.fichasrpg.dto.MoedasDnd;
 import dev.spironello.fichasrpg.dto.MoedasRequest;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /** Edição das moedas de uma ficha de D&D: grava só as moedas enviadas. */
 @Service
@@ -21,16 +19,16 @@ public class MoedasService {
 
 	private static final Logger log = LoggerFactory.getLogger(MoedasService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 
-	public MoedasService(FichaRepository fichas) {
+	public MoedasService(FichasDoUsuario fichas) {
 		this.fichas = fichas;
 	}
 
 	/** Devolve as cinco moedas depois da mudança. Loga só o id da ficha. */
 	@Transactional
 	public MoedasDnd atualizar(Long fichaId, MoedasRequest request) {
-		Ficha ficha = fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		Ficha ficha = fichas.buscar(fichaId);
 		if (!(ficha instanceof FichaDnd dnd)) {
 			throw new DadosInvalidosException(Map.of("lista", "não existe em Ordem Paranormal"));
 		}
