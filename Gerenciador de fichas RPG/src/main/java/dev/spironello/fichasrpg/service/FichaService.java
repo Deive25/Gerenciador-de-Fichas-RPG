@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.spironello.fichasrpg.dto.FichaRequest;
 import dev.spironello.fichasrpg.dto.FichaResponse;
 import dev.spironello.fichasrpg.dto.FichaResumoResponse;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.exception.SistemaImutavelException;
 import dev.spironello.fichasrpg.model.Ficha;
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
@@ -29,29 +29,32 @@ public class FichaService {
 
 	private final FichaRepository repository;
 	private final SistemasDeFicha sistemas;
+	private final FichasDoUsuario fichas;
+	private final UsuarioAtual usuario;
 
-	public FichaService(FichaRepository repository, SistemasDeFicha sistemas) {
+	public FichaService(FichaRepository repository, SistemasDeFicha sistemas, FichasDoUsuario fichas, UsuarioAtual usuario) {
 		this.repository = repository;
 		this.sistemas = sistemas;
+		this.fichas = fichas;
+		this.usuario = usuario;
 	}
 
 	@Transactional(readOnly = true)
 	public List<FichaResumoResponse> listar() {
 		log.debug("Listando fichas");
-		return repository.findAll().stream().map(this::resumo).toList();
+		return repository.findAllByDonoId(usuario.id()).stream().map(this::resumo).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public FichaResponse buscar(Long id) {
 		log.debug("Buscando ficha id={}", id);
-		return repository.findById(id)
-				.map(this::resposta)
-				.orElseThrow(() -> new FichaNaoEncontradaException(id));
+		return resposta(fichas.buscar(id));
 	}
 
 	@Transactional
 	public FichaResponse criar(FichaRequest request) {
 		Ficha nova = sistemas.de(request.sistema()).criar(request);
+		nova.setDonoId(usuario.id());
 		FichaResponse criada = resposta(repository.save(nova));
 		log.info("Ficha criada id={}", criada.id());
 		return criada;
@@ -63,7 +66,7 @@ public class FichaService {
 	 */
 	@Transactional
 	public FichaResponse atualizar(Long id, FichaRequest request) {
-		Ficha ficha = repository.findById(id).orElseThrow(() -> new FichaNaoEncontradaException(id));
+		Ficha ficha = fichas.buscar(id);
 		if (ficha.getSistema() != request.sistema()) {
 			throw new SistemaImutavelException();
 		}
@@ -79,7 +82,7 @@ public class FichaService {
 	 */
 	@Transactional
 	public FichaResponse atualizarRecursos(Long id, Map<String, Integer> atuais) {
-		Ficha ficha = repository.findById(id).orElseThrow(() -> new FichaNaoEncontradaException(id));
+		Ficha ficha = fichas.buscar(id);
 		sistemas.de(ficha.getSistema()).atualizarRecursos(ficha, atuais);
 		FichaResponse atualizada = resposta(repository.save(ficha));
 		log.info("Recursos atualizados id={}", id);
@@ -88,9 +91,7 @@ public class FichaService {
 
 	@Transactional
 	public void excluir(Long id) {
-		if (!repository.existsById(id)) {
-			throw new FichaNaoEncontradaException(id);
-		}
+		fichas.exigir(id);
 		repository.deleteById(id);
 		log.info("Ficha excluida id={}", id);
 	}

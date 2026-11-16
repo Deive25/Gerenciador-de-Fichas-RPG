@@ -17,9 +17,13 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import dev.spironello.fichasrpg.FichasDeTeste;
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.AlvoTeste;
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.ModoTeste;
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.TesteRequest;
+import dev.spironello.fichasrpg.auth.UsuarioAtual;
 import dev.spironello.fichasrpg.dto.TesteResponse;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
 import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
@@ -35,6 +39,14 @@ import dev.spironello.fichasrpg.repository.FichaRepository;
 class TesteServiceTest {
 
 	private static final Long ID = 7L;
+	private static final Long DONO = 1000000L;
+	/** O usuário logado nos testes unitários: sem Spring Security, o id é fixo. */
+	private static final UsuarioAtual USUARIO = new UsuarioAtual() {
+		@Override
+		public Long id() {
+			return DONO;
+		}
+	};
 
 	@Mock
 	private FichaRepository repository;
@@ -46,7 +58,7 @@ class TesteServiceTest {
 
 	@BeforeEach
 	void criarServico() {
-		service = new TesteService(repository, new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
+		service = new TesteService(new FichasDoUsuario(repository, USUARIO), new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
 	}
 
 	private FichaOrdem fichaComIntelecto3() {
@@ -59,7 +71,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("perícia usa o atributo-base e o grau da ficha")
 	void periciaUsaAtributoEGrau() {
-		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		TesteResponse resposta = service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "INVESTIGACAO", null));
@@ -71,7 +83,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("atributo rola sem bônus e devolve o nome do atributo")
 	void atributoSemBonus() {
-		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		TesteResponse resposta = service.testar(ID, new TesteRequest(AlvoTeste.ATRIBUTO, "INT", ModoTeste.NORMAL));
@@ -84,7 +96,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("ficha inexistente lança FichaNaoEncontradaException")
 	void fichaInexistente() {
-		when(repository.findById(ID)).thenReturn(Optional.empty());
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.empty());
 
 		assertThatThrownBy(() -> service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "LUTA", null)))
 				.isInstanceOf(FichaNaoEncontradaException.class);
@@ -93,7 +105,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("salvaguarda, modo diferente de NORMAL e código inválido viram erros por campo")
 	void erros() {
-		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
 
 		assertThatThrownBy(() -> service.testar(ID, new TesteRequest(AlvoTeste.SALVAGUARDA, "VOAR", ModoTeste.VANTAGEM)))
 				.isInstanceOfSatisfying(DadosInvalidosException.class, e ->
@@ -106,7 +118,7 @@ class TesteServiceTest {
 	@Test
 	@DisplayName("o log traz id, código e total, e nunca a lista de dados")
 	void logSemOsDados(CapturedOutput saida) {
-		when(repository.findById(ID)).thenReturn(Optional.of(fichaComIntelecto3()));
+		when(repository.findByIdAndDonoId(ID, DONO)).thenReturn(Optional.of(fichaComIntelecto3()));
 		when(dado.rolar(20)).thenReturn(4, 17, 9);
 
 		service.testar(ID, new TesteRequest(AlvoTeste.PERICIA, "INVESTIGACAO", null));

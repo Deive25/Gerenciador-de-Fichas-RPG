@@ -31,6 +31,7 @@ public final class FichasDeTeste {
 	public static FichaOrdem ordem(String personagem) {
 		FichaOrdem ficha = new FichaOrdem();
 		ficha.setJogador("Ana");
+		ficha.setDonoId(AutenticacaoDeTesteConfig.USUARIO_DE_TESTE_ID);
 		ficha.setPersonagem(personagem);
 		ficha.setGenero("F");
 		ficha.setNex(5);
@@ -44,6 +45,7 @@ public final class FichasDeTeste {
 	public static FichaDnd dnd(String personagem) {
 		FichaDnd ficha = new FichaDnd();
 		ficha.setJogador("Ana");
+		ficha.setDonoId(AutenticacaoDeTesteConfig.USUARIO_DE_TESTE_ID);
 		ficha.setPersonagem(personagem);
 		ficha.setGenero("F");
 		ficha.setEdicao(EdicaoDnd.D2024);

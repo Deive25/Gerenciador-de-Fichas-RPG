@@ -11,11 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.spironello.fichasrpg.dto.EspacoDnd;
 import dev.spironello.fichasrpg.dto.EspacoRequest;
 import dev.spironello.fichasrpg.exception.DadosInvalidosException;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.EspacoMagia;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /** Edição dos espaços de magia de uma ficha de D&D: grava só os níveis enviados. */
 @Service
@@ -23,9 +21,9 @@ public class EspacosService {
 
 	private static final Logger log = LoggerFactory.getLogger(EspacosService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 
-	public EspacosService(FichaRepository fichas) {
+	public EspacosService(FichasDoUsuario fichas) {
 		this.fichas = fichas;
 	}
 
@@ -35,7 +33,7 @@ public class EspacosService {
 	 */
 	@Transactional
 	public Map<Integer, EspacoDnd> atualizar(Long fichaId, Map<String, EspacoRequest> pedido) {
-		Ficha ficha = fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		Ficha ficha = fichas.buscar(fichaId);
 		if (!(ficha instanceof FichaDnd dnd)) {
 			throw new DadosInvalidosException(Map.of("lista", "não existe em Ordem Paranormal"));
 		}

@@ -9,11 +9,9 @@ import dev.spironello.fichasrpg.dto.AtaqueRequest;
 import dev.spironello.fichasrpg.dto.AtaqueResponse;
 import dev.spironello.fichasrpg.dto.ModoTeste;
 import dev.spironello.fichasrpg.dto.RolagemAtaqueResponse;
-import dev.spironello.fichasrpg.exception.FichaNaoEncontradaException;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
-import dev.spironello.fichasrpg.repository.FichaRepository;
 
 /**
  * Criar, editar, excluir e rolar os ataques de uma ficha. Cada sistema tem a sua tabela e as suas regras; o switch
@@ -24,12 +22,12 @@ public class AtaqueService {
 
 	private static final Logger log = LoggerFactory.getLogger(AtaqueService.class);
 
-	private final FichaRepository fichas;
+	private final FichasDoUsuario fichas;
 	private final AtaquesOrdem ataquesOrdem;
 	private final AtaquesDnd ataquesDnd;
 	private final Dado dado;
 
-	public AtaqueService(FichaRepository fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado) {
+	public AtaqueService(FichasDoUsuario fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado) {
 		this.fichas = fichas;
 		this.ataquesOrdem = ataquesOrdem;
 		this.ataquesDnd = ataquesDnd;
@@ -83,6 +81,6 @@ public class AtaqueService {
 	}
 
 	private Ficha buscarFicha(Long fichaId) {
-		return fichas.findById(fichaId).orElseThrow(() -> new FichaNaoEncontradaException(fichaId));
+		return fichas.buscar(fichaId);
 	}
 }
