@@ -59,6 +59,21 @@ describe('EdicaoFicha', () => {
     expect(el.querySelector('app-formulario-dnd')).toBeNull();
   });
 
+  it('Recarregar (do aviso de 409) busca a ficha de novo e reabre o formulario com os dados novos', () => {
+    const nova = { ...ORDEM, versao: 4, personagem: 'Lia do outro lado' };
+    const buscarFicha = vi.fn().mockReturnValueOnce(of(ORDEM as Ficha)).mockReturnValueOnce(of(nova as Ficha));
+    const { fixture } = montar(buscarFicha);
+    const antes = fixture.debugElement.query((d) => d.componentInstance instanceof FormularioOrdem);
+
+    (antes.componentInstance as FormularioOrdem).recarregar.emit();
+    fixture.detectChanges();
+
+    expect(buscarFicha).toHaveBeenCalledTimes(2);
+    const depois = fixture.debugElement.query((d) => d.componentInstance instanceof FormularioOrdem)
+      .componentInstance as FormularioOrdem;
+    expect(depois.form.controls.personagem.value).toBe('Lia do outro lado');
+  });
+
   it('ficha de D&D abre o formulario de D&D, sem cair no de Ordem', () => {
     const { fixture, el } = montar(vi.fn(() => of(DND as Ficha)), '9');
     const dnd = fixture.debugElement.query((d) => d.componentInstance instanceof FormularioDnd)
