@@ -33,6 +33,8 @@ public class SecurityConfig {
 				.sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(rotas -> rotas
 						.requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						// a sonda de vida do deploy (não consulta o banco); o health completo e o resto do actuator exigem login
+						.requestMatchers(HttpMethod.GET, "/actuator/health/liveness").permitAll()
 						// a prévia do convite é pública (só o GET); aceitar exige token
 						.requestMatchers(HttpMethod.GET, "/convites/*").permitAll()
 						// o handshake do WebSocket é HTTP sem token; a autenticação acontece no CONNECT do STOMP (AutenticacaoStomp)
