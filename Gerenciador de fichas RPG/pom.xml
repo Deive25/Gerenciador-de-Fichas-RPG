@@ -34,6 +34,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
 		</dependency>
+		<!-- Saude para o deploy (2.6): so o /actuator/health, com as probes de liveness e readiness -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 		<!-- Bean Validation (Hibernate Validator): @NotBlank, @Size etc. nos DTOs de entrada -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
