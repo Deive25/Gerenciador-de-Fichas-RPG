@@ -18,6 +18,8 @@ import { MagiasDndAba } from '../sistemas/dnd/magias-dnd-aba';
 import { AtaquesOrdemAba } from '../sistemas/ordem/ataques-ordem-aba';
 import { InventarioOrdemAba } from '../sistemas/ordem/inventario-ordem-aba';
 import { RituaisOrdemAba } from '../sistemas/ordem/rituais-ordem-aba';
+import { AvisoDeRolagem } from '../../campanhas/aviso-de-rolagem';
+import { PainelRolagens } from '../../campanhas/painel-rolagens';
 import { RecursosFicha } from './recursos-ficha';
 import { SeletorCampanha } from './seletor-campanha';
 import { Medalhao } from '../componentes/medalhao';
@@ -68,6 +70,8 @@ export type UltimoResultado =
     Medalhao,
     RecursosFicha,
     SeletorCampanha,
+    PainelRolagens,
+    AvisoDeRolagem,
     HabilidadesAba,
     DadosAba,
     AtaquesOrdemAba,
@@ -138,6 +142,8 @@ export class FichaDetalhe {
   /** Dados lançando na camada; o cartão desse resultado só aparece quando ela termina. */
   readonly animacao = signal<{ resultado: UltimoResultado; lancador: LancadorDeDados; dados: DadoLancado[] } | null>(null);
   readonly confirmandoExclusao = signal(false);
+  /** O painel lateral de rolagens da campanha da ficha (2.4); só existe se a ficha tem campanha. */
+  readonly painelAberto = signal(false);
   readonly excluindo = signal(false);
   readonly confirmandoRemocaoRetrato = signal(false);
   readonly enviandoRetrato = signal(false);
@@ -159,6 +165,7 @@ export class FichaDetalhe {
     this.rolando.set(false);
     this.ultimoResultado.set(null);
     this.confirmandoExclusao.set(false);
+    this.painelAberto.set(false);
     this.api.buscarFicha(id).subscribe({
       next: (ficha) => {
         this.ficha.set(ficha);

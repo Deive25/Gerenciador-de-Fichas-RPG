@@ -8,6 +8,10 @@ import { FichaResumo } from '../fichas/ficha.model';
 import { CampanhaApi } from './campanha-api';
 import { CampanhaTela } from './campanha-tela';
 import { Campanha, Membro } from './campanha.model';
+import { MesaAoVivo } from './mesa-ao-vivo';
+import { RolagemDaMesa } from './rolagem-da-mesa.model';
+import { RolagensApi } from './rolagens-api';
+import { historicoVazio, mesaFalsa } from './teste-mesa';
 
 // A sessão de teste é a da Ana (id 7).
 const ANA = { id: 7, nome: 'Ana' };
@@ -42,11 +46,19 @@ const INDISPONIVEL: ApiError = {
   status: 0, titulo: 'Servidor indisponível', detalhe: 'Ele pode estar acordando.', campos: {},
 };
 
+let mesa: ReturnType<typeof mesaFalsa>;
+
 function montar(api: Partial<Record<keyof CampanhaApi, unknown>>) {
   localStorage.clear();
+  mesa = mesaFalsa();
   TestBed.configureTestingModule({
     imports: [CampanhaTela],
-    providers: [provideRouter([]), { provide: CampanhaApi, useValue: api }],
+    providers: [
+      provideRouter([]),
+      { provide: CampanhaApi, useValue: api },
+      { provide: MesaAoVivo, useValue: mesa },
+      { provide: RolagensApi, useValue: historicoVazio },
+    ],
   });
   TestBed.inject(Sessao).iniciar(respostaDe());
   const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -349,5 +361,65 @@ describe('CampanhaTela: convite', () => {
     const { el } = montar(apiMestre({ buscar: () => of(desativada) }));
     expect(el.querySelector('input[readonly]')).toBeNull();
     expect(botao(el, 'Gerar novo link')).toBeTruthy();
+  });
+});
+
+describe('CampanhaTela: rolagens ao vivo (2.4)', () => {
+  const DA_BIA: RolagemDaMesa = {
+    id: 41, campanhaId: 3, criadaEm: new Date().toISOString(), autor: BIA, personagem: 'Kai', doMestre: false,
+    tipo: 'TESTE', rotulo: 'Furtividade', total: 25,
+    detalhe: { alvo: 'PERICIA', codigo: 'FURTIVIDADE', nome: 'Furtividade', dados: [17, 6], mantido: 17, bonus: 8, total: 25 },
+  };
+
+  it('o botão Rolagens aparece para o mestre, com o painel fechado', () => {
+    const { el } = montar(apiMestre());
+    expect(botao(el, 'Rolagens')).toBeTruthy();
+    expect(el.querySelector('app-painel-rolagens')).toBeNull();
+  });
+
+  it('o botão Rolagens aparece para o jogador', () => {
+    const { el } = montar(apiJogador());
+    expect(botao(el, 'Rolagens')).toBeTruthy();
+  });
+
+  it('o botão abre o painel desta campanha e "Fechar" o fecha', () => {
+    const { fixture, el } = montar(apiMestre());
+    clicar(fixture, el, 'Rolagens');
+    expect(el.querySelector('app-painel-rolagens [role="dialog"]')).not.toBeNull();
+    clicar(fixture, el, 'Fechar');
+    expect(el.querySelector('app-painel-rolagens')).toBeNull();
+  });
+
+  it('a conexão ao vivo fica ativa com a tela aberta, mesmo com o painel fechado', () => {
+    montar(apiJogador());
+    expect(mesa.inscritos(3)).toBe(1);
+  });
+
+  it('a rolagem de outra pessoa com o painel fechado vira um aviso; tocar nele abre o painel', () => {
+    const { fixture, el } = montar(apiMestre());
+    mesa.emitir(3, DA_BIA);
+    fixture.detectChanges();
+    const aviso = el.querySelector('.aviso-rolagem') as HTMLButtonElement;
+    expect(aviso.textContent?.trim()).toBe('Bia · Kai · Furtividade: 25');
+    aviso.click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-painel-rolagens')).not.toBeNull();
+    expect(el.querySelector('.aviso-rolagem')).toBeNull();
+  });
+
+  it('a rolagem da própria pessoa não gera aviso', () => {
+    const { fixture, el } = montar(apiMestre());
+    mesa.emitir(3, { ...DA_BIA, autor: ANA });
+    fixture.detectChanges();
+    expect(el.querySelector('.aviso-rolagem')).toBeNull();
+  });
+
+  it('com o painel aberto não há aviso, e a rolagem entra no painel', () => {
+    const { fixture, el } = montar(apiMestre());
+    clicar(fixture, el, 'Rolagens');
+    mesa.emitir(3, DA_BIA);
+    fixture.detectChanges();
+    expect(el.querySelector('.aviso-rolagem')).toBeNull();
+    expect(el.querySelector('app-painel-rolagens li.rolagem')?.textContent).toContain('Furtividade');
   });
 });

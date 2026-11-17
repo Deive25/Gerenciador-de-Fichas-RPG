@@ -8,7 +8,9 @@ import { CartaoFicha } from '../fichas/painel/cartao-ficha';
 import { FichaResumo } from '../fichas/ficha.model';
 import { CampanhaApi } from './campanha-api';
 import { Campanha, CampanhaEntrada, Membro, NOMES_PAPEL } from './campanha.model';
+import { AvisoDeRolagem } from './aviso-de-rolagem';
 import { FormularioCampanha } from './formulario-campanha';
+import { PainelRolagens } from './painel-rolagens';
 
 type Estado = 'carregando' | 'pronto' | 'nao-encontrada' | 'erro';
 
@@ -22,7 +24,7 @@ type Confirmacao = { tipo: 'excluir' } | { tipo: 'sair' } | { tipo: 'renovar' } 
  */
 @Component({
   selector: 'app-campanha-tela',
-  imports: [RouterLink, CartaoFicha, FormularioCampanha],
+  imports: [RouterLink, CartaoFicha, FormularioCampanha, PainelRolagens, AvisoDeRolagem],
   templateUrl: './campanha-tela.html',
   styleUrl: './campanha-tela.scss',
 })
@@ -43,6 +45,8 @@ export class CampanhaTela {
   readonly erro = signal<ApiError | null>(null);
 
   readonly editando = signal(false);
+  /** O painel lateral de rolagens (2.4); o aviso de rolagem avisa quando ele está fechado. */
+  readonly painelAberto = signal(false);
   readonly confirmacao = signal<Confirmacao | null>(null);
   readonly ocupado = signal(false);
   /** Erro de uma ação (remover, sair, excluir, convite): vai para um alerta, sem derrubar a tela. */
