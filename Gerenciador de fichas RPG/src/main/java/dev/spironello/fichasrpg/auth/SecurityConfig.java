@@ -35,6 +35,8 @@ public class SecurityConfig {
 						.requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						// a prévia do convite é pública (só o GET); aceitar exige token
 						.requestMatchers(HttpMethod.GET, "/convites/*").permitAll()
+						// o handshake do WebSocket é HTTP sem token; a autenticação acontece no CONNECT do STOMP (AutenticacaoStomp)
+						.requestMatchers("/ws", "/ws/**").permitAll()
 						.anyRequest().authenticated())
 				.exceptionHandling(erros -> erros.authenticationEntryPoint(problema))
 				.oauth2ResourceServer(recurso -> recurso.jwt(Customizer.withDefaults())
