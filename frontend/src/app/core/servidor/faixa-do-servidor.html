@@ -1,0 +1,8 @@
+@switch (servidor.estado()) {
+  @case ('acordando') {
+    <p class="faixa" role="status">Acordando o servidor gratuito… pode levar até 2 minutos ({{ servidor.segundos() }}s).</p>
+  }
+  @case ('falhou') {
+    <p class="faixa faixa-erro" role="status">O servidor não respondeu. Tente recarregar a página.</p>
+  }
+}

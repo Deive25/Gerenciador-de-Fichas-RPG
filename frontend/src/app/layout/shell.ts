@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthApi } from '../core/auth/auth-api';
 import { Sessao } from '../core/auth/sessao';
+import { FaixaDoServidor } from '../core/servidor/faixa-do-servidor';
 
 /**
  * Esqueleto da aplicação: topo fixo (marca; logado, também os links "Fichas" e "Campanhas", "Nova ficha", o nome e "Sair") e uma
@@ -13,7 +14,7 @@ import { Sessao } from '../core/auth/sessao';
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FaixaDoServidor],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })

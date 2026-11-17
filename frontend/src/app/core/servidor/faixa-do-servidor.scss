@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+// Texto quebra linha no celular (375 px): nada de largura fixa nem de rolagem horizontal.
+.faixa {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 0.95rem;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-acao);
+  color: var(--cor-texto);
+}
+
+.faixa-erro {
+  border-bottom-color: var(--cor-vida);
+  background: var(--cor-fundo-erro);
+  color: #f0a597;
+}
