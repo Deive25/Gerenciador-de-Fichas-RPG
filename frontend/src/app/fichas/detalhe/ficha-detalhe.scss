@@ -21,6 +21,16 @@
   }
 }
 
+.direita {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.botao-rolagens {
+  padding-inline: 0.75rem;
+}
+
 .mais {
   min-width: 44px;
   min-height: 44px;
