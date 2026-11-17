@@ -44,7 +44,7 @@ public class ConviteService {
 	 * do {@code unique} só apareceria no flush e deixaria a transação inteira inutilizável. Com 71 bits, a segunda
 	 * tentativa nunca acontece na prática; o {@code unique} fica como rede de segurança.
 	 */
-	String novoCodigoLivre() {
+	public String novoCodigoLivre() {
 		for (int tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
 			String codigo = CodigoDeConvite.gerar();
 			if (!campanhas.existsByCodigoConvite(codigo)) {
@@ -80,7 +80,7 @@ public class ConviteService {
 		Campanha campanha = ativaPeloCodigo(codigo);
 		String mestre = participacoes.findByCampanhaIdAndPapel(campanha.getId(), Papel.MESTRE)
 				.flatMap(p -> usuarios.findById(p.getUsuarioId())).map(u -> u.getNome()).orElse("");
-		return new PreviaConviteResponse(campanha.getId(), campanha.getNome(), mestre);
+		return new PreviaConviteResponse(campanha.getId(), campanha.getNome(), mestre, participacoes.mestreEhDemo(campanha.getId(), Papel.MESTRE));
 	}
 
 	/**
@@ -90,9 +90,17 @@ public class ConviteService {
 	@Transactional
 	public ResultadoDoAceite aceitar(String codigo) {
 		Campanha campanha = ativaPeloCodigo(codigo);
+		// Conta demo só entra em campanha de demonstração: para ela, o convite de uma campanha real não existe (404).
+		if (contaAtualEhDemo() && !participacoes.mestreEhDemo(campanha.getId(), Papel.MESTRE)) {
+			throw new ConviteInvalidoException();
+		}
 		boolean novo = participacoes.entrarComoJogador(campanha.getId(), usuario.id(), relogio.instant()) > 0;
 		log.info("Convite aceito campanhaId={} novo={}", campanha.getId(), novo);
 		return new ResultadoDoAceite(campanha.getId(), novo);
+	}
+
+	private boolean contaAtualEhDemo() {
+		return usuarios.findById(usuario.id()).map(u -> u.isDemo()).orElse(false);
 	}
 
 	private Campanha ativaPeloCodigo(String codigo) {
