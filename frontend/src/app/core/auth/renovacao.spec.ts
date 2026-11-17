@@ -96,4 +96,42 @@ describe('Renovacao', () => {
     expect(await p).toBe('indisponivel');
     expect(localStorage.getItem('fichas-rpg.refresh')).toBe('velho');
   });
+
+  describe('sessão demo (sessionStorage)', () => {
+    beforeEach(() => sessionStorage.clear());
+
+    it('renova a conta demo lendo e regravando o refresh no sessionStorage', async () => {
+      sessionStorage.setItem('fichas-rpg.refresh', 'demo-velho');
+      const p = renovacao.renovar();
+      const req = http.expectOne(REFRESH);
+      expect(req.request.body).toEqual({ refreshToken: 'demo-velho' });
+      req.flush(respostaDe('2'));
+      expect(await p).toBe('renovada');
+      expect(sessionStorage.getItem('fichas-rpg.refresh')).toBe('refresh-2');
+      expect(localStorage.getItem('fichas-rpg.refresh')).toBeNull();
+      expect(sessao.usuario()?.demo).toBe(true);
+    });
+
+    it('com a trava, relê o refresh demo dentro dela', async () => {
+      sessionStorage.setItem('fichas-rpg.refresh', 'antes-da-espera');
+      const request = vi.fn(async (nome: string, tarefa: () => Promise<unknown>) => {
+        sessionStorage.setItem('fichas-rpg.refresh', 'gravado-depois');
+        return tarefa();
+      });
+      vi.stubGlobal('navigator', { locks: { request } });
+      const p = renovacao.renovar();
+      const req = http.expectOne(REFRESH);
+      expect(req.request.body).toEqual({ refreshToken: 'gravado-depois' });
+      req.flush(respostaDe('3'));
+      expect(await p).toBe('renovada');
+    });
+
+    it('401 na conta demo apaga o refresh do sessionStorage', async () => {
+      sessionStorage.setItem('fichas-rpg.refresh', 'velho');
+      const p = renovacao.renovar();
+      http.expectOne(REFRESH).flush({ title: 'x', detail: 'y' }, { status: 401, statusText: 'Unauthorized' });
+      expect(await p).toBe('sem-sessao');
+      expect(sessionStorage.getItem('fichas-rpg.refresh')).toBeNull();
+    });
+  });
 });

@@ -40,8 +40,10 @@ export class Renovacao {
     if (!refresh) {
       return 'sem-sessao';
     }
+    // A renovação não muda o tipo da conta: demo continua no sessionStorage, normal no localStorage.
+    const demo = this.sessao.ehDemo();
     try {
-      this.sessao.iniciar(await firstValueFrom(this.api.renovar(refresh)));
+      this.sessao.iniciar(await firstValueFrom(this.api.renovar(refresh)), demo);
       return 'renovada';
     } catch (erro) {
       const { status } = erro as ApiError;
