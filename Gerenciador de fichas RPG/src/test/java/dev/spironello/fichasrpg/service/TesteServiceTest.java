@@ -30,6 +30,7 @@ import dev.spironello.fichasrpg.model.GrauOrdem;
 import dev.spironello.fichasrpg.model.PericiaOrdem;
 import dev.spironello.fichasrpg.campanha.ParticipacaoRepository;
 import dev.spironello.fichasrpg.repository.FichaRepository;
+import dev.spironello.fichasrpg.rolagem.RegistroDeRolagens;
 
 /** Testes unitários do serviço de rolagem: Mockito puro, sem Spring e sem Docker. */
 @ExtendWith({ MockitoExtension.class, OutputCaptureExtension.class })
@@ -55,11 +56,15 @@ class TesteServiceTest {
 	@Mock
 	private Dado dado;
 
+	/** O registro da mesa é do 2.4 e tem testes próprios (RegistroDeRolagensTest); aqui só não pode atrapalhar. */
+	@Mock
+	private RegistroDeRolagens registro;
+
 	private TesteService service;
 
 	@BeforeEach
 	void criarServico() {
-		service = new TesteService(new AcessoAFicha(repository, participacoes, USUARIO), new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado);
+		service = new TesteService(new AcessoAFicha(repository, participacoes, USUARIO), new SistemasDeFicha(List.of(new SistemaOrdem(new FichaOrdemMapper(), PartesComunsDeTeste.componente(), ListasDeTeste.ataquesOrdem(), ListasDeTeste.itensOrdem(), ListasDeTeste.rituaisOrdem()))), dado, registro);
 	}
 
 	private FichaOrdem fichaComIntelecto3() {
