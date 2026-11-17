@@ -27,6 +27,23 @@
     gap: 0.75rem;
   }
 
+  // Separador "ou" entre o botão do Google e o formulário: uma linha de cada lado do texto.
+  .separador-ou {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    color: var(--cor-texto-suave);
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid currentcolor;
+      opacity: 0.4;
+    }
+  }
+
   .erro-acao {
     margin: 0;
     padding: 0.6rem 0.75rem;

@@ -2,6 +2,9 @@
   <h1 class="titulo-auth">Entrar</h1>
   <p class="subtitulo-auth">Bem-vindo de volta. As suas fichas estão te esperando.</p>
 
+  <app-botao-google [volta]="volta()" />
+  <p class="separador-ou">ou</p>
+
   <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>E-mail</mat-label>
