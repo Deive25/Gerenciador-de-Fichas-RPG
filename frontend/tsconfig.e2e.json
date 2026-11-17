@@ -1,0 +1,9 @@
+/* Só para o editor e para conferir tipos do teste de ponta a ponta (npx tsc -p tsconfig.e2e.json). O ng build e o ng test não usam este arquivo. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": []
+  },
+  "include": ["e2e/**/*.ts", "playwright.config.ts"]
+}
