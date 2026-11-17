@@ -135,3 +135,46 @@ jobs:
             frontend/test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  # Publicacao (2.6): so depois de um merge na main e so com os tres jobs verdes.
+  # Os segredos ficam no environment "producao" do GitHub, nunca no repositorio (ADR 0028).
+  deploy:
+    name: Publicar (Render + Cloudflare Pages)
+    needs: [backend, frontend, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: producao
+    # Dois merges seguidos nao publicam ao mesmo tempo; o mais novo espera o anterior.
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      # O Render puxa a main e builda o Dockerfile da API (o auto-deploy dele fica desligado).
+      # O hook e uma URL secreta: vai por variavel de ambiente e nao aparece no log.
+      - name: Publicar a API no Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK" -o /dev/null
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build do front (producao)
+        working-directory: frontend
+        run: |
+          npm ci
+          npx ng build
+
+      # O _headers (CSP) vai junto, dentro do dist. Versao do wrangler fixa.
+      - name: Publicar o front no Cloudflare Pages
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.156.2 pages deploy dist/frontend/browser --project-name=fichas-rpg --branch=main
