@@ -24,6 +24,11 @@ public interface ParticipacaoRepository extends JpaRepository<Participacao, Part
 
 	List<Participacao> findAllByUsuarioId(Long usuarioId);
 
+	/** O mestre da campanha é uma conta de demonstração? (a campanha demo e a prévia do convite perguntam isto) */
+	@Query("select count(p) > 0 from Participacao p, Usuario u where p.campanhaId = :campanhaId and p.papel = :mestre "
+			+ "and u.id = p.usuarioId and u.demo = true")
+	boolean mestreEhDemo(@Param("campanhaId") Long campanhaId, @Param("mestre") Papel mestre);
+
 	/**
 	 * Entra como jogador, uma vez só: se já existe a participação (de jogador ou do mestre) não faz nada e devolve 0. O
 	 * "on conflict" torna o aceite idempotente até com dois cliques ao mesmo tempo.
