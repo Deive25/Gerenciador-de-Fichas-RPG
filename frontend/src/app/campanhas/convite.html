@@ -30,6 +30,22 @@
             <a class="botao" routerLink="/entrar" [queryParams]="volta()">Entrar</a>
             <a class="botao-neutro" routerLink="/cadastrar" [queryParams]="volta()">Criar conta</a>
           </div>
+          @if (p.demo && demoAtiva) {
+            <p class="aviso">Ou entre sem criar conta, só para ver a mesa ao vivo.</p>
+            <div class="acoes">
+              <button
+                type="button"
+                class="botao botao-demo"
+                [disabled]="entrandoNaDemo() || servidor.aguardando()"
+                (click)="entrarComoJogadorDemo()"
+              >
+                {{ servidor.aguardando() ? 'Aguardando o servidor…' : 'Entrar como jogador de demonstração' }}
+              </button>
+            </div>
+            @if (erroDemo(); as erro) {
+              <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
+            }
+          }
         } @else if (jaMembro()) {
           <p class="aviso" role="status">Você já está nesta campanha.</p>
           <a class="botao" [routerLink]="['/campanhas', p.campanhaId]">Abrir a campanha</a>

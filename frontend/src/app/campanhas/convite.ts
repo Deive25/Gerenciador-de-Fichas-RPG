@@ -1,8 +1,11 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { ApiError } from '../core/api-error';
+import { AuthApi } from '../core/auth/auth-api';
 import { Renovacao } from '../core/auth/renovacao';
 import { Sessao } from '../core/auth/sessao';
+import { EstadoDoServidor } from '../core/servidor/estado-do-servidor';
 import { CampanhaApi } from './campanha-api';
 import { PreviaConvite } from './campanha.model';
 
@@ -21,6 +24,8 @@ type Estado = 'carregando' | 'pronto' | 'invalido' | 'erro';
 })
 export class ConviteTela {
   private readonly api = inject(CampanhaApi);
+  private readonly authApi = inject(AuthApi);
+  protected readonly servidor = inject(EstadoDoServidor);
   private readonly sessao = inject(Sessao);
   private readonly renovacao = inject(Renovacao);
   private readonly router = inject(Router);
@@ -34,6 +39,9 @@ export class ConviteTela {
   readonly jaMembro = signal(false);
   readonly aceitando = signal(false);
   readonly erroAoAceitar = signal<ApiError | null>(null);
+  readonly entrandoNaDemo = signal(false);
+  readonly erroDemo = signal<ApiError | null>(null);
+  protected readonly demoAtiva = environment.demoAtiva;
 
   readonly logado = this.sessao.estaLogado;
   /** Para onde /entrar e /cadastrar mandam a pessoa depois de entrar: de volta a este convite. */
@@ -54,6 +62,7 @@ export class ConviteTela {
     this.estado.set('carregando');
     this.erro.set(null);
     this.erroAoAceitar.set(null);
+    this.erroDemo.set(null);
     this.jaMembro.set(false);
     // Recarregou a página: o token de acesso (só na memória) sumiu, mas o refresh guardado ainda pode
     // restaurar a sessão. Sem isso, quem já tem conta veria "Entrar" em vez de "Entrar na campanha".
@@ -94,6 +103,26 @@ export class ConviteTela {
       },
       // Sem a lista, a tela só não avisa; aceitar de quem já é membro responde 200 e abre a campanha.
       error: () => undefined,
+    });
+  }
+
+  /** Sem conta: cria um jogador temporário (sessão só desta aba) já membro da mesa demo deste convite. */
+  entrarComoJogadorDemo(): void {
+    if (this.entrandoNaDemo() || this.servidor.aguardando()) {
+      return;
+    }
+    this.erroDemo.set(null);
+    this.entrandoNaDemo.set(true);
+    // Só libera o botão se der erro: no sucesso a tela navega.
+    this.authApi.demo(this.codigo()).subscribe({
+      next: (resposta) => {
+        this.sessao.iniciar(resposta, true);
+        void this.router.navigate(['/campanhas', resposta.campanhaId]);
+      },
+      error: (erro: ApiError) => {
+        this.entrandoNaDemo.set(false);
+        this.erroDemo.set(erro);
+      },
     });
   }
 

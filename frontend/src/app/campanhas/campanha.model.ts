@@ -52,4 +52,6 @@ export interface PreviaConvite {
   campanhaId: number;
   campanha: string;
   mestre: string;
+  /** Campanha cujo mestre é uma conta de demonstração (a API só aceita jogador demo nela). */
+  demo?: boolean;
 }
