@@ -1,4 +1,7 @@
-<div class="alvo-google" #alvo></div>
+@if (servidor.aguardando()) {
+  <p class="aviso-google aviso-servidor">Login com o Google: aguardando o servidor…</p>
+}
+<div class="alvo-google" #alvo [hidden]="servidor.aguardando()"></div>
 @if (indisponivel()) {
   <p class="aviso-google" role="status">O login com o Google não está disponível agora. Use o e-mail e a senha.</p>
 }
