@@ -9,6 +9,11 @@
   justify-content: center;
   min-height: 44px;
   overflow: hidden;
+
+  // O atributo `hidden` perderia para o display:flex acima; some com o botão enquanto a API acorda.
+  &[hidden] {
+    display: none;
+  }
 }
 
 .aviso-google {
