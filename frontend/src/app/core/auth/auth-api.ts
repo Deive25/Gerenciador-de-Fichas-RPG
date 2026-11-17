@@ -19,6 +19,11 @@ export class AuthApi {
     return this.tratar(this.http.post<RespostaAuth>(`${this.base}/login`, dados));
   }
 
+  /** `idToken` é o `credential` do botão do Google; a API o valida e devolve a nossa sessão. */
+  entrarComGoogle(idToken: string): Observable<RespostaAuth> {
+    return this.tratar(this.http.post<RespostaAuth>(`${this.base}/google`, { idToken }));
+  }
+
   renovar(refreshToken: string): Observable<RespostaAuth> {
     return this.tratar(this.http.post<RespostaAuth>(`${this.base}/refresh`, { refreshToken }));
   }

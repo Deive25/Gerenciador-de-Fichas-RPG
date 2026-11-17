@@ -30,6 +30,10 @@ public class Usuario {
 	@Column(name = "criado_em", nullable = false)
 	private Instant criadoEm;
 
+	/** Identidade (claim "sub") da conta do Google ligada; nulo = conta so por senha (ou o legado). */
+	@Column(name = "google_sub", length = 255)
+	private String googleSub;
+
 	protected Usuario() {
 	}
 
@@ -38,6 +42,19 @@ public class Usuario {
 		this.nome = nome;
 		this.senhaHash = senhaHash;
 		this.criadoEm = criadoEm;
+	}
+
+	/** Conta nova vinda do Google: sem senha. */
+	public static Usuario doGoogle(String email, String nome, String googleSub, Instant criadoEm) {
+		Usuario usuario = new Usuario(email, nome, null, criadoEm);
+		usuario.googleSub = googleSub;
+		return usuario;
+	}
+
+	/** Liga a conta ao Google e apaga a senha (quem provou ser dono do e-mail vence; spec §3). */
+	public void ligarAoGoogle(String sub) {
+		this.googleSub = sub;
+		this.senhaHash = null;
 	}
 
 	public Long getId() {
@@ -54,5 +71,8 @@ public class Usuario {
 	}
 	public Instant getCriadoEm() {
 		return criadoEm;
+	}
+	public String getGoogleSub() {
+		return googleSub;
 	}
 }

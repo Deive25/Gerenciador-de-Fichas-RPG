@@ -30,6 +30,13 @@ public class AuthController {
 		this.usuarioAtual = usuarioAtual;
 	}
 
+	@Operation(summary = "Entra (ou cria a conta) com o ID token do Google")
+	@SecurityRequirements
+	@PostMapping("/auth/google")
+	public RespostaAuth entrarComGoogle(@Valid @RequestBody GoogleRequest pedido) {
+		return contas.entrarComGoogle(pedido.idToken());
+	}
+
 	@Operation(summary = "Cria uma conta e já entra nela")
 	@SecurityRequirements
 	@PostMapping("/auth/registro")
