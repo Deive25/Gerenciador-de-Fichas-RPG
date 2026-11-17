@@ -1,6 +1,6 @@
 # J1 2.6: deploy gratuito (design)
 
-- **Status:** aprovado em conversa pelo Arthur em 2026-11-17. Aguarda a revisão desta spec escrita.
+- **Status:** aprovado pelo Arthur em 2026-11-17 (conversa e spec escrita, com o plano).
 - **Base:** `main` em `7174b43` (2.5 mesclado, banco na V13). Parte da spec da fase 2 (`2026-11-04-j1-fase-2-design.md`, §2, §5, §9 e §10).
 
 ## 1. Objetivo
