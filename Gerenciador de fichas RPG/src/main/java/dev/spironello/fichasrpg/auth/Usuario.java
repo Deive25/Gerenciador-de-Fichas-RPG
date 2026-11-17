@@ -34,6 +34,10 @@ public class Usuario {
 	@Column(name = "google_sub", length = 255)
 	private String googleSub;
 
+	/** Conta de demonstração (V14): temporária, sem senha e sem Google; a limpeza a apaga depois de 24 h. */
+	@Column(nullable = false)
+	private boolean demo;
+
 	protected Usuario() {
 	}
 
@@ -48,6 +52,13 @@ public class Usuario {
 	public static Usuario doGoogle(String email, String nome, String googleSub, Instant criadoEm) {
 		Usuario usuario = new Usuario(email, nome, null, criadoEm);
 		usuario.googleSub = googleSub;
+		return usuario;
+	}
+
+	/** Conta de demonstração: sem senha e sem Google, com um e-mail interno que não serve para login (domínio .invalid, RFC 2606). */
+	public static Usuario demo(String email, String nome, Instant criadoEm) {
+		Usuario usuario = new Usuario(email, nome, null, criadoEm);
+		usuario.demo = true;
 		return usuario;
 	}
 
@@ -74,5 +85,8 @@ public class Usuario {
 	}
 	public String getGoogleSub() {
 		return googleSub;
+	}
+	public boolean isDemo() {
+		return demo;
 	}
 }
