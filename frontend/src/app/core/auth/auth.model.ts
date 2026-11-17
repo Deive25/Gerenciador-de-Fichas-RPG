@@ -21,3 +21,8 @@ export interface RespostaAuth {
  * - indisponivel: a API não respondeu (rede ou 5xx); o refresh foi mantido.
  */
 export type ResultadoRenovacao = 'renovada' | 'sem-sessao' | 'indisponivel';
+
+/** Resposta de `POST /auth/demo`: a sessão da conta temporária mais a campanha para abrir. */
+export interface RespostaDemo extends RespostaAuth {
+  campanhaId: number;
+}

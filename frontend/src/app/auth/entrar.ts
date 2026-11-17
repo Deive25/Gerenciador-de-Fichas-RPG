@@ -3,10 +3,12 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { ApiError } from '../core/api-error';
 import { AuthApi } from '../core/auth/auth-api';
 import { voltaSegura } from '../core/auth/guards';
 import { Sessao } from '../core/auth/sessao';
+import { EstadoDoServidor } from '../core/servidor/estado-do-servidor';
 import { aplicarErrosDoServidor, focarPrimeiroInvalido } from '../fichas/sistemas/comum/formulario-comum';
 import { BotaoGoogle } from './botao-google';
 import { mensagemAuth } from './mensagem-auth';
@@ -23,6 +25,7 @@ export class Entrar {
   private readonly sessao = inject(Sessao);
   private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly servidor = inject(EstadoDoServidor);
 
   readonly volta = input<string | undefined>();
 
@@ -31,6 +34,7 @@ export class Entrar {
   protected readonly erroGeral = signal<string | null>(null);
   protected readonly mensagem = mensagemAuth;
   protected readonly capsLigado = signal(false);
+  protected readonly demoAtiva = environment.demoAtiva;
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
@@ -43,7 +47,7 @@ export class Entrar {
   }
 
   protected enviar(): void {
-    if (this.enviando()) {
+    if (this.enviando() || this.servidor.aguardando()) {
       return;
     }
     if (this.form.invalid) {
@@ -66,6 +70,28 @@ export class Entrar {
           // O 401 vem como "E-mail ou senha incorretos", igual para os dois casos (a API não revela qual).
           this.erroGeral.set(erro.detalhe || erro.titulo);
         }
+      },
+    });
+  }
+
+  /** Cria uma conta temporária (sessão só desta aba) e abre a campanha de exemplo dela. */
+  protected verDemonstracao(): void {
+    if (this.enviando() || this.servidor.aguardando()) {
+      return;
+    }
+    this.erroGeral.set(null);
+    this.enviando.set(true);
+    this.form.disable({ emitEvent: false });
+    this.api.demo().subscribe({
+      next: (resposta) => {
+        this.sessao.iniciar(resposta, true);
+        void this.router.navigateByUrl(`/campanhas/${resposta.campanhaId}`);
+      },
+      error: (erro: ApiError) => {
+        this.enviando.set(false);
+        this.form.enable({ emitEvent: false });
+        // O 429 vem com "Muitas tentativas. Tente de novo em alguns minutos."; o 404, se a demo está desligada.
+        this.erroGeral.set(erro.detalhe || erro.titulo);
       },
     });
   }

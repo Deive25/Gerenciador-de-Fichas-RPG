@@ -3,6 +3,11 @@
   <p class="subtitulo-auth">Bem-vindo de volta. As suas fichas estão te esperando.</p>
 
   <app-botao-google [volta]="volta()" />
+  @if (demoAtiva) {
+    <button type="button" class="botao-neutro botao-demo" [disabled]="enviando() || servidor.aguardando()" (click)="verDemonstracao()">
+      {{ servidor.aguardando() ? 'Aguardando o servidor…' : 'Ver demonstração' }}
+    </button>
+  }
   <p class="separador-ou">ou</p>
 
   <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
@@ -49,7 +54,9 @@
       <p class="erro-acao" role="alert">{{ erro }}</p>
     }
 
-    <button type="submit" class="botao enviar" [disabled]="enviando()">{{ enviando() ? 'Entrando…' : 'Entrar' }}</button>
+    <button type="submit" class="botao enviar" [disabled]="enviando() || servidor.aguardando()">
+      {{ servidor.aguardando() ? 'Aguardando o servidor…' : enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
   </form>
 
   <p class="trocar">Ainda não tem conta? <a routerLink="/cadastrar" [queryParams]="{ volta: volta() }">Criar conta</a></p>

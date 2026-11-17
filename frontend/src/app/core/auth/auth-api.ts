@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { paraApiError } from '../api-error';
-import { RespostaAuth } from './auth.model';
+import { RespostaAuth, RespostaDemo } from './auth.model';
 
 /** Único ponto de contato com /auth/*. Todo erro sai como ApiError. */
 @Injectable({ providedIn: 'root' })
@@ -22,6 +22,11 @@ export class AuthApi {
   /** `idToken` é o `credential` do botão do Google; a API o valida e devolve a nossa sessão. */
   entrarComGoogle(idToken: string): Observable<RespostaAuth> {
     return this.tratar(this.http.post<RespostaAuth>(`${this.base}/google`, { idToken }));
+  }
+
+  /** Cria uma conta temporária de demonstração; com `codigoConvite`, uma de jogador na campanha demo do convite. */
+  demo(codigoConvite?: string): Observable<RespostaDemo> {
+    return this.tratar(this.http.post<RespostaDemo>(`${this.base}/demo`, codigoConvite ? { codigoConvite } : {}));
   }
 
   renovar(refreshToken: string): Observable<RespostaAuth> {
