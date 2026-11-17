@@ -3,6 +3,8 @@ export interface Usuario {
   id: number;
   nome: string;
   email: string;
+  /** Conta de demonstração? A API manda no `/me`; no login, quem sabe é a `Sessao`, que preenche. */
+  demo?: boolean;
 }
 
 /** Resposta de registro, login e refresh: o par de tokens mais o usuário. */
