@@ -6,6 +6,7 @@ import { AuthApi } from '../core/auth/auth-api';
 import { GoogleIdentity } from '../core/auth/google-identity';
 import { voltaSegura } from '../core/auth/guards';
 import { Sessao } from '../core/auth/sessao';
+import { EstadoDoServidor } from '../core/servidor/estado-do-servidor';
 
 /**
  * Botão oficial "Continuar com o Google" (não é nosso: a marca do Google exige o visual dele).
@@ -21,6 +22,7 @@ export class BotaoGoogle {
   private readonly api = inject(AuthApi);
   private readonly sessao = inject(Sessao);
   private readonly router = inject(Router);
+  protected readonly servidor = inject(EstadoDoServidor);
 
   readonly volta = input<string | undefined>();
 
@@ -32,8 +34,10 @@ export class BotaoGoogle {
 
   constructor() {
     afterNextRender(() => {
-      this.google
-        .carregar()
+      // Com a API dormindo o login não funcionaria: só baixa e desenha o botão quando ela responder.
+      this.servidor
+        .quandoLiberado()
+        .then(() => this.google.carregar())
         .then((id) => {
           const elemento = this.alvo().nativeElement;
           id.initialize({ client_id: environment.googleClientId, callback: (r) => this.receber(r.credential) });

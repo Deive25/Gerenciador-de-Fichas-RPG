@@ -1,3 +1,10 @@
 @use 'cartao-auth' as *;
 
 @include cartao-auth;
+
+// "Ver demonstração": largura total, logo abaixo do botão do Google (44 px de alvo).
+.botao-demo {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.75rem;
+}
