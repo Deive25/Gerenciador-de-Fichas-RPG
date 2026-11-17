@@ -1,0 +1,7 @@
+<div class="alvo-google" #alvo></div>
+@if (indisponivel()) {
+  <p class="aviso-google" role="status">O login com o Google não está disponível agora. Use o e-mail e a senha.</p>
+}
+@if (erro(); as texto) {
+  <p class="erro-google" role="alert">{{ texto }}</p>
+}
