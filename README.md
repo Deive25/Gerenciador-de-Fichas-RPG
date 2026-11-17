@@ -45,8 +45,8 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 2.1f | Dado animado em 3D: um d20 por dado rolado pelo servidor (1 a 5 em Ordem, 2 com vantagem ou desvantagem em D&D), o mantido dourado, carregado só na primeira rolagem e com plano B automático ([spec §5](docs/superpowers/specs/2026-11-04-j1-redesign-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1f-dado-animado.md), [ADR 0020](docs/decisoes/0020-dado-3d-sob-demanda-com-plano-b.md)) | Concluído (PR #16) |
 | 2.1i | Ataques (aba nova nos dois sistemas) com rolagem de ataque e dano e o crítico de cada sistema, mais a **rolagem livre** (aba Dados, por botões ou pela notação), tudo rolado no servidor e mostrado no dado 3D (d4 a d100), com migração V9 ([spec](docs/superpowers/specs/2026-11-09-j1-abas-da-ficha-design.md), [plano](docs/superpowers/plans/2026-11-11-j1-2.1i-ataques-e-rolagem-livre.md), [ADR 0021](docs/decisoes/0021-notacao-de-dados-no-servidor.md)) | Concluído (PR #17) |
 | 2.2 | Login com e-mail e senha: JWT de acesso de 15 min e refresh de 30 dias rotacionado por família, telas de entrar e cadastrar, e o dono da ficha (cada pessoa vê, edita e rola só as próprias; a de outra pessoa dá 404), com migração V10 ([spec](docs/superpowers/specs/2026-11-12-j1-login-design.md), [plano](docs/superpowers/plans/2026-11-12-j1-2.2-login.md), [ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md), [ADR 0023](docs/decisoes/0023-tokens-no-navegador.md)) | Concluído (PR #18) |
-| 2.3 | Campanhas com convite por link e papéis Mestre/Jogador: o mestre vê, edita e rola com as fichas da mesa, o jogador vê o resumo das fichas dos outros jogadores, e a ficha do mestre fica oculta; a ficha pode ficar sem campanha; trava otimista (`@Version`, 409) na ficha; migração V11 ([spec](docs/superpowers/specs/2026-11-16-j1-campanhas-design.md), [plano](docs/superpowers/plans/2026-11-16-j1-2.3-campanhas.md), [ADR 0024](docs/decisoes/0024-permissoes-de-campanha-num-ponto-central.md), [ADR 0025](docs/decisoes/0025-trava-otimista-na-ficha.md)) | Em revisão (PR) |
-| 2.4 | Rolagens gravadas e ao vivo (WebSocket STOMP) | Planejado |
+| 2.3 | Campanhas com convite por link e papéis Mestre/Jogador: o mestre vê, edita e rola com as fichas da mesa, o jogador vê o resumo das fichas dos outros jogadores, e a ficha do mestre fica oculta; a ficha pode ficar sem campanha; trava otimista (`@Version`, 409) na ficha; migração V11 ([spec](docs/superpowers/specs/2026-11-16-j1-campanhas-design.md), [plano](docs/superpowers/plans/2026-11-16-j1-2.3-campanhas.md), [ADR 0024](docs/decisoes/0024-permissoes-de-campanha-num-ponto-central.md), [ADR 0025](docs/decisoes/0025-trava-otimista-na-ficha.md)) | Concluído (PR #19) |
+| 2.4 | Rolagens gravadas e ao vivo: as três rolagens de uma ficha em campanha (teste, ataque e rolagem livre) são gravadas e chegam na hora ao painel de todos os membros, por WebSocket (STOMP); histórico com "Carregar mais", ficha do mestre como "Mestre" e o primeiro teste de ponta a ponta (Playwright, com duas sessões) no CI; migração V12 ([spec](docs/superpowers/specs/2026-11-16-j1-rolagens-ao-vivo-design.md), [plano](docs/superpowers/plans/2026-11-17-j1-2.4-rolagens-ao-vivo.md), [ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md)) | Em revisão (PR) |
 | 2.5 | Login com Google | Planejado |
 | 2.6 | Deploy gratuito (Cloudflare Pages + Render + Neon) | Planejado |
 
@@ -105,6 +105,50 @@ Quem está fora recebe 404 (a campanha e as fichas "não existem" para ele); o m
 | POST | `/convites/{codigo}/aceitar` | logado | 201 ao entrar; 200 se já era membro |
 
 O código do convite tem 12 caracteres (`A-Z`, `a-z`, `0-9`, cerca de 71 bits, `SecureRandom`) e não expira. **O banco garante** que a ficha só fique numa campanha da qual o dono participa: a chave estrangeira `(campanha_id, dono_id)` aponta para a participação, com `on delete set null (campanha_id)`, então sair, ser removido ou apagar a campanha devolve as fichas a "sem campanha" sem código no serviço.
+
+**Rolagens da mesa (2.4).** O histórico e o canal ao vivo da campanha:
+
+| Método | Rota | Quem | Respostas |
+| --- | --- | --- | --- |
+| GET | `/campanhas/{id}/rolagens?antes=<id>&limite=50` | membro | lista da mais nova para a mais antiga; `antes` é opcional (só traz ids menores); `limite` de 1 a 100 (padrão 50), fora disso 400; quem não é membro recebe 404, e sem token, 401 |
+| WebSocket | `/ws` (STOMP, sem SockJS) | handshake público | a autenticação acontece no `CONNECT`, com `Authorization: Bearer <token>`; sem token, ou com token inválido ou vencido, a conexão é recusada |
+| SUBSCRIBE | `/topic/campanhas/{id}/rolagens` | membro | cada rolagem nova, no mesmo formato do `GET`; qualquer outro destino é recusado, e o `SEND` do cliente também |
+
+```json
+{ "id": 41, "campanhaId": 3, "criadaEm": "2026-11-16T22:10:03Z",
+  "autor": { "id": 7, "nome": "Lía" }, "personagem": "Kai", "doMestre": false,
+  "tipo": "TESTE", "rotulo": "Furtividade", "total": 25,
+  "detalhe": { "...": "a resposta da rota, como foi devolvida a quem rolou" } }
+```
+
+`tipo` é `TESTE`, `ATAQUE` ou `LIVRE`; o `rotulo` é o nome da perícia, do atributo, da salvaguarda ou do ataque, ou a expressão (`2d6+3`). Na ficha do mestre, `doMestre` é `true` e `personagem` é `null`; a resposta não traz o id da ficha, então o id do NPC não se descobre. A tela mostra "Carregar mais" quando a página veio cheia.
+
+### Rolagens ao vivo (2.4)
+
+Quem rola com uma ficha que está numa campanha aparece, na hora, no painel de rolagens de todos os membros que estão com a campanha aberta. Quem chega depois vê o histórico. O desenho está no [ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md).
+
+- **O que é gravado:** as três rolagens (teste de perícia, atributo ou salvaguarda; ataque com dano e crítico; rolagem livre). A **ficha sem campanha não grava nem publica**: a rolagem fica só na tela de quem rolou, como antes. A resposta das três rotas `POST` não mudou.
+- **Quem vê:** os membros da campanha. Se a ficha é do mestre, todos veem "Mestre" no lugar do nome do personagem, e **o nome do NPC nem é gravado**. Se o mestre rola com a ficha de um jogador, a linha diz "(rolado pelo mestre)".
+- **Histórico:** `GET /campanhas/{id}/rolagens`, com as 50 últimas e um cursor pelo `id` para o "Carregar mais".
+- **Painel e aviso:** o botão "Rolagens", na campanha e na ficha que tem campanha, abre um painel lateral (360 px à direita a partir de 900 px; tela cheia no celular). Com o painel fechado, a rolagem de outra pessoa aparece num aviso de 4 s, e tocar nele abre o painel. Se a conexão cai e volta, o painel busca de novo a primeira página do histórico para recuperar o que foi rolado durante a queda.
+- **WebSocket:** STOMP em `/ws`, com um broker simples em memória. O handshake é público, e o token vai no `CONNECT` (cabeçalho `Authorization: Bearer`). O `SUBSCRIBE` em `/topic/campanhas/{id}/rolagens` só vale para membros, e o `SEND` do cliente é recusado: a mesa só recebe.
+- **Regra para o futuro:** toda rota que rola dados chama o `RegistroDeRolagens`. Uma rolagem nova que esquecesse a chamada não apareceria para a mesa.
+
+```mermaid
+sequenceDiagram
+    participant J as Jogadora
+    participant S as Serviço de rolagem
+    participant R as RegistroDeRolagens
+    participant B as PostgreSQL
+    participant L as Publicador (após o commit)
+    participant M as Mestre (painel aberto)
+    J->>S: POST /fichas/{id}/testes
+    S->>R: registrar(ficha, tipo, rótulo, total, detalhe)
+    R->>B: grava a rolagem
+    S-->>J: 200 com o resultado (como antes)
+    B-->>L: commit feito
+    L->>M: /topic/campanhas/{id}/rolagens
+```
 
 ### Fichas
 
@@ -739,6 +783,16 @@ npx ng test --watch=false
 npx ng build
 ```
 
+Teste de ponta a ponta (2.4), com o Playwright. Na primeira vez, baixe o Chromium; depois, com a API e o `ng serve` no ar, rode:
+
+```sh
+cd frontend
+npx playwright install chromium   # uma vez só
+npm run e2e
+```
+
+O teste reaproveita a API e o `ng serve` que já estão no ar (se não estiverem, o Playwright os sobe; a API, a partir do jar em `target/`). Ele cria duas contas de teste no banco local, com e-mail `e2e-…@teste.local`, que podem ser apagadas depois.
+
 ## Testes
 
 ```sh
@@ -746,9 +800,9 @@ cd "Gerenciador de fichas RPG"
 ./mvnw -B clean verify
 ```
 
-**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24.
+**Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24. O job `e2e` (2.4) roda depois dos dois: sobe um PostgreSQL como serviço, empacota e sobe a API com um `JWT_SEGREDO` gerado na hora, sobe o front, instala o Chromium e roda o Playwright; se falhar, guarda o relatório e o rastreamento como artefato.
 
-**Front-end:** 887 testes unitários em 67 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.3 (eram 782 em 61 arquivos no 2.2, 693 em 54 no 2.1i, 495 em 42 no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
+**Front-end:** 960 testes unitários em 71 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.4 (eram 887 em 67 arquivos no 2.3, 782 em 61 arquivos no 2.2, 693 em 54 no 2.1i, 495 em 42 no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
@@ -764,15 +818,20 @@ cd "Gerenciador de fichas RPG"
 - Dado animado (2.1f): `config-dos-dados.spec` (um d20 por valor, só o mantido dourado, Ordem com 5 dados, atributo 0 e vantagem em D&D), `dado-animado.spec` (plano B com movimento reduzido, sem WebGL e com falha no `import()`; o pedaço 3D baixado uma vez só), `camada-dos-dados.spec` (a camada lança exatamente os `dados`, espera os dados pararem e mais 0,6 s, pula no toque e no Esc, limite de 5 s, falha da animação, emite uma vez só) e os casos novos de `ficha-detalhe.spec` (o cartão só depois da animação, "Rolar" desabilitado até lá, plano B direto, `POST` com erro sem dados, sair ou trocar de ficha no meio da rolagem). A cena 3D real não roda no jsdom e é conferida no navegador.
 - Login (2.2): `sessao.spec` (o `localStorage` indisponível não quebra nada), `renovacao.spec` (duas chamadas juntas geram um só `POST /auth/refresh`; com a trava falsa, o refresh gravado por outra aba é relido; rede fora ou 5xx mantém o refresh e 401 o apaga), `auth.interceptor.spec` (o Bearer só na API e nunca em `/auth/`, nem num host que só começa com o endereço da API; 401 renova e repete uma vez, sem laço; o 401 da senha errada não renova), `guards.spec` (recarregar `/fichas/2` com refresh guardado renova e continua lá; sem sessão vai para `/entrar?volta=`; `voltaSegura('//mal.com')` dá `/fichas`), `politica-de-senha.spec` (os mesmos exemplos do servidor para tamanho, repetição, sequência, nome e e-mail), `entrar.spec` e `cadastrar.spec` (validação, 400 por campo, 409 no e-mail, 401 em `role="alert"`, bloqueio durante o envio, mostrar senha com `aria-pressed`, a lista de requisitos que aparece ao digitar e vai de ○ para ✓ com o contador N/15, a senha fora da regra que não chama a API, e o aviso de Caps Lock) e os casos novos de `shell.spec` (nome e "Sair" só com sessão; o "Sair" chama a API, limpa e recarrega em `/entrar`, mesmo com erro).
 - Campanhas (2.3): `campanha-api.spec` (rotas e corpos, o id da campanha criada), `minhas-campanhas.spec`, `campanha-tela.spec` (as ações de cada papel, o convite com copiar, renovar com confirmação e desativar, remover e sair, excluir) e `convite.spec` (a prévia sem sessão com "Entrar" e "Criar conta" que voltam ao convite, "Você já está nesta campanha", código inválido, e **com o interceptor real**, a sessão vencida indo para `/entrar?volta=/convite/…`), o seletor de campanha e o "Excluir" só para o dono em `ficha-detalhe.spec`, o cartão sem link para a ficha de outro jogador, e nos dois formulários a `versao` no `PUT`, **dois salvamentos seguidos sem 409** (o segundo usa a versão da resposta) e o 409 com "Recarregar".
+- Rolagens ao vivo (2.4): `mesa-ao-vivo.spec` (o serviço de conexão, com o RxStomp simulado: o token no `CONNECT`, conectar e desconectar), `rolagens-api.spec` (a rota do histórico, `antes` e `limite`), `painel-rolagens.spec` (a lista, o vazio, "Mestre" e "rolado pelo mestre", **juntar o histórico com o ao vivo pelo `id`** sem repetir, "Carregar mais", trocar de campanha e **buscar a primeira página de novo ao reconectar**) e `aviso-de-rolagem.spec` (o aviso só para a rolagem de outra pessoa e só com o painel fechado), mais os casos novos de `campanha-tela.spec` e `ficha-detalhe.spec` (o botão "Rolagens").
+- Ponta a ponta (2.4): **1 teste Playwright** (`frontend/e2e/mesa-ao-vivo.spec.ts`, `npm run e2e` em `frontend/`), com duas sessões de navegador: o mestre cria a campanha e copia o convite, a jogadora entra pelo link, cria uma ficha e rola Furtividade, e o painel do mestre, aberto, mostra a rolagem sem recarregar. Leva cerca de 7 s no computador. Ele prova o caminho inteiro: cadastro, campanha, convite, rolagem, gravação, WebSocket e tela.
 - Ataques e rolagem livre (2.1i): `notacao-de-dados.spec` (a mesma gramática do servidor: válidos, inválidos e as mensagens), `dados-aba.spec` (botões que escrevem a notação, texto que atualiza os contadores, "Rolar" desabilitado com notação inválida, "Limpar"), `ataques-ordem-aba.spec` e `ataques-dnd-aba.spec` (os campos de cada sistema, criar, editar e remover, erro no campo, o resumo com o bônus), `resultado-ataque.spec` e `resultado-livre.spec` (o ataque, o dano, o selo "Crítico" e o "20 natural"), `seletor-de-modo.spec`, os casos novos de `config-dos-dados.spec` (o d10 e o d100 convertidos como na mesa, as três cores e o limite de 20 dados) e de `ficha-detalhe.spec` (ataque com crítico, vantagem, rolagem livre, plano B com mais de 20 dados e as abas novas na URL).
 - Inventário (2.1h): `inventario-ordem-aba.spec` (carga e limite, aviso só acima do limite, categoria, criar, editar e remover pela API, erro do servidor no campo), `inventario-dnd-aba.spec` (peso total contra a capacidade, vírgula e ponto no peso, equipado, o zero como valor válido) e `moedas-dnd.spec` (as cinco moedas, salvar só o que mudou, o que foi digitado não se perde quando a ficha muda). Os casos novos de `catalogo-ordem.spec` (limite com Força 0, 1 e 5; espaços usados por quantidade), `regras-dnd.spec` (capacidade de 7,5 kg por ponto de Força; peso total sem ruído de ponto flutuante) e `formulario-comum.spec` (a conversão de vírgula e ponto em número) cobrem as contas e o campo de peso.
 - Magias e rituais (2.1j): `magias-dnd-aba.spec` (CD e ataque mágico, "—" sem atributo, criar, editar e remover, ordem por nível), `espacos-dnd.spec` (marcar e desmarcar, salvar totais cortando os usados, descanso longo, erro do servidor no campo do nível) e `rituais-ordem-aba.spec` (custo em PE e DT no cartão, criar, editar e remover, ordem por círculo). Os casos novos de `regras-dnd.spec` (CD e ataque mágico nos níveis 1, 5 e 17 e sem atributo), `catalogo-ordem.spec` (custo nos 4 círculos; DT com NEX 5, 35 e 99), `formulario-dnd.spec` (o seletor do atributo de conjuração) e `abas-da-ficha.spec` (as abas de cada sistema) cobrem as contas e a navegação.
 - D&D (2.1e): `regras-dnd.spec` (modificador com 9 dando −1, proficiência por nível, bônus de perícia, especialização e salvaguarda, nas fronteiras), `catalogo-dnd.spec` (6 atributos, 18 perícias, rótulo "Raça" e "Espécie"), `ficha-dnd.spec` (bônus na tela, "Rolar", seletor de modo que volta a Normal, "−" no bônus negativo, "20 natural", anéis Vida e Temporário), `ficha-ordem.spec` (a ficha de Ordem, agora um componente por sistema), `formulario-dnd.spec` (valores iniciais, limites, erro do servidor no campo, edição), `edicao-ficha.spec` (a rota de edição abre o formulário do sistema da ficha) e `formulario-comum.spec` (o que os dois formulários repartem).
 
-**Back-end:** são 575 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.3; eram 517 no 2.2, 466 no 2.1i, 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
+**Back-end:** são 596 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.4; eram 575 no 2.3, 517 no 2.2, 466 no 2.1i, 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
 
 | Grupo | O que cobre |
 | --- | --- |
+| `RegistroDeRolagensTest`, `HistoricoDeRolagensTest` | Rolagens da mesa (2.4), contra o PostgreSQL: cada uma das três rotas grava o tipo, o rótulo, o total e o detalhe certos quando a ficha tem campanha, e nada quando não tem; a ficha do mestre grava `personagem` nulo e responde `doMestre`; a rolagem recusada (400) não grava; o histórico na ordem certa, o cursor `antes`, o `limite` (padrão, 0 e 101 dando 400), o não membro em 404 e o sem token em 401 |
+| `PublicacaoAposCommitTest`, `RolagensAoVivoTest` | A publicação só depois do commit (com a transação desfeita, nada chega ao tópico) e o WebSocket de verdade, com dois clientes STOMP na porta aleatória: o membro inscrito recebe a rolagem que outro fez por REST; o não membro é recusado no `SUBSCRIBE`; o `CONNECT` sem token ou com token inválido é recusado |
+| `MigracaoRolagensTest` | A V12 sobre dados da V11: as fichas e as campanhas ficam iguais. O `EsquemaBancoTest` ganhou `esquemaDaRolagem`, que confere a tabela `rolagem` |
 | `PermissoesDaFichaTest` | Campanhas (2.3): cada célula da matriz de acesso (dono, mestre, outro jogador, de fora) em `GET`/`PUT /fichas/{id}`, itens, retrato, rolagens, `DELETE` e troca de campanha; a ficha do mestre dando 404 ao jogador em todas as rotas; a ficha sem campanha só do dono |
 | `PermissoesDaCampanhaTest`, `CampanhaApiTest` | As rotas de campanha por papel (403 ao jogador, 404 a quem está fora, 401 sem token), o mestre que não sai (409), o convite `null` para o jogador, membros sem e-mail, e a contagem de `GET /campanhas` igual ao tamanho da lista de fichas que cada um vê |
 | `ConviteTest`, `CodigoDeConviteTest` | Renovar derruba o código antigo também para quem já foi membro, convite desativado em 404, aceitar 201 e depois 200, a prévia sem token, e o código com 12 caracteres de `[A-Za-z0-9]` |
@@ -854,6 +913,7 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0023 Onde o navegador guarda os tokens](docs/decisoes/0023-tokens-no-navegador.md): acesso só na memória, refresh no `localStorage`, renovação única entre abas com `navigator.locks`, e o cookie *httpOnly* como alternativa quando houver domínio próprio.
 - [0024 Permissões de campanha num ponto central](docs/decisoes/0024-permissoes-de-campanha-num-ponto-central.md): o `AcessoAFicha` decide entre liberar, 403 e 404 numa ordem fixa, a ficha do mestre oculta para os jogadores, a ficha que pode ficar sem campanha e a chave estrangeira composta que o banco usa para devolvê-la; e por que não `@PreAuthorize` em cada rota nem Row-Level Security.
 - [0025 Trava otimista na ficha](docs/decisoes/0025-trava-otimista-na-ficha.md): `@Version` na ficha, o `PUT` com a versão lida e o 409, as rotas de um clique que sobem a versão sem enviá-la, e por que não trava pessimista nem "a última gravação vence".
+- [0026 Rolagens ao vivo com STOMP](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md): o `RegistroDeRolagens` chamado pelas três rotas, a publicação só depois do commit, o token no `CONNECT` com inscrição só para membros, o broker em memória e os limites conhecidos (a conexão aberta depois de o token vencer ou de a pessoa ser removida); e por que não SSE, polling, AOP nem o front enviando o resultado.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -1030,14 +1090,33 @@ As duas reapresentariam o mesmo refresh, e o servidor acharia que foi roubo. Por
 **Como os 466 testes antigos continuaram passando com todas as rotas exigindo token?**
 O MockMvc da base de testes já vai autenticado como um usuário de teste fixo, e as fichas de teste são gravadas com esse dono. Assim nenhuma asserção mudou. Os testes novos sobrescrevem o usuário por pedido ou montam o próprio MockMvc com tokens reais. O validador do JWT usa o mesmo `Clock` injetado da aplicação, então vencer um token no teste é só avançar o relógio 17 minutos.
 
+**Por que um registro explícito, e não AOP nem o navegador mandando o resultado?**
+O navegador mandar o resultado deixaria qualquer um forjar um 20 natural, então a rolagem tem de ser gravada onde é sorteada, no servidor. Entre os jeitos de fazer isso, escolhi o `RegistroDeRolagens`, que as três rotas (teste, ataque e rolagem livre) chamam de forma visível depois de rolar. Um `@Aspect` evitaria as três chamadas, mas teria de adivinhar a ficha e o tipo pela assinatura dos métodos, e fica mágico de ler e de testar. O custo do registro é lembrar de chamá-lo numa rolagem nova; isso está escrito no comentário do componente e no ADR ([ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md)).
+
+**Por que publicar só depois do commit?**
+Porque a mesa não pode ver uma rolagem que não foi gravada. O registro grava a linha e publica um evento de domínio, e um `@TransactionalEventListener(AFTER_COMMIT)` é que manda ao tópico. Se a transação for desfeita, nada sai, e um teste confere isso. Se o envio falhar, o erro só vai para o log: a rolagem já está no banco e aparece no histórico.
+
+**O handshake do WebSocket é público. Como a conexão é autenticada?**
+O navegador não consegue mandar o cabeçalho `Authorization` no handshake de um WebSocket, então a autenticação acontece um passo depois, no `CONNECT` do STOMP, onde o front manda o `Bearer`. Um interceptor valida o token com o mesmo `JwtDecoder` da API e guarda o usuário na sessão. No `SUBSCRIBE`, ele confere se esse usuário participa da campanha do destino, e o `SEND` do cliente é recusado. O limite que aceitei: a conexão aberta continua valendo depois de o token de 15 min vencer, e quem é removido da campanha continua recebendo até a conexão cair. O histórico, porém, exige ser membro a cada `GET`.
+
+**Como o nome do NPC do mestre não vaza?**
+Ele nunca é gravado. Quando a ficha é do mestre da campanha, a coluna `personagem` fica nula, e a resposta traz `doMestre: true` e nenhum id de ficha. Assim o nome não vaza nem pelo tópico nem por uma consulta futura, porque não existe no banco. A regra está na gravação, e não só na hora de mostrar.
+
+**Por que cursor pelo `id` e não página por número (offset)?**
+Porque numa mesa ao vivo chegam rolagens novas o tempo todo. Com `offset`, a página 2 mudaria de lugar a cada rolagem nova e repetiria ou pularia linhas. Com o cursor (`antes=<id da mais antiga que já tenho>`), a pergunta é "me dê as 50 anteriores a esta", que não muda. O índice `(campanha_id, id desc)` segue essa ordem. No front, o painel junta o histórico e o que chega ao vivo pelo `id`, então nada aparece duas vezes.
+
+**Como o teste de ponta a ponta prova que a mesa funciona ao vivo?**
+Com o Playwright, em duas sessões de navegador isoladas, como duas pessoas: o mestre cria a campanha e deixa o painel aberto; a jogadora entra pelo link, cria a ficha e rola Furtividade; e o teste espera o texto da rolagem aparecer no painel do mestre, sem recarregar. Esperar pelo texto (e não por um `sleep`) é o que evita teste instável. Isso exercita juntos o cadastro, o convite, a gravação, o WebSocket e a tela, o que nenhum teste unitário faz. No CI, o job `e2e` sobe o PostgreSQL, a API e o front do zero.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f), os ataques com a rolagem livre (2.1i), o **login (2.2)** e as **campanhas (2.3)** já estão prontos.
+- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f), os ataques com a rolagem livre (2.1i), o **login (2.2)**, as **campanhas (2.3)** e as **rolagens ao vivo (2.4)** já estão prontos.
 - **Riscos registrados para o deploy:** sem limite de tentativas de login nem de consulta de convite, e os refresh vencidos não são apagados ([ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md)). O perfil `demo` (contas de demonstração com uma campanha pronta) entra no 2.6, junto com o link público.
-- **2.4 Rolagens ao vivo** para toda a mesa (WebSocket).
-- **2.5 Login com Google** e **2.6 deploy** gratuito, com link público.
+- **Riscos registrados nas rolagens ao vivo (2.4):** a conexão aberta continua valendo depois de o token vencer ou de a pessoa ser removida da campanha, e o broker em memória serve a uma instância só ([ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md)).
+- **2.5 Login com Google.**
+- **2.6 Deploy** gratuito, com link público e o perfil `demo`.
 
 ## O que este projeto demonstra
 
@@ -1062,6 +1141,7 @@ A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 - Dado 3D com física que mostra o resultado sorteado pelo servidor: biblioteca validada num teste rápido antes do plano, carregada sob demanda, atrás de uma interface testável sem WebGL e com plano B para movimento reduzido.
 - Autenticação com Spring Security: JWT de acesso curto, refresh rotacionado por família com detecção de reuso, senha em BCrypt, dono da ficha num ponto só (404 para a ficha de outra pessoa) e, no Angular, interceptor e guards com renovação única entre abas (`navigator.locks`), sem mudar nenhuma asserção dos 466 testes que já existiam.
 - Autorização por papel com 404 × 403 decidida num ponto só e testada célula a célula, uma regra de integridade garantida pelo banco (chave estrangeira composta com `on delete set null` de uma coluna) e trava otimista (`@Version`) com o conflito tratado na tela.
+- Tempo real com WebSocket (STOMP): rolagem gravada por um registro explícito e publicada só depois do commit, token no `CONNECT` com inscrição só para membros, cursor em vez de offset no histórico e um teste de ponta a ponta no CI (Playwright, duas sessões de navegador) que prova a mesa ao vivo.
 
 ## Contexto do portfólio
 

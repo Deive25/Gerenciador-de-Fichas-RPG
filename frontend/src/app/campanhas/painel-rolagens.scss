@@ -1,0 +1,149 @@
+:host {
+  display: block;
+}
+
+// Celular: o painel ocupa a tela inteira. A partir de 900 px, vira uma coluna de 360 px à direita,
+// por cima do conteúdo (acima do cabeçalho, z-index 10, e abaixo da camada dos dados, 100).
+.painel {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--cor-superficie);
+  border-left: 1px solid var(--cor-borda-dourada);
+
+  @media (min-width: 900px) {
+    left: auto;
+    width: min(360px, 100vw);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--cor-borda);
+
+  h2 {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--cor-acao);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.estado {
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+
+  &.vivo {
+    color: var(--cor-sanidade);
+  }
+}
+
+.corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.vazio {
+  margin: 0.5rem 0;
+  color: var(--cor-texto-suave);
+  text-align: center;
+}
+
+.erro {
+  margin: 0 0 0.75rem;
+  color: #f0a597;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rolagem {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.topo,
+.resultado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.quem {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.hora {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.rotulo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--cor-texto-suave);
+}
+
+.total {
+  flex: none;
+  font-family: var(--fonte-titulo);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--cor-titulo);
+}
+
+.dados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+
+  strong {
+    color: var(--cor-acao);
+  }
+}
+
+.natural,
+.critico {
+  color: var(--cor-acao);
+}
+
+.critico {
+  font-weight: 700;
+}
+
+.mais {
+  width: 100%;
+  margin-top: 0.75rem;
+}

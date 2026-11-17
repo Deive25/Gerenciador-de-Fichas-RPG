@@ -27,7 +27,12 @@
     @if (ficha(); as f) {
       <nav class="barra-acoes" aria-label="Ficha">
         <a class="voltar" routerLink="/fichas">← Investigadores</a>
-        <button type="button" class="mais" aria-label="Mais ações" [matMenuTriggerFor]="acoes">⋮</button>
+        <div class="direita">
+          @if (f.campanha) {
+            <button type="button" class="botao-neutro botao-rolagens" (click)="painelAberto.set(true)">Rolagens</button>
+          }
+          <button type="button" class="mais" aria-label="Mais ações" [matMenuTriggerFor]="acoes">⋮</button>
+        </div>
         <mat-menu #acoes="matMenu" xPosition="before">
           <a mat-menu-item [routerLink]="['/fichas', f.id, 'editar']">Editar</a>
           @if (ehDono()) {
@@ -35,6 +40,13 @@
           }
         </mat-menu>
       </nav>
+
+      @if (f.campanha; as campanha) {
+        @if (painelAberto()) {
+          <app-painel-rolagens [campanhaId]="campanha.id" (fechar)="painelAberto.set(false)" />
+        }
+        <app-aviso-de-rolagem [campanhaId]="campanha.id" [painelAberto]="painelAberto()" (abrir)="painelAberto.set(true)" />
+      }
 
       @if (confirmandoExclusao()) {
         <section class="confirmacao bloco">
