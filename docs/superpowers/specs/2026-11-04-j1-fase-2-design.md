@@ -55,6 +55,8 @@ Transformar o Gerenciador de Fichas numa ferramenta que o grupo de RPG do Arthur
 
 > **Mudou no 2.3** (spec `2026-11-16-j1-campanhas-design.md`): a campanha "Fichas importadas" saiu, porque desde o 2.2 as fichas antigas são do Arthur; a ficha pode ficar **sem campanha** (`campanha_id` nulo). A renomeação para nomes claros já tinha sido feita na V4. O perfil `demo` foi para o **2.6**.
 
+> **Mudou no 2.4** (spec `2026-11-16-j1-rolagens-ao-vivo-design.md`): a tabela `rolagem` ficou **genérica**, porque o d100 saiu no 2.1d: `id`, `campanha_id`, `ficha_id` (nulo se a ficha for apagada), `usuario_id` (quem rolou), `personagem` (cópia do nome, **nula quando a ficha é do mestre**), `tipo` (`TESTE`, `ATAQUE` ou `LIVRE`), `rotulo`, `total`, `detalhe` (JSON com a resposta da rota) e `criada_em`; índice (`campanha_id`, `id desc`). Migração V12.
+
 ## 4. Permissões
 
 | Ação | Mestre da campanha | Jogador da campanha | Fora da campanha |
@@ -113,6 +115,8 @@ Tudo em ProblemDetail, como hoje.
 | Rolagens | `POST /fichas/{id}/testes-de-pericia` (passa a gravar e publicar); `GET /campanhas/{id}/rolagens?antes=<id>&limite=50` (paginação por cursor) |
 | Tempo real | WebSocket `/ws` (STOMP); tópico `/topic/campanhas/{id}/rolagens` |
 
+> **Mudou no 2.4** (spec `2026-11-16-j1-rolagens-ao-vivo-design.md`): **as três rolagens gravam e publicam** (teste, ataque e rolagem livre: `POST /fichas/{id}/testes`, `/ataques/{ataqueId}/rolagem` e `/rolagens`), e não só o teste de perícia, pelo `RegistroDeRolagens`. **A ficha sem campanha não grava nem publica.** A ficha do mestre aparece como "Mestre". As respostas das rotas `POST` não mudaram.
+
 **Mudanças de contrato conscientes:**
 - `GET /fichas` e `POST /fichas` dão lugar a `/campanhas/{id}/fichas` no 2.3;
 - todas as rotas, exceto auth, convite (prévia), documentação e health, passam a exigir token no 2.2.
@@ -142,6 +146,8 @@ O Angular muda junto em cada incremento.
 **Layout, pensado primeiro para o celular:**
 
 > **Substituído** pela spec do redesign (`2026-11-04-j1-redesign-design.md`, §3): agora há um painel de fichas e uma tela própria para cada ficha, sem colunas fixas nem abas embaixo. As rolagens ao vivo do 2.4 abrem num painel lateral, aberto por um botão. O texto original fica abaixo como histórico.
+
+> **Mudou no 2.4** (spec `2026-11-16-j1-rolagens-ao-vivo-design.md`): as rolagens ao vivo ficam num **painel lateral aberto por um botão "Rolagens"** (na campanha e na ficha que tem campanha), com um aviso curto de 4 s quando chega a rolagem de outra pessoa e o painel está fechado. Não há aba nem coluna fixa.
 
 - no celular, barra no topo e abas embaixo: **Mesa · Minha ficha · Rolagens**;
 - no computador, as mesmas telas em 2 colunas: fichas à esquerda e rolagens ao vivo à direita.
