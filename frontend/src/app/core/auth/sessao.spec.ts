@@ -80,18 +80,37 @@ describe('Sessao', () => {
       expect(s.refreshGuardado()).toBe('refresh-n');
     });
 
-    it('entrar numa conta demo apaga o refresh normal', () => {
+    it('entrar numa conta demo não derruba a conta normal das outras abas', () => {
       const s = TestBed.inject(Sessao);
       s.iniciar(respostaDe('n'));
       s.iniciar(respostaDe('d'), true);
-      expect(localStorage.getItem(CHAVE)).toBeNull();
+      expect(localStorage.getItem(CHAVE)).toBe('refresh-n');
       expect(sessionStorage.getItem(CHAVE)).toBe('refresh-d');
+      expect(s.refreshGuardado()).toBe('refresh-d');
     });
 
-    it('limpar apaga os dois', () => {
-      localStorage.setItem(CHAVE, 'a');
-      sessionStorage.setItem(CHAVE, 'b');
+    it('sair da demo apaga só o refresh da aba', () => {
+      const s = TestBed.inject(Sessao);
+      s.iniciar(respostaDe('n'));
+      s.iniciar(respostaDe('d'), true);
+      s.limpar();
+      expect(sessionStorage.getItem(CHAVE)).toBeNull();
+      expect(localStorage.getItem(CHAVE)).toBe('refresh-n');
+    });
+
+    it('sair da demo depois de recarregar (só o refresh da aba) também preserva a conta normal', () => {
+      localStorage.setItem(CHAVE, 'normal');
+      sessionStorage.setItem(CHAVE, 'demo');
       TestBed.inject(Sessao).limpar();
+      expect(sessionStorage.getItem(CHAVE)).toBeNull();
+      expect(localStorage.getItem(CHAVE)).toBe('normal');
+    });
+
+    it('sair da conta normal apaga os dois', () => {
+      const s = TestBed.inject(Sessao);
+      s.iniciar(respostaDe('n'));
+      sessionStorage.setItem(CHAVE, 'resto');
+      s.limpar();
       expect(localStorage.getItem(CHAVE)).toBeNull();
       expect(sessionStorage.getItem(CHAVE)).toBeNull();
     });

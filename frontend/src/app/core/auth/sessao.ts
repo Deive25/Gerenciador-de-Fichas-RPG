@@ -40,14 +40,17 @@ export class Sessao {
     this.acesso = resposta.accessToken;
     this._usuario.set({ ...resposta.usuario, demo });
     this.gravar(() => (demo ? sessionStorage : localStorage), resposta.refreshToken);
-    this.apagar(() => (demo ? localStorage : sessionStorage));
+    // A demo não mexe no localStorage: apagar ali derrubaria a conta normal das outras abas.
+    if (!demo) this.apagar(() => sessionStorage);
   }
 
+  /** Sair da demo apaga só o refresh da aba; sair da conta normal apaga os dois. */
   limpar(): void {
+    const eraDemo = this.ehDemo();
     this.acesso = null;
     this._usuario.set(null);
-    this.apagar(() => localStorage);
     this.apagar(() => sessionStorage);
+    if (!eraDemo) this.apagar(() => localStorage);
   }
 
   private ler(storage: () => Storage): string | null {

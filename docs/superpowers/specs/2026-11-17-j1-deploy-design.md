@@ -99,7 +99,7 @@ Pôr o J1 num link público e gratuito, com dois usos:
 ## 6. Front
 - **`environment.prod.ts`:** `apiUrl` com a URL do Render e `demoAtiva: true`. No dev, `demoAtiva` também é `true`; sem o perfil, a API responde 404 e a tela mostra o erro.
 - **Entrar:** um botão "Ver demonstração", abaixo do Google, chama `/auth/demo` e abre a campanha demo.
-- **A sessão demo fica no `sessionStorage`, e não no `localStorage`.** Uma sessão por aba é o que permite abrir o mestre e o jogador no mesmo navegador. Hoje o refresh fica no `localStorage`, compartilhado entre as abas: a segunda conta trocaria a primeira na renovação. Fechar a aba encerra a demo.
+- **A sessão demo fica no `sessionStorage`, e não no `localStorage`.** Uma sessão por aba é o que permite abrir o mestre e o jogador no mesmo navegador. Hoje o refresh fica no `localStorage`, compartilhado entre as abas: a segunda conta trocaria a primeira na renovação. Fechar a aba encerra a demo. A demo nunca apaga o `localStorage`: sair dela apaga só o refresh da aba, e a conta normal das outras abas continua.
 - **Campanha demo:** quando o usuário é demo, um cartão diz "Abra este convite em outra aba ou no celular para entrar como jogador", com o botão de copiar o link.
 - **Convite:** sem sessão e com campanha demo, aparece "Entrar como jogador de demonstração" (`/auth/demo` com o código).
 - **Aviso "acordando o servidor":**
@@ -110,7 +110,7 @@ Pôr o J1 num link público e gratuito, com dois usos:
 - **`public/_headers`** (vai para o `dist` e é aplicado pelo Pages):
   ```
   /*
-    Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://<api>.onrender.com wss://<api>.onrender.com https://accounts.google.com/gsi/; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+    Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://<api>.onrender.com wss://<api>.onrender.com https://accounts.google.com/gsi/; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob:; worker-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
     X-Content-Type-Options: nosniff
     Referrer-Policy: strict-origin-when-cross-origin
     Permissions-Policy: camera=(), microphone=(), geolocation=()
@@ -118,7 +118,7 @@ Pôr o J1 num link público e gratuito, com dois usos:
   - O `script-src` não tem `'unsafe-inline'`: é isso que protege o refresh contra XSS (ADR 0023).
   - O `style-src` aceita `'unsafe-inline'` porque o Angular e o Material injetam estilos, e um site estático não tem *nonce*; estilo injetado é bem menos perigoso que script.
   - Se a inlinização de CSS crítico do Angular usar `onload` em linha (violação de `script-src`), desligar `optimization.styles.inlineCritical`.
-  - O `blob:` cobre o retrato (`createObjectURL`), e o `data:`, as texturas do dado 3D.
+  - O `blob:` cobre o retrato (`createObjectURL`), e o `data:`, as texturas do dado 3D. O `worker-src 'self' blob:` (acrescentado na implementação) deixa o `open-dice-dnd` criar o worker de física, que nasce de um `blob:`; criar o worker exige um script que já rodou, e esse script continua preso ao `script-src`.
   - Conferir no console, com `npx wrangler pages dev`, que não há violação.
 
 ## 7. Publicação
