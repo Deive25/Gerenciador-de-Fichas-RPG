@@ -8,12 +8,13 @@ import { AuthApi } from '../core/auth/auth-api';
 import { voltaSegura } from '../core/auth/guards';
 import { Sessao } from '../core/auth/sessao';
 import { aplicarErrosDoServidor, focarPrimeiroInvalido } from '../fichas/sistemas/comum/formulario-comum';
+import { BotaoGoogle } from './botao-google';
 import { mensagemAuth } from './mensagem-auth';
 
 /** Tela de entrar. O `volta` (query param, ligado ao input pelo roteador) diz para onde ir depois. */
 @Component({
   selector: 'app-entrar',
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, RouterLink],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, RouterLink, BotaoGoogle],
   templateUrl: './entrar.html',
   styleUrl: './entrar.scss',
 })

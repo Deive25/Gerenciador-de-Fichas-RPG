@@ -29,7 +29,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({ RelogioDeTesteConfig.class, AutenticacaoDeTesteConfig.class })
+@Import({ RelogioDeTesteConfig.class, AutenticacaoDeTesteConfig.class, ChavesDoGoogleDeTeste.class })
 public abstract class IntegrationTestBase {
 
 	// Mesma versão do docker-compose.yml, para testar no banco que se usa de verdade.

@@ -20,7 +20,7 @@ import dev.spironello.fichasrpg.repository.FichaRepository;
  * Registra o esquema (ficha, ficha_ordem, ficha_ordem_pericia, ficha_dnd, ficha_dnd_pericia, retrato_ficha, ficha_habilidade, ficha_ordem_item, ficha_dnd_item, ficha_dnd_magia, ficha_dnd_espaco, ficha_ordem_ritual, ficha_ordem_ataque, ficha_dnd_ataque, usuario, refresh_token, campanha e participacao), que vem das migrações
  * Flyway e não do Hibernate: com ddl-auto=validate ele só confere.
  * O teste protege os nomes de coluna e a nulabilidade que as entidades esperam, e também mostra que
- * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 12 aplicadas).
+ * foi o Flyway quem criou o esquema (tabela flyway_schema_history com as versões 1 a 13 aplicadas).
  */
 @DisplayName("Esquema do banco (criado pelo Flyway)")
 class EsquemaBancoTest extends IntegrationTestBase {
@@ -115,6 +115,7 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		esperado.put("email", "character varying/NO");
 		esperado.put("nome", "character varying/NO");
 		esperado.put("senha_hash", "character varying/YES");
+		esperado.put("google_sub", "character varying/YES");
 		esperado.put("criado_em", "timestamp with time zone/NO");
 
 		assertThat(colunas("usuario")).containsExactlyInAnyOrderEntriesOf(esperado);
@@ -420,11 +421,11 @@ class EsquemaBancoTest extends IntegrationTestBase {
 	}
 
 	@Test
-	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11 e V12 com sucesso")
+	@DisplayName("o Flyway aplicou as migrações V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12 e V13 com sucesso")
 	void flywayAplicouAsMigracoes() {
 		List<Map<String, Object>> historico = jdbc.queryForList(
 				"select version, description, success from flyway_schema_history order by installed_rank");
-		assertThat(historico).hasSize(12);
+		assertThat(historico).hasSize(13);
 		assertThat(historico.get(0))
 				.containsEntry("version", "1")
 				.containsEntry("description", "cria tabela sheet player")
@@ -472,6 +473,10 @@ class EsquemaBancoTest extends IntegrationTestBase {
 		assertThat(historico.get(11))
 				.containsEntry("version", "12")
 				.containsEntry("description", "rolagens")
+				.containsEntry("success", true);
+		assertThat(historico.get(12))
+				.containsEntry("version", "13")
+				.containsEntry("description", "google sub")
 				.containsEntry("success", true);
 	}
 

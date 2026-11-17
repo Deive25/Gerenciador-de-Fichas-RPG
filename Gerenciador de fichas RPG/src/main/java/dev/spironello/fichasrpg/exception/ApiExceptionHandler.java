@@ -197,6 +197,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problema;
 	}
 
+	/** Login com Google recusado: o 401 leva a mensagem da própria exceção (token inválido, e-mail não verificado...). */
+	@ExceptionHandler(LoginGoogleRecusadoException.class)
+	public ProblemDetail handleLoginGoogleRecusado(LoginGoogleRecusadoException ex) {
+		ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+		problema.setTitle("Login com Google recusado");
+		return problema;
+	}
+
 	/** Refresh inválido, vencido ou reutilizado. */
 	@ExceptionHandler(SessaoExpiradaException.class)
 	public ProblemDetail handleSessaoExpirada(SessaoExpiradaException ex) {
