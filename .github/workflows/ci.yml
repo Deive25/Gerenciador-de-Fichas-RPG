@@ -152,13 +152,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # O Render puxa a main e builda o Dockerfile da API (o auto-deploy dele fica desligado).
-      # O hook e uma URL secreta: vai por variavel de ambiente e nao aparece no log.
-      - name: Publicar a API no Render
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK" -o /dev/null
-
+      # O build do front vem primeiro: se ele falhar, nada e publicado (nem a API).
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -170,6 +164,13 @@ jobs:
         run: |
           npm ci
           npx ng build
+
+      # O Render puxa a main e builda o Dockerfile da API (o auto-deploy dele fica desligado).
+      # O hook e uma URL secreta: vai por variavel de ambiente e nao aparece no log.
+      - name: Publicar a API no Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK" -o /dev/null
 
       # O _headers (CSP) vai junto, dentro do dist. Versao do wrangler fixa.
       - name: Publicar o front no Cloudflare Pages
