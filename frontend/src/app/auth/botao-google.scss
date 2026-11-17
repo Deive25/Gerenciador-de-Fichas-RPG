@@ -1,0 +1,27 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+// O Google desenha o botão aqui dentro; só centralizamos e reservamos a altura (44 px de alvo).
+.alvo-google {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  overflow: hidden;
+}
+
+.aviso-google {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+.erro-google {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--cor-vida);
+  border-radius: 8px;
+  background: var(--cor-fundo-erro);
+  color: #f0a597;
+}

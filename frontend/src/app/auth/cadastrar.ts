@@ -10,6 +10,7 @@ import { AuthApi } from '../core/auth/auth-api';
 import { voltaSegura } from '../core/auth/guards';
 import { Sessao } from '../core/auth/sessao';
 import { aplicarErrosDoServidor, focarPrimeiroInvalido, focarPrimeiroInvalidoDepois } from '../fichas/sistemas/comum/formulario-comum';
+import { BotaoGoogle } from './botao-google';
 import { mensagemAuth } from './mensagem-auth';
 import { requisitosDaSenha, tamanhoDaSenha } from './politica-de-senha';
 
@@ -25,7 +26,7 @@ const requisitosAtendidos: ValidatorFn = (controle) => {
 /** Tela de criar conta. O cadastro já entra na conta (a API devolve o par de tokens). */
 @Component({
   selector: 'app-cadastrar',
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, RouterLink],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, RouterLink, BotaoGoogle],
   templateUrl: './cadastrar.html',
   styleUrl: './cadastrar.scss',
 })
