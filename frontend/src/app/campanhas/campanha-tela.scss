@@ -177,3 +177,17 @@
   color: var(--cor-texto-suave);
   font-size: 0.9rem;
 }
+
+// Cartão da demonstração: aparece só para a conta demo, logo abaixo do cabeçalho da mesa.
+.cartao-demo {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+
+  p {
+    margin: 0 0 0.6rem;
+  }
+
+  .mensagem-copia {
+    margin: 0.5rem 0 0;
+  }
+}

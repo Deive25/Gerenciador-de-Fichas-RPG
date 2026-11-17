@@ -56,6 +56,8 @@ export class CampanhaTela {
   readonly mensagemCopia = signal<string | null>(null);
 
   readonly ehMestre = computed(() => this.campanha()?.meuPapel === 'MESTRE');
+  /** Conta de demonstração, dona da mesa: o cartão manda abrir o convite em outra aba. */
+  readonly mostrarCartaoDemo = computed(() => this.sessao.usuario()?.demo === true && this.ehMestre());
   private readonly meuId = computed(() => this.sessao.usuario()?.id);
   /** O link completo do convite (só com o convite ativo). */
   readonly link = computed(() => {

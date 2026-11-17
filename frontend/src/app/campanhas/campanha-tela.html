@@ -65,6 +65,18 @@
         <p class="erro-acao" role="alert"><strong>{{ erro.titulo }}</strong> {{ erro.detalhe }}</p>
       }
 
+      @if (mostrarCartaoDemo()) {
+        <section class="cartao-demo bloco bloco-dourado" aria-label="Convite para a demonstração">
+          <p>Abra este convite em outra aba ou no celular para entrar como jogador.</p>
+          @if (link()) {
+            <button type="button" class="botao" (click)="copiar()">Copiar link do convite</button>
+            @if (mensagemCopia(); as texto) {
+              <p class="mensagem-copia">{{ texto }}</p>
+            }
+          }
+        </section>
+      }
+
       <section class="secao" aria-labelledby="titulo-fichas">
         <div class="titulo-linha">
           <h2 id="titulo-fichas" class="titulo-secao">Fichas da mesa</h2>
