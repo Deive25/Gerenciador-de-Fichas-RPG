@@ -12,6 +12,8 @@ import dev.spironello.fichasrpg.dto.RolagemAtaqueResponse;
 import dev.spironello.fichasrpg.model.Ficha;
 import dev.spironello.fichasrpg.model.FichaDnd;
 import dev.spironello.fichasrpg.model.FichaOrdem;
+import dev.spironello.fichasrpg.rolagem.RegistroDeRolagens;
+import dev.spironello.fichasrpg.rolagem.TipoRolagem;
 
 /**
  * Criar, editar, excluir e rolar os ataques de uma ficha. Cada sistema tem a sua tabela e as suas regras; o switch
@@ -26,12 +28,15 @@ public class AtaqueService {
 	private final AtaquesOrdem ataquesOrdem;
 	private final AtaquesDnd ataquesDnd;
 	private final Dado dado;
+	private final RegistroDeRolagens registro;
 
-	public AtaqueService(AcessoAFicha fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado) {
+	public AtaqueService(AcessoAFicha fichas, AtaquesOrdem ataquesOrdem, AtaquesDnd ataquesDnd, Dado dado,
+			RegistroDeRolagens registro) {
 		this.fichas = fichas;
 		this.ataquesOrdem = ataquesOrdem;
 		this.ataquesDnd = ataquesDnd;
 		this.dado = dado;
+		this.registro = registro;
 	}
 
 	/** Os logs levam só os ids, nunca o texto digitado. */
@@ -67,8 +72,11 @@ public class AtaqueService {
 		log.info("Ataque excluído fichaId={} ataqueId={}", fichaId, ataqueId);
 	}
 
-	/** Rola o ataque e o dano (não grava nada). Modo nulo vale NORMAL; em Ordem só NORMAL existe. */
-	@Transactional(readOnly = true)
+	/**
+	 * Rola o ataque e o dano e entrega o resultado ao {@link RegistroDeRolagens} (a mesa só vê se a ficha está numa
+	 * campanha). Modo nulo vale NORMAL; em Ordem só NORMAL existe. O total registrado é o d20 do ataque; o dano fica no detalhe.
+	 */
+	@Transactional
 	public RolagemAtaqueResponse rolar(Long fichaId, Long ataqueId, ModoTeste modo) {
 		Ficha ficha = buscarFicha(fichaId);
 		RolagemAtaqueResponse resposta = switch (ficha.getSistema()) {
@@ -77,6 +85,7 @@ public class AtaqueService {
 		};
 		log.info("Ataque rolado fichaId={} ataqueId={} critico={} total={} dano={}", fichaId, ataqueId,
 				resposta.critico(), resposta.ataque().total(), resposta.dano().total());
+		registro.registrar(ficha, TipoRolagem.ATAQUE, resposta.nome(), resposta.ataque().total(), resposta);
 		return resposta;
 	}
 

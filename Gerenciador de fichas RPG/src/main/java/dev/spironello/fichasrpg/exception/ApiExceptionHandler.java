@@ -18,6 +18,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -151,6 +152,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		Map<String, String> erros = new LinkedHashMap<>();
 		ex.getBindingResult().getFieldErrors()
 				.forEach(erro -> erros.putIfAbsent(erro.getField(), erro.getDefaultMessage()));
+		return handleExceptionInternal(ex, problemaDadosInvalidos(erros), headers, status, request);
+	}
+
+	/** Bean Validation em parâmetro de rota (ex.: limite do histórico de rolagens): o mesmo 400 "Dados inválidos", com errors (parâmetro -> mensagem). */
+	@Override
+	protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		Map<String, String> erros = new LinkedHashMap<>();
+		ex.getParameterValidationResults().forEach(resultado -> resultado.getResolvableErrors().stream().findFirst()
+				.ifPresent(erro -> erros.putIfAbsent(resultado.getMethodParameter().getParameterName(), erro.getDefaultMessage())));
 		return handleExceptionInternal(ex, problemaDadosInvalidos(erros), headers, status, request);
 	}
 

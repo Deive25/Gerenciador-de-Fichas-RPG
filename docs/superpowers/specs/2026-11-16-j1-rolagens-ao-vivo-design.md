@@ -1,0 +1,179 @@
+# J1 2.4: rolagens gravadas e ao vivo (design)
+
+- **Status:** aprovado em conversa pelo Arthur em 2026-11-16 (6 perguntas e a abordagem), e a spec escrita aprovada em 2026-11-17 ("Aprovar a spec").
+- **Base:** `main` em `c73b638` (o 2.3, PR #19, está mesclado). Backend com 575 testes, frontend com 887 testes em 67 arquivos, ADRs 0001 a 0025, banco na V11.
+- **Relação com outras specs:** detalha o 2.4 da spec da fase 2 (`2026-11-04-j1-fase-2-design.md`, §3, §5, §6, §7, §8 e §9) e decide o painel que a spec do redesign (§3.1) deixou para o 2.4. Muda quatro pontos da fase 2:
+  1. **as três rolagens de hoje são gravadas**, e não só o "teste de perícia" (teste, ataque e rolagem livre). A tabela `rolagem` da §3, pensada para o d100 que saiu no 2.1d, vira uma tabela genérica;
+  2. **a rolagem de ficha sem campanha não é gravada** (a ficha sem campanha só existe desde o 2.3);
+  3. **a rolagem com uma ficha do mestre aparece como "Mestre"**, sem o nome do personagem, porque essa ficha é oculta para os jogadores desde o 2.3;
+  4. **as rolagens aparecem num painel lateral aberto por um botão**, e não numa aba nem numa coluna fixa (o redesign já tinha tirado as abas).
+
+## 1. Objetivo
+
+Hoje cada pessoa vê só as próprias rolagens, e nada é gravado. Depois do 2.4, **a mesa vê as rolagens de todos na hora**: quem rola numa ficha da campanha aparece no painel de rolagens de cada membro com a campanha aberta, e quem chega depois vê o histórico. Serve aos dois objetivos da fase 2: o grupo joga só pelo celular, e o recrutador vê a mesa ao vivo, com um teste de ponta a ponta no CI que prova isso.
+
+**Escolhas do Arthur (2026-11-16):**
+- **As três rolagens vão para a mesa:** teste (perícia, atributo e salvaguarda), ataque (d20 + dano + crítico) e rolagem livre (por exemplo, `2d6+3`), porque na mesa também se rola dano e iniciativa pela livre.
+- **A ficha sem campanha não grava nem publica.** A rolagem funciona como hoje, só na tela de quem rolou. "A rolagem é da mesa."
+- **A rolagem guarda a campanha do momento.** Se a ficha mudar de campanha, as rolagens antigas ficam no histórico da campanha antiga. Se a campanha for apagada, o histórico vai junto.
+- **NPC do mestre:** todos veem "Mestre" no lugar do nome do personagem, com o rótulo e o resultado.
+- **Histórico:** abre com as 50 últimas e tem "Carregar mais" (cursor pelo id). O banco guarda tudo.
+- **Painel:** um botão "Rolagens" na campanha e na ficha abre um painel lateral. Com ele fechado, um aviso curto mostra a rolagem de outra pessoa que acabou de chegar.
+- **Playwright no CI:** o fluxo da spec, com duas sessões (cadastro → campanha → convite → ficha → rolar → a rolagem aparece na outra).
+- **Abordagem: registro explícito** (§2).
+
+**Sucesso:**
+- Com duas contas em duas janelas, a que é jogadora rola Furtividade na ficha dela, e a rolagem aparece no painel do mestre em menos de 1 segundo, sem recarregar. O inverso também vale, inclusive com o ataque e a rolagem livre.
+- O mestre rola com um NPC dele, e o jogador vê "Mestre · Furtividade · 25", sem o nome do NPC.
+- Ao reabrir a campanha, as 50 últimas rolagens aparecem, e "Carregar mais" traz as anteriores.
+- A rolagem de uma ficha sem campanha continua igual, sem ir para lugar nenhum.
+- Quem não é membro não consegue se inscrever no tópico da campanha.
+- O teste do Playwright passa no CI.
+- Tudo funciona a 375 px e a 1280 px.
+
+**Fora do escopo:** rolagem secreta do mestre (precisaria de um canal por usuário); atualização ao vivo da ficha; animar o dado 3D de quem rolou na tela dos outros; som; apagar rolagens; filtros no histórico; mais de uma instância da API (o broker simples fica em memória, como a fase 2 previa).
+
+## 2. Abordagens (escolhida: registro explícito)
+
+| | Como | Prós | Contras |
+|---|---|---|---|
+| **Registro explícito** ✔ | Os 3 serviços (`TesteService`, `AtaqueService`, `RolagemService`), depois de rolar, chamam `RegistroDeRolagens.registrar(ficha, tipo, rotulo, total, detalhe)`. Se a ficha tem campanha, ele grava a linha e publica um evento de domínio. Um `@TransactionalEventListener(AFTER_COMMIT)` envia o evento ao tópico. | Fica num ponto só, chamado de forma visível. Os 3 contratos REST não mudam. É fácil de testar e de explicar. | Três chamadas para lembrar. Uma rolagem nova no futuro precisa chamar o registro, e isso fica escrito no comentário do componente. |
+| AOP (`@Aspect`) | Intercepta os 3 métodos e grava o retorno | Os serviços não mudam | Mágico: o aspecto adivinha a ficha e o tipo pela assinatura, e fica difícil de ler, testar e explicar |
+| O front envia o resultado | `POST /campanhas/{id}/rolagens` com o resultado que o navegador rolou | O mais simples | Qualquer um forjaria um 20 natural. Descartada por segurança |
+
+O transporte (STOMP sobre WebSocket, broker simples em memória, token no CONNECT) já foi aprovado na §5 e na §6 da fase 2 e não foi reaberto.
+
+## 3. Dados: migração V12 (`V12__rolagens.sql`)
+
+```sql
+create table rolagem (
+    id          bigint        generated by default as identity primary key,
+    campanha_id bigint        not null references campanha (id) on delete cascade,
+    ficha_id    bigint        references ficha (id) on delete set null,
+    usuario_id  bigint        not null references usuario (id),
+    personagem  varchar(255),
+    tipo        varchar(10)   not null check (tipo in ('TESTE', 'ATAQUE', 'LIVRE')),
+    rotulo      varchar(255)  not null,
+    total       integer       not null,
+    detalhe     jsonb         not null,
+    criada_em   timestamptz   not null default now()
+);
+create index ix_rolagem_campanha on rolagem (campanha_id, id desc);
+```
+
+- **`personagem` é uma cópia** do nome no momento da rolagem, então o histórico sobrevive à exclusão da ficha (`ficha_id` vira nulo). **Quando a ficha é do mestre da campanha, `personagem` é gravado nulo** (escolha do Opus): o nome do NPC nem entra na tabela, então não há como vazar por uma consulta futura. Na tela, nulo vira "Mestre".
+- **`rotulo`:** no teste, o nome da perícia, do atributo ou da salvaguarda (o `nome` do `TesteResponse`, por exemplo "Furtividade"); no ataque, o nome do ataque; na livre, a expressão canônica (`2d6+3`).
+- **`detalhe`** guarda a resposta da rota, serializada como está (`TesteResponse`, `RolagemAtaqueResponse` ou `RolagemResponse`). O painel usa os dados para mostrar cada dado e o crítico. Na entidade: `@JdbcTypeCode(SqlTypes.JSON)`.
+- O índice segue a ordem do cursor (id decrescente dentro da campanha).
+- As tabelas existentes não mudam. **Backup do banco local antes da V12.**
+- **Entidade e pacote:** `Rolagem` (o nome já é usado pelo registro `service.Rolagem` da notação, então a entidade se chama `RolagemDaMesa`) num pacote novo, `rolagem`, como previa a §2 da fase 2. Ficam no pacote: a entidade, o repositório, o `RegistroDeRolagens`, o evento, o publicador, o controller do histórico e a configuração do WebSocket.
+
+## 4. Regras
+
+| Situação | Grava? | Publica? | Quem vê |
+|---|---|---|---|
+| Ficha com campanha, qualquer membro que pode rolar com ela (dono ou mestre, pelo `AcessoAFicha` de hoje) | sim | sim, depois do commit | todos os membros da campanha |
+| Ficha sem campanha | não | não | só quem rolou, na resposta da rota (como hoje) |
+| Ficha do mestre da campanha | sim, com `personagem` nulo | sim | todos, como "Mestre" |
+| Rolagem que falha (400, 403, 404) ou transação desfeita | não | não | — |
+
+- **O autor é quem rolou** (`usuario_id`), que pode ser o mestre rolando com a ficha de um jogador. O painel mostra "Kai (rolado pelo mestre)" nesse caso (escolha do Opus: a mesa sabe quem apertou o botão).
+- **A resposta das 3 rotas `POST` não muda.** Quem rola continua vendo o resultado e o dado 3D na hora. A rolagem dele chega também pelo tópico, e o painel a mostra como as outras, sem aviso.
+- Os 3 serviços de rolagem deixam de ser `@Transactional(readOnly = true)`.
+
+## 5. API
+
+| Rota | Quem | Resposta |
+|---|---|---|
+| `GET /campanhas/{id}/rolagens?antes=<id>&limite=50` | membro (`AcessoACampanha.exigirMembro`; fora → 404) | lista da mais nova para a mais antiga; `antes` é opcional; `limite` de 1 a 100 (padrão 50; fora disso, 400) |
+| WebSocket `/ws` (STOMP, sem SockJS) | o handshake é público; a autenticação acontece no CONNECT | — |
+| `SUBSCRIBE /topic/campanhas/{id}/rolagens` | membro | cada rolagem nova, no mesmo formato do `GET` |
+
+**Formato (`RolagemDaMesaResponse`):**
+```json
+{ "id": 41, "campanhaId": 3, "criadaEm": "2026-11-16T22:10:03Z",
+  "autor": { "id": 7, "nome": "Lía" }, "personagem": "Kai", "doMestre": false,
+  "tipo": "TESTE", "rotulo": "Furtividade", "total": 25,
+  "detalhe": { "...": "a resposta da rota, como foi devolvida a quem rolou" } }
+```
+- `doMestre: true` acompanha `personagem: null`. Não há `fichaId` na resposta, e assim não se descobre o id do NPC.
+- "Tem mais" fica no front: se a página veio cheia (`limite` itens), mostra "Carregar mais".
+
+**WebSocket** (`WebSocketConfig` com `@EnableWebSocketMessageBroker`):
+- broker simples em `/topic`, sem destinos de aplicação. Um `SEND` do cliente é recusado (a mesa só recebe);
+- um `ChannelInterceptor` no canal de entrada trata dois comandos:
+  - **CONNECT:** lê `Authorization: Bearer <token>` dos cabeçalhos STOMP e valida com o `JwtDecoder` que já existe. Se faltar o token, ou se ele for inválido ou estiver vencido, recusa (frame ERROR, e a conexão cai). Se for válido, guarda o usuário na sessão;
+  - **SUBSCRIBE:** só aceita destinos `/topic/campanhas/{id}/rolagens` em que o usuário da sessão tem participação (pelo `ParticipacaoRepository`, porque o `UsuarioAtual` lê o `SecurityContext` do HTTP, que não existe aqui). Qualquer outro destino é recusado;
+- o `SecurityConfig` libera `/ws` (o handshake é HTTP sem token), e as origens permitidas no endpoint vêm da mesma propriedade `app.cors.origens`;
+- **o token vence em 15 minutos, mas a conexão aberta continua valendo** (a autenticação acontece no CONNECT). Na reconexão, o front manda o token atual e renova antes, se for preciso. Limite conhecido: quem é removido da campanha continua recebendo até a conexão cair ou até sair da tela. Fica registrado no ADR.
+- O publicador, `@TransactionalEventListener(phase = AFTER_COMMIT)`, chama `SimpMessagingTemplate.convertAndSend("/topic/campanhas/{id}/rolagens", resposta)`. Uma falha no envio vai só para o log: a rolagem já foi gravada e vai aparecer no histórico.
+
+## 6. Frontend
+
+**Dependência:** `@stomp/rx-stomp` (e a `@stomp/stompjs`, que vem junto), com reconexão automática. A URL é a `apiUrl` com `http` trocado por `ws`, mais `/ws`.
+
+**Serviço `MesaAoVivo`** (`core/` ou `campanhas/`, a cargo de quem implementar):
+- conecta só quando um painel de campanha está ativo e desconecta quando nenhum está;
+- no `beforeConnect`, pega o token da `Sessao` e renova pelo fluxo de renovação do 2.2 se ele não existir;
+- expõe `rolagens$(campanhaId)` e um sinal de estado (`conectado` / `reconectando`).
+
+**Botão e painel `painel-rolagens`:**
+- o botão **"Rolagens"** aparece na tela da campanha e na tela da ficha quando a ficha tem campanha;
+- **no computador** (a partir de 900 px), é um painel à direita, de cerca de 360 px, por cima do conteúdo, com "Fechar". **No celular**, ocupa a tela inteira, também com "Fechar";
+- ao abrir, faz `GET` das 50 últimas e passa a receber as novas por cima. Junta as duas fontes pelo `id`, sem repetir;
+- cada linha mostra o autor (ou "Mestre"), o personagem, o rótulo, o total em destaque e, em letra menor, os dados (o mantido destacado, o 20 natural ou 1 natural no D&D, o "Crítico!" no ataque e o dano). A hora é relativa ("agora", "há 3 min");
+- no fim da lista, "Carregar mais" (com `antes` = o menor id), visível só se a última página veio cheia;
+- um indicador discreto "ao vivo" / "reconectando…" fica no cabeçalho do painel;
+- vazio: "Nenhuma rolagem nesta campanha ainda.".
+
+**Aviso com o painel fechado:** quando chega a rolagem de **outra pessoa** e o painel está fechado, aparece um aviso curto no rodapé, por 4 s, com o texto "Lía · Kai · Furtividade: 25". Tocar nele abre o painel. Para isso, a conexão fica ativa enquanto a tela da campanha ou a de uma ficha com campanha está aberta, e não só com o painel aberto.
+
+**Acessibilidade:** o painel é um diálogo (`role="dialog"`, foco no título ao abrir, `Esc` fecha), e o aviso usa `aria-live="polite"`.
+
+**Visual:** o do redesign (cartões, cores e fontes atuais). Não há estilo novo.
+
+## 7. Testes
+
+**Backend** (integração contra o PostgreSQL real, como hoje):
+- cada uma das 3 rotas grava uma linha com o tipo, o rótulo, o total e o detalhe certos quando a ficha tem campanha, e nenhuma quando a ficha não tem;
+- a ficha do mestre grava `personagem` nulo e responde `doMestre: true`;
+- uma rolagem recusada (400 numa notação inválida) não grava nada;
+- `GET /campanhas/{id}/rolagens`: a ordem, o cursor `antes`, o `limite` (padrão, máximo, 0 e 101 → 400), o não membro → 404 e o sem token → 401;
+- **WebSocket com dois clientes** (`WebSocketStompClient` contra a porta aleatória): o membro inscrito recebe a rolagem que outro usuário fez por REST; o não membro é recusado no SUBSCRIBE; o CONNECT sem token, ou com token inválido, é recusado;
+- a publicação acontece só depois do commit: num teste com a transação desfeita, nada chega ao tópico;
+- a migração V12 sobre os dados da V11: as fichas e as campanhas ficam iguais;
+- os testes das 3 rotas de rolagem continuam sem mudança de asserção.
+
+**Frontend** (Vitest): `MesaAoVivo` com o RxStomp simulado (o token no CONNECT, conectar e desconectar); o painel (a lista, juntar o histórico com o ao vivo sem repetir, "Carregar mais", vazio, "Mestre", "rolado pelo mestre"); o aviso (só para outra pessoa e só com o painel fechado); o botão só com campanha.
+
+**Ponta a ponta (Playwright, novo):** em `frontend/e2e/`, com um teste e dois contextos de navegador:
+- A cadastra a conta, cria a campanha e copia o link; B abre o link, cadastra a conta e entra; B cria uma ficha na campanha e rola uma perícia;
+- o painel de A mostra a rolagem;
+- o dado 3D é pulado com `Esc`. No headless sem WebGL, cai no plano B do 2.1f.
+
+**CI:** um job novo, `e2e`, depois dos dois de hoje. Ele tem PostgreSQL como serviço, sobe a API com um `JWT_SEGREDO` de teste gerado no próprio job, roda `npx playwright install --with-deps chromium` e o `webServer` do Playwright, e guarda o relatório como artefato quando falha.
+
+**Regras de sempre:** nenhum teste existente é removido; se alguma asserção mudar de propósito, ela entra na lista do PR.
+
+## 8. Documentação
+
+- README: a linha do 2.3 passa a "Concluído (PR #19)" (pendência do 2.3); a do 2.4 é preenchida; uma seção curta "Rolagens ao vivo (2.4)" (o que é gravado, "Mestre", o histórico, como rodar o Playwright localmente).
+- **ADR 0026:** rolagens ao vivo com STOMP, token no CONNECT, inscrição só para membros, publicação depois do commit, broker em memória (e quando trocar por RabbitMQ ou Redis), e o limite da conexão aberta depois da remoção.
+- Notas na spec da fase 2 sobre os quatro pontos que mudaram; `estado.md`.
+
+## 9. Processo
+
+- Processo enxuto: um plano curto; **backup do banco antes da V12**; dois desenvolvedores Sonnet em paralelo (back e front, com o contrato da §5), e depois o Playwright e o CI; um verificador Sonnet no fim; a conferência no navegador pelo Opus com duas contas de teste, apagadas no fim (as fichas do Arthur não são tocadas).
+- Regras nos briefs: com o `ng serve` no ar, nada de `npm ci`/`npm install`; com a API no ar, o Maven roda numa cópia da pasta.
+- **Instalar as dependências novas** (`@stomp/rx-stomp`, `@playwright/test`) exige `npm install`. Antes disso, o Arthur para o `ng serve` (ele está numa aba de outra sessão) e o sobe de novo depois.
+- Branch `feat/rolagens-ao-vivo` a partir da `main` (`c73b638`). O PR é criado com o CI verde, e o merge só acontece quando o Arthur pede.
+
+## 10. Riscos
+
+| Risco | Mitigação |
+|---|---|
+| Removido da campanha continua recebendo até reconectar | Aceito e registrado no ADR; o histórico já exige membro a cada `GET` |
+| Teste de ponta a ponta instável no CI (tempo, WebGL) | Espera pelo texto na tela (sem `sleep`), dado 3D pulado, relatório e rastreamento guardados na falha |
+| Uma rolagem nova no futuro esquecer o `RegistroDeRolagens` | Comentário no componente e no ADR; o verificador procura as rotas de rolagem |
+| Proxies e o Render cortam WebSocket parado | O rx-stomp reconecta e usa heartbeat (10 s); reavaliado no 2.6 |
+| O `detalhe` em JSON muda de formato junto com os DTOs | O painel lê só campos que já existem nas 3 respostas; mudança de DTO passa pelos testes do painel |
