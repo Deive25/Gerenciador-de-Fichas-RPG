@@ -1,12 +1,18 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
+import { GoogleIdentity } from '../core/auth/google-identity';
 import { Sessao } from '../core/auth/sessao';
 import { respostaDe } from '../core/auth/teste-auth';
+import { BotaoGoogle } from './botao-google';
 import { Entrar } from './entrar';
 
 const LOGIN = 'http://localhost:8080/auth/login';
+
+/** O botão do Google não baixa o script real nos testes: a promessa nunca resolve (o botão é testado em botao-google.spec). */
+const googleSemRede = { provide: GoogleIdentity, useValue: { carregar: () => new Promise<never>(() => undefined) } };
 
 describe('Entrar', () => {
   let fixture: ComponentFixture<Entrar>;
@@ -30,7 +36,7 @@ describe('Entrar', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), googleSemRede] });
     navegar = vi.fn().mockResolvedValue(true);
     vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(navegar as never);
     ctl = TestBed.inject(HttpTestingController);
@@ -145,5 +151,13 @@ describe('Entrar', () => {
   it('mostra o novo subtítulo e não tem lista de requisitos', () => {
     expect(el.textContent).toContain('Bem-vindo de volta. As suas fichas estão te esperando.');
     expect(el.querySelector('ul.requisitos')).toBeNull();
+  });
+
+  it('mostra o botão do Google com o volta', () => {
+    fixture.componentRef.setInput('volta', '/convite/Abc123');
+    fixture.detectChanges();
+    const botao = fixture.debugElement.query(By.directive(BotaoGoogle));
+    expect(botao).not.toBeNull();
+    expect((botao.componentInstance as BotaoGoogle).volta()).toBe('/convite/Abc123');
   });
 });
