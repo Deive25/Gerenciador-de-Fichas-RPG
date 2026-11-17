@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
+import { GoogleIdentity } from '../core/auth/google-identity';
 import { Sessao } from '../core/auth/sessao';
 import { respostaDe } from '../core/auth/teste-auth';
 import { BotaoGoogle } from './botao-google';
@@ -10,6 +11,9 @@ import { Cadastrar } from './cadastrar';
 
 const REGISTRO = 'http://localhost:8080/auth/registro';
 const SENHA = 'dragão vermelho na taverna';
+
+/** O botão do Google não baixa o script real nos testes: a promessa nunca resolve (o botão é testado em botao-google.spec). */
+const googleSemRede = { provide: GoogleIdentity, useValue: { carregar: () => new Promise<never>(() => undefined) } };
 
 describe('Cadastrar', () => {
   let fixture: ComponentFixture<Cadastrar>;
@@ -35,7 +39,7 @@ describe('Cadastrar', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), googleSemRede] });
     navegar = vi.fn().mockResolvedValue(true);
     vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(navegar as never);
     ctl = TestBed.inject(HttpTestingController);
