@@ -18,6 +18,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<RefreshToken> findByHash(String hash);
 
+	/** Revoga todos os tokens ainda vivos do usuario, de qualquer familia (ligacao ao Google). Devolve quantos mudaram. */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update RefreshToken t set t.revogadoEm = :quando where t.usuarioId = :usuarioId and t.revogadoEm is null")
+	int revogarTodasDoUsuario(@Param("usuarioId") Long usuarioId, @Param("quando") Instant quando);
+
 	/** Revoga todos os tokens ainda vivos da família (reuso detectado). Devolve quantos mudaram. */
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("update RefreshToken t set t.revogadoEm = :quando where t.familia = :familia and t.revogadoEm is null")
