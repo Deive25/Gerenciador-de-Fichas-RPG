@@ -295,6 +295,26 @@ describe('PainelRolagens', () => {
       fixture.detectChanges();
       expect(el.querySelector('.estado')?.textContent?.trim()).toBe('reconectando…');
     });
+
+    it('ao reconectar, busca de novo a primeira página e junta o que rolou durante a queda', () => {
+      const paginas: Record<string, RolagemDaMesa[]> = { '3:': [teste(41)] };
+      const { fixture, el } = montar(paginas);
+      expect(historico).toHaveBeenCalledTimes(1);
+      estado.set('reconectando');
+      fixture.detectChanges();
+      paginas['3:'] = [teste(43, { rotulo: 'Atletismo' }), teste(42, { rotulo: 'Luta' }), teste(41)];
+      estado.set('conectado');
+      fixture.detectChanges();
+      expect(historico).toHaveBeenCalledTimes(2);
+      expect(linhas(el)).toHaveLength(3);
+    });
+
+    it('conectado desde o início não busca o histórico duas vezes', () => {
+      const { fixture } = montar();
+      estado.set('conectado');
+      fixture.detectChanges();
+      expect(historico).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('fechar', () => {
