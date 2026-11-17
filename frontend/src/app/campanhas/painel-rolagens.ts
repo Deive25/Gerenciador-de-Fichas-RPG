@@ -109,6 +109,26 @@ export class PainelRolagens {
       const assinaturas = untracked(() => this.iniciar(id));
       limpar(() => assinaturas.unsubscribe());
     });
+    // O broker não guarda mensagens: o que rolou durante a queda só volta pelo GET. Na volta de
+    // "reconectando" para "conectado", busca de novo a primeira página e junta pelo `id` (sem repetir).
+    let anterior = this.estado();
+    effect((limpar) => {
+      const atual = this.estado();
+      const voltou = anterior === 'reconectando' && atual === 'conectado';
+      anterior = atual;
+      if (voltou) {
+        const campanhaId = untracked(() => this.campanhaId());
+        const sub = this.rolagensApi
+          .historico(campanhaId)
+          .pipe(catchError(() => of([] as RolagemDaMesa[])))
+          .subscribe((pagina) => {
+            if (campanhaId === this.campanhaId()) {
+              this.rolagens.update((atuais) => juntarRolagens(atuais, pagina));
+            }
+          });
+        limpar(() => sub.unsubscribe());
+      }
+    });
     const relogio = setInterval(() => this.agora.set(Date.now()), 30_000);
     inject(DestroyRef).onDestroy(() => clearInterval(relogio));
     // Foco no título ao abrir: o leitor de tela anuncia o diálogo e Esc/Tab partem de dentro dele.
