@@ -1,0 +1,63 @@
+<section class="painel" role="dialog" aria-labelledby="titulo-rolagens">
+  <header class="cabecalho">
+    <h2 #titulo id="titulo-rolagens" tabindex="-1">Rolagens</h2>
+    <span class="estado" [class.vivo]="estado() === 'conectado'">{{ estado() === 'conectado' ? 'ao vivo' : 'reconectando…' }}</span>
+    <button type="button" class="botao-neutro" (click)="fechar.emit()">Fechar</button>
+  </header>
+
+  <div class="corpo">
+    @if (erro(); as e) {
+      <p class="erro" role="alert"><strong>{{ e.titulo }}</strong> {{ e.detalhe }}</p>
+    }
+
+    @if (carregando()) {
+      <p class="vazio" role="status">Carregando rolagens…</p>
+    } @else if (ehVazio()) {
+      <p class="vazio">Nenhuma rolagem nesta campanha ainda.</p>
+    }
+
+    <ul class="lista">
+      @for (r of rolagens(); track r.id) {
+        <li class="rolagem">
+          <div class="topo">
+            <span class="quem">{{ quem(r) }}</span>
+            <span class="hora">{{ hora(r) }}</span>
+          </div>
+          <div class="resultado">
+            <span class="rotulo">{{ r.rotulo }}</span>
+            <span class="total">{{ r.total }}</span>
+          </div>
+          @if (detalhes(r); as d) {
+            <p class="dados">
+              @for (dado of d.dados; track $index) {
+                @if (dado.mantido) {
+                  <strong>{{ dado.valor }}</strong>
+                } @else {
+                  <span>{{ dado.valor }}</span>
+                }
+              }
+              @if (d.bonus) {
+                <span>{{ d.bonus }}</span>
+              }
+              @if (d.natural) {
+                <span class="natural">{{ d.natural }}</span>
+              }
+              @if (d.critico) {
+                <span class="critico">Crítico!</span>
+              }
+              @if (d.dano) {
+                <span>{{ d.dano }}</span>
+              }
+            </p>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (temMais()) {
+      <button type="button" class="botao-neutro mais" [disabled]="carregandoMais()" (click)="carregarMais()">
+        Carregar mais
+      </button>
+    }
+  </div>
+</section>

@@ -36,16 +36,22 @@
             <p class="descricao">{{ c.descricao }}</p>
           }
           <p class="papel">Mestre: {{ c.mestre.nome }} · {{ ehMestre() ? 'Você é o mestre' : 'Você é jogador' }}</p>
-          @if (ehMestre()) {
-            <div class="acoes">
+          <div class="acoes">
+            <button type="button" class="botao-neutro" (click)="painelAberto.set(true)">Rolagens</button>
+            @if (ehMestre()) {
               <button type="button" class="botao-neutro" (click)="editando.set(true)">Editar</button>
               <button type="button" class="botao-perigo" (click)="confirmacao.set({ tipo: 'excluir' })">
                 Excluir campanha
               </button>
-            </div>
-          }
+            }
+          </div>
         }
       </header>
+
+      @if (painelAberto()) {
+        <app-painel-rolagens [campanhaId]="c.id" (fechar)="painelAberto.set(false)" />
+      }
+      <app-aviso-de-rolagem [campanhaId]="c.id" [painelAberto]="painelAberto()" (abrir)="painelAberto.set(true)" />
 
       @if (confirmacao()?.tipo === 'excluir') {
         <section class="confirmacao bloco">

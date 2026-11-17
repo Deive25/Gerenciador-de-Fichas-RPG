@@ -4,9 +4,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { RetratoCache } from '../retrato-cache';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { Subject, of, throwError } from 'rxjs';
+import { NEVER, Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { CampanhaApi } from '../../campanhas/campanha-api';
+import { MesaAoVivo } from '../../campanhas/mesa-ao-vivo';
+import { RolagemDaMesa } from '../../campanhas/rolagem-da-mesa.model';
+import { RolagensApi } from '../../campanhas/rolagens-api';
+import { historicoVazio, mesaFalsa } from '../../campanhas/teste-mesa';
 import { Sessao } from '../../core/auth/sessao';
 import { respostaDe } from '../../core/auth/teste-auth';
 import { FichaApi } from '../ficha-api';
@@ -59,13 +63,18 @@ const RESULTADO_DND: TesteResultado = {
   alvo: 'PERICIA', codigo: 'FURTIVIDADE', nome: 'Furtividade', dados: [17, 6], mantido: 17, bonus: 8, total: 25,
 };
 
+let mesa: ReturnType<typeof mesaFalsa>;
+
 function montar(api: Partial<Record<keyof FichaApi, unknown>>, extras: Provider[] = []) {
+  mesa = mesaFalsa();
   TestBed.configureTestingModule({
     imports: [FichaDetalhe],
     providers: [
       provideRouter([]),
       { provide: FichaApi, useValue: { versaoFichas: signal(0), ...api } },
-      { provide: CampanhaApi, useValue: { listar: () => of([]) } },
+      { provide: CampanhaApi, useValue: { listar: () => of([]), buscar: () => NEVER } },
+      { provide: MesaAoVivo, useValue: mesa },
+      { provide: RolagensApi, useValue: historicoVazio },
       // Por padrão, plano B (sem dado 3D): o cartão aparece direto, como antes do 2.1f.
       { provide: DadoAnimado, useValue: { preparar: () => Promise.resolve(null) } },
       ...extras,
@@ -1211,5 +1220,57 @@ describe('FichaDetalhe · campanhas (2.3)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('FichaDetalhe · rolagens ao vivo (2.4)', () => {
+  const COM_CAMPANHA: FichaOrdem = { ...FICHA, campanha: { id: 3, nome: 'Mesa de sexta' } };
+  const DA_LIA: RolagemDaMesa = {
+    id: 41, campanhaId: 3, criadaEm: new Date().toISOString(), autor: { id: 8, nome: 'Lía' }, personagem: 'Kai', doMestre: false,
+    tipo: 'TESTE', rotulo: 'Furtividade', total: 25,
+    detalhe: { alvo: 'PERICIA', codigo: 'FURTIVIDADE', nome: 'Furtividade', dados: [17, 6], mantido: 17, bonus: 8, total: 25 },
+  };
+  const botaoRolagens = (el: HTMLElement) =>
+    Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Rolagens');
+
+  it('sem campanha: sem o botão Rolagens, sem painel e sem conexão ao vivo', () => {
+    const { el } = montar({ buscarFicha: vi.fn(() => of(FICHA)) });
+    expect(botaoRolagens(el)).toBeUndefined();
+    expect(el.querySelector('app-painel-rolagens')).toBeNull();
+    expect(mesa.inscritos(3)).toBe(0);
+  });
+
+  it('com campanha: o botão aparece e abre o painel da campanha da ficha; "Fechar" o fecha', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(COM_CAMPANHA)) });
+    expect(el.querySelector('app-painel-rolagens')).toBeNull();
+    botaoRolagens(el)!.click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-painel-rolagens [role="dialog"]')).not.toBeNull();
+    Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Fechar')!.click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-painel-rolagens')).toBeNull();
+  });
+
+  it('com campanha: a conexão ao vivo fica ativa com o painel fechado', () => {
+    montar({ buscarFicha: vi.fn(() => of(COM_CAMPANHA)) });
+    expect(mesa.inscritos(3)).toBe(1);
+  });
+
+  it('com campanha: a rolagem de outra pessoa vira aviso, e tocar nele abre o painel', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(COM_CAMPANHA)) });
+    mesa.emitir(3, DA_LIA);
+    fixture.detectChanges();
+    const aviso = el.querySelector('.aviso-rolagem') as HTMLButtonElement;
+    expect(aviso.textContent?.trim()).toBe('Lía · Kai · Furtividade: 25');
+    aviso.click();
+    fixture.detectChanges();
+    expect(el.querySelector('app-painel-rolagens')).not.toBeNull();
+  });
+
+  it('a rolagem do dono da ficha não gera aviso para ele mesmo', () => {
+    const { fixture, el } = montar({ buscarFicha: vi.fn(() => of(COM_CAMPANHA)) });
+    mesa.emitir(3, { ...DA_LIA, autor: { id: 1, nome: 'Arthur' } });
+    fixture.detectChanges();
+    expect(el.querySelector('.aviso-rolagem')).toBeNull();
   });
 });
