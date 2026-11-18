@@ -26,7 +26,7 @@ Até o 2.2, cada pessoa só alcançava as próprias fichas, e um componente úni
 
 ## Consequências
 - A matriz inteira é testada num ponto só (`PermissoesDaFichaTest`, `PermissoesDaCampanhaTest`), em leitura, escrita, listas, retrato, exclusão e troca de campanha.
-- **Pior:** a regra vive no Java. Um serviço novo que buscasse a ficha direto no `FichaRepository` fugiria dela. Hoje o repositório só é usado no `AcessoAFicha` e no `FichaService`, e o verificador procura outros usos a cada incremento.
+- **Pior:** a regra vive no Java. Um serviço novo que buscasse a ficha direto no `FichaRepository` fugiria dela. Hoje o repositório só é usado no `AcessoAFicha` e no `FichaService`, e a revisão de cada incremento procura outros usos.
 - **Pior:** o `on delete set null` de uma coluna só existe no PostgreSQL 15 ou mais novo. O projeto usa o 17 no compose, no Testcontainers e no Neon.
 - **Pior:** quem apaga a participação não pode carregar as fichas na mesma transação, senão o Hibernate poderia regravar o `campanha_id` antigo. O serviço só apaga e dá `flush`, e um teste confere que o `PUT` seguinte da ficha funciona.
 - O link de convite vazado deixa entrar quem o tiver; o mestre renova o código (o antigo para na hora) e remove quem entrou. O limite de consultas ao convite fica para o deploy (2.6).

@@ -61,7 +61,7 @@ create table rolagem (
 create index ix_rolagem_campanha on rolagem (campanha_id, id desc);
 ```
 
-- **`personagem` é uma cópia** do nome no momento da rolagem, então o histórico sobrevive à exclusão da ficha (`ficha_id` vira nulo). **Quando a ficha é do mestre da campanha, `personagem` é gravado nulo** (escolha do Opus): o nome do NPC nem entra na tabela, então não há como vazar por uma consulta futura. Na tela, nulo vira "Mestre".
+- **`personagem` é uma cópia** do nome no momento da rolagem, então o histórico sobrevive à exclusão da ficha (`ficha_id` vira nulo). **Quando a ficha é do mestre da campanha, `personagem` é gravado nulo** (decisão de implementação): o nome do NPC nem entra na tabela, então não há como vazar por uma consulta futura. Na tela, nulo vira "Mestre".
 - **`rotulo`:** no teste, o nome da perícia, do atributo ou da salvaguarda (o `nome` do `TesteResponse`, por exemplo "Furtividade"); no ataque, o nome do ataque; na livre, a expressão canônica (`2d6+3`).
 - **`detalhe`** guarda a resposta da rota, serializada como está (`TesteResponse`, `RolagemAtaqueResponse` ou `RolagemResponse`). O painel usa os dados para mostrar cada dado e o crítico. Na entidade: `@JdbcTypeCode(SqlTypes.JSON)`.
 - O índice segue a ordem do cursor (id decrescente dentro da campanha).
@@ -77,7 +77,7 @@ create index ix_rolagem_campanha on rolagem (campanha_id, id desc);
 | Ficha do mestre da campanha | sim, com `personagem` nulo | sim | todos, como "Mestre" |
 | Rolagem que falha (400, 403, 404) ou transação desfeita | não | não | — |
 
-- **O autor é quem rolou** (`usuario_id`), que pode ser o mestre rolando com a ficha de um jogador. O painel mostra "Kai (rolado pelo mestre)" nesse caso (escolha do Opus: a mesa sabe quem apertou o botão).
+- **O autor é quem rolou** (`usuario_id`), que pode ser o mestre rolando com a ficha de um jogador. O painel mostra "Kai (rolado pelo mestre)" nesse caso (decisão de implementação: a mesa sabe quem apertou o botão).
 - **A resposta das 3 rotas `POST` não muda.** Quem rola continua vendo o resultado e o dado 3D na hora. A rolagem dele chega também pelo tópico, e o painel a mostra como as outras, sem aviso.
 - Os 3 serviços de rolagem deixam de ser `@Transactional(readOnly = true)`.
 
@@ -163,8 +163,8 @@ create index ix_rolagem_campanha on rolagem (campanha_id, id desc);
 
 ## 9. Processo
 
-- Processo enxuto: um plano curto; **backup do banco antes da V12**; dois desenvolvedores Sonnet em paralelo (back e front, com o contrato da §5), e depois o Playwright e o CI; um verificador Sonnet no fim; a conferência no navegador pelo Opus com duas contas de teste, apagadas no fim (as fichas do Arthur não são tocadas).
-- Regras nos briefs: com o `ng serve` no ar, nada de `npm ci`/`npm install`; com a API no ar, o Maven roda numa cópia da pasta.
+- Processo enxuto: um plano curto; **backup do banco antes da V12**; back e front em paralelo (com o contrato da §5), e depois o Playwright e o CI; uma revisão independente no fim; a conferência no navegador com duas contas de teste, apagadas no fim (as fichas do Arthur não são tocadas).
+- Regras de cada tarefa: com o `ng serve` no ar, nada de `npm ci`/`npm install`; com a API no ar, o Maven roda numa cópia da pasta.
 - **Instalar as dependências novas** (`@stomp/rx-stomp`, `@playwright/test`) exige `npm install`. Antes disso, o Arthur para o `ng serve` (ele está numa aba de outra sessão) e o sobe de novo depois.
 - Branch `feat/rolagens-ao-vivo` a partir da `main` (`c73b638`). O PR é criado com o CI verde, e o merge só acontece quando o Arthur pede.
 
@@ -174,6 +174,6 @@ create index ix_rolagem_campanha on rolagem (campanha_id, id desc);
 |---|---|
 | Removido da campanha continua recebendo até reconectar | Aceito e registrado no ADR; o histórico já exige membro a cada `GET` |
 | Teste de ponta a ponta instável no CI (tempo, WebGL) | Espera pelo texto na tela (sem `sleep`), dado 3D pulado, relatório e rastreamento guardados na falha |
-| Uma rolagem nova no futuro esquecer o `RegistroDeRolagens` | Comentário no componente e no ADR; o verificador procura as rotas de rolagem |
+| Uma rolagem nova no futuro esquecer o `RegistroDeRolagens` | Comentário no componente e no ADR; a revisão de cada incremento procura as rotas de rolagem |
 | Proxies e o Render cortam WebSocket parado | O rx-stomp reconecta e usa heartbeat (10 s); reavaliado no 2.6 |
 | O `detalhe` em JSON muda de formato junto com os DTOs | O painel lê só campos que já existem nas 3 respostas; mudança de DTO passa pelos testes do painel |

@@ -184,7 +184,7 @@ O Angular muda junto em cada incremento.
 
 ## 9. Incrementos
 
-Cada incremento passa por: dev Sonnet → verificador Sonnet separado → documentação (README, ADR, `estado.md`) → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur vale para a fase 2.
+Cada incremento passa por: desenvolvimento → revisão independente → documentação (README, ADR, `estado.md`) → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur vale para a fase 2.
 
 | Inc. | Entrega | Pronto quando |
 |---|---|---|

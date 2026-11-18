@@ -28,7 +28,7 @@ O jogador quer guardar na ficha tudo o que usa na mesa, além do núcleo jogáve
 
 ## 2. Incrementos
 
-Mesmo fluxo da fase 2: TDD → verificador separado → documentação → PR com o CI verde, mesclado como *merge commit*.
+Mesmo fluxo da fase 2: TDD → revisão independente → documentação → PR com o CI verde, mesclado como *merge commit*.
 
 | Inc. | Entrega | Pronto quando |
 |---|---|---|
@@ -136,7 +136,7 @@ Continuam valendo: JSON estrito, ProblemDetail em português e o servidor como q
 - **CD de magia** = 8 + proficiência + modificador do atributo de conjuração.
 - **Ataque mágico** = proficiência + modificador. Sem atributo de conjuração, os dois aparecem como "—".
 
-### 6.2 Ordem Paranormal (propostas do Opus, aprovadas pelo Arthur em 2026-11-09)
+### 6.2 Ordem Paranormal (propostas aprovadas pelo Arthur em 2026-11-09)
 - **Limite de carga:** 5 espaços por ponto de Força; com Força 0, 2 espaços.
 - **Custo em PE por círculo:** 1º = 1, 2º = 3, 3º = 6, 4º = 10.
 - **DT dos rituais:** 10 + limite de PE + Presença, sendo o limite de PE = ⌊NEX / 5⌋ (NEX 5% → 1).
