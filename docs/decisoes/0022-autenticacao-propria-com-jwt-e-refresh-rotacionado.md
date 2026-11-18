@@ -2,6 +2,8 @@
 
 Status: aceita · Incremento 2.2 · 2026-11-16
 
+> Atualização (2.6): os dois riscos registrados abaixo (sem limite de tentativas de login e refresh vencidos nunca apagados) foram tratados no [ADR 0029](0029-conta-de-demonstracao-e-limite-de-tentativas.md).
+
 ## Contexto
 Até o 2.1i, a API não tinha login: qualquer pessoa que a alcançasse lia, editava e apagava qualquer ficha. O 2.2 dá uma conta a cada pessoa (e-mail e senha) e faz cada uma ver, editar e rolar só as próprias fichas. O deploy (2.6) vai pôr o front e a API em domínios diferentes (Cloudflare Pages e Render), e o login com Google (2.5) precisa caber depois sem refazer o que existe.
 
