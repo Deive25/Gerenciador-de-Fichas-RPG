@@ -2,6 +2,17 @@
 
 Aplicação de estudo full stack para cadastrar, consultar, editar e excluir fichas de personagens de RPG de mais de um sistema (hoje Ordem Paranormal, D&D 5e e D&D 2024), com interface Angular e API REST em Java e Spring Boot, persistida em PostgreSQL, com o esquema versionado por migrações Flyway.
 
+## Experimente em 2 minutos
+
+**Link público: <https://fichas-rpg.pages.dev>** (a API tem o Swagger em <https://fichas-rpg-api.onrender.com/swagger-ui.html>).
+
+1. Abra o link e toque em **"Ver demonstração"**. Não precisa de conta: o app cria um visitante temporário, a "Mesa de demonstração" e duas fichas de exemplo (Ordem Paranormal e D&D 2024).
+2. **A API gratuita dorme depois de 15 min sem uso.** Se ela estiver dormindo, aparece a faixa "Acordando o servidor gratuito…" e o primeiro acesso leva cerca de 1 minuto ou um pouco mais. É o custo de hospedar de graça (veja [Deploy](#deploy)).
+3. Para ver a mesa ao vivo, copie o link do convite no cartão da campanha e abra em **outra aba** (ou no celular): ele entra como jogador de demonstração.
+4. Na aba do jogador, abra uma ficha e role um teste. A rolagem aparece na hora no painel "Rolagens" da aba do mestre, sem recarregar.
+
+As contas de demonstração são apagadas depois de 24 h.
+
 > **App não oficial.** Ordem Paranormal é de seus autores e da Jambô Editora; o app usa só nomes e mecânicas, sem texto dos livros. Para D&D, o app é compatível com a quinta edição (5E) e usa material do SRD 5.1 e do SRD 5.2.1 sob a licença CC-BY-4.0 (atribuição abaixo).
 
 ### Atribuição do SRD (D&D)
@@ -48,7 +59,7 @@ O projeto original é de dezembro de 2021 (Java 11, Spring Boot 2.5.7, Springfox
 | 2.3 | Campanhas com convite por link e papéis Mestre/Jogador: o mestre vê, edita e rola com as fichas da mesa, o jogador vê o resumo das fichas dos outros jogadores, e a ficha do mestre fica oculta; a ficha pode ficar sem campanha; trava otimista (`@Version`, 409) na ficha; migração V11 ([spec](docs/superpowers/specs/2026-11-16-j1-campanhas-design.md), [plano](docs/superpowers/plans/2026-11-16-j1-2.3-campanhas.md), [ADR 0024](docs/decisoes/0024-permissoes-de-campanha-num-ponto-central.md), [ADR 0025](docs/decisoes/0025-trava-otimista-na-ficha.md)) | Concluído (PR #19) |
 | 2.4 | Rolagens gravadas e ao vivo: as três rolagens de uma ficha em campanha (teste, ataque e rolagem livre) são gravadas e chegam na hora ao painel de todos os membros, por WebSocket (STOMP); histórico com "Carregar mais", ficha do mestre como "Mestre" e o primeiro teste de ponta a ponta (Playwright, com duas sessões) no CI; migração V12 ([spec](docs/superpowers/specs/2026-11-16-j1-rolagens-ao-vivo-design.md), [plano](docs/superpowers/plans/2026-11-17-j1-2.4-rolagens-ao-vivo.md), [ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md)) | Concluído (PR #20) |
 | 2.5 | Login com Google: botão oficial do Google em Entrar e Cadastrar, *ID token* validado na API (RS256, JWKS do Google, `aud`, `iss`, `exp`) e trocado pelos tokens próprios; ligação de contas por e-mail verificado, apagando a senha (*pre-account takeover*); migração V13 ([spec](docs/superpowers/specs/2026-11-17-j1-login-google-design.md), [plano](docs/superpowers/plans/2026-11-17-j1-2.5-login-google.md), [ADR 0027](docs/decisoes/0027-login-com-google-e-ligacao-de-contas.md)) | Concluído (PR #21) |
-| 2.6 | Deploy gratuito (Cloudflare Pages + Render + Neon) | Planejado |
+| 2.6 | Deploy gratuito e link público: Cloudflare Pages (front), Render com Docker (API) e Neon (PostgreSQL); botão "Ver demonstração" com conta temporária e mesa pronta; limite de tentativas de login e limpeza das contas demo e dos refresh vencidos; CSP; publicação pelo CI depois dos testes; migração V14 ([spec](docs/superpowers/specs/2026-11-17-j1-deploy-design.md), [plano](docs/superpowers/plans/2026-11-17-j1-2.6-deploy.md), [ADR 0028](docs/decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md), [ADR 0029](docs/decisoes/0029-conta-de-demonstracao-e-limite-de-tentativas.md)) | Em revisão (PR) |
 
 ## Tecnologias
 
@@ -515,6 +526,17 @@ flowchart LR
     X -.-> T
 ```
 
+**Em produção (2.6)**, o mesmo código roda em três serviços gratuitos ([ADR 0028](docs/decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md)):
+
+```mermaid
+flowchart LR
+    U["Navegador"] -->|HTML, JS e CSP| P["Cloudflare Pages (Angular)"]
+    U -->|HTTPS e WebSocket| R["Render: API Spring Boot em Docker (dorme sem uso)"]
+    R -->|JDBC, conexão direta| N[("Neon: PostgreSQL")]
+    G["GitHub Actions: job deploy (só na main)"] -.->|wrangler pages deploy| P
+    G -.->|deploy hook| R
+```
+
 O controller cuida só de HTTP: recebe e devolve DTOs (`record`), nunca a entidade. O corpo de entrada é a `sealed interface FichaRequest`, e o Jackson escolhe o record certo (`FichaOrdemRequest` ou `FichaDndRequest`) pelo campo `sistema`. O `FichaService` guarda as transações (`@Transactional`) e os logs, e lança `FichaNaoEncontradaException` quando a ficha não existe e `SistemaImutavelException` quando o `PUT` troca o sistema (409). Ele não conhece nenhum sistema: pede ao registro `SistemasDeFicha` a implementação da interface `SistemaDeFicha` que atende a ficha (`SistemaOrdem` ou `SistemaDnd`) e delega `criar`, `copiar`, `resposta`, `resumo`, `atualizarRecursos` e `testar` ([ADR 0017](docs/decisoes/0017-regras-de-cada-sistema-atras-de-uma-interface.md)). O 409 de sistema continua no serviço, antes da validação. O Bean Validation confere o que se vê campo a campo; a `ValidacaoFichaOrdem` e a `ValidacaoFichaDnd` conferem o que cruza campos (atributo ausente, grau que exige mais NEX, PV temporário com máximo) e lançam `DadosInvalidosException`, que vira o mesmo 400 "Dados inválidos". O `FichaOrdemMapper` e o `FichaDndMapper` convertem DTO e entidade à mão, campo a campo. A entidade `Ficha` é abstrata (dados comuns) e `FichaOrdem` e `FichaDnd` a estendem, com herança JPA JOINED ([ADR 0015](docs/decisoes/0015-uma-tabela-por-sistema.md)). As perícias treinadas ficam em `ficha_ordem_pericia` (um `Map<PericiaOrdem, GrauOrdem>` na entidade) e as de D&D com proficiência em `ficha_dnd_pericia` (um `Map<PericiaDnd, GrauDnd>`). Os métodos de leitura do repository usam `@EntityGraph` para trazer ficha e perícias numa consulta só, e a listagem usa o resumo, que nem toca nas perícias. O `ApiExceptionHandler` transforma as exceções em respostas ProblemDetail. O springdoc lê os controllers e gera a especificação OpenAPI.
 
 A descrição e as habilidades ficam fora desse fluxo ([ADR 0018](docs/decisoes/0018-listas-da-ficha-em-recursos-proprios.md)). O `DescricaoController` e o `DescricaoService` gravam os três textos nas colunas novas da `ficha`. O `HabilidadeController` e o `HabilidadeService` cuidam do `POST`, do `PUT` e do `DELETE` de cada habilidade e conferem antes se o tipo existe no sistema da ficha (`TipoHabilidade.permitidoEm`). A `Ficha` **não tem coleção** de habilidades: elas são a entidade `HabilidadeFicha`, com `@ManyToOne`, lida pelo `HabilidadeFichaRepository`. Para o detalhe, o `SistemaDeFicha` pede ao `PartesComunsDaFicha` a descrição e as habilidades; o resumo da listagem não chama esse componente, e por isso listar continua sendo uma consulta só. Um item de outra ficha lança `ItemDaFichaNaoEncontradoException`, genérica para as próximas listas, que vira 404 "Item não encontrado".
@@ -798,6 +820,24 @@ npm run e2e
 
 O teste reaproveita a API e o `ng serve` que já estão no ar (se não estiverem, o Playwright os sobe; a API, a partir do jar em `target/`). Ele cria duas contas de teste no banco local, com e-mail `e2e-…@teste.local`, que podem ser apagadas depois.
 
+## Deploy
+
+O J1 está no ar sem custo mensal ([ADR 0028](docs/decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md) e [ADR 0029](docs/decisoes/0029-conta-de-demonstracao-e-limite-de-tentativas.md)):
+
+| Parte | Serviço (plano gratuito) | Observações |
+| --- | --- | --- |
+| Front | Cloudflare Pages: <https://fichas-rpg.pages.dev> | A CSP e os demais headers vão em `frontend/public/_headers`; as rotas do Angular caem no `index.html` |
+| API | Render, Web Service Docker, Virginia: <https://fichas-rpg-api.onrender.com> (Swagger em `/swagger-ui.html`) | 512 MB e 0,1 CPU; saúde em `/actuator/health/liveness` |
+| Banco | Neon (PostgreSQL), AWS us-east-1 | Conexão **direta**, e não a do *pooler*, por causa do Flyway |
+
+**Variáveis no Render** (só os nomes; os valores ficam no painel, nunca no repositório): `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SEGREDO`, `APP_CORS_ORIGENS`, `SPRING_PROFILES_ACTIVE=demo`, `LOGGING_LEVEL_ORG_HIBERNATE_SQL=info` e, se for preciso ajustar a JVM, `JAVA_TOOL_OPTIONS`. O `.env.example` da API traz a lista comentada.
+
+**Como a publicação acontece.** O job `deploy` do `ci.yml` só roda em *push* na `main`, depois dos jobs `backend`, `frontend` e `e2e`, no environment `producao` do GitHub (que guarda `RENDER_DEPLOY_HOOK`, `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`). Ele compila o front, chama o *deploy hook* do Render (o auto-deploy do Render fica desligado) e roda `wrangler pages deploy`. Pull request não publica nada. O primeiro deploy foi manual, antes do merge, para conferir o link.
+
+**A API dorme.** O plano gratuito do Render suspende a API depois de 15 min sem tráfego, e o primeiro acesso depois disso espera ela acordar (cerca de 1 min mais o arranque da JVM). O front avisa com a faixa "Acordando o servidor gratuito…" e deixa os botões de entrar aguardando. O arranque a 0,1 CPU, no Docker local, caiu de 128 s para 63 s com o CDS do Java 21 (o *training run* é feito no `docker build`); a medida no próprio Render ainda não foi feita.
+
+**Limites.** O limite de tentativas fica em memória e zera a cada reinício, e só uma instância da API é prevista (o broker do WebSocket também é em memória). As contas de demonstração são apagadas em 24 h.
+
 ## Testes
 
 ```sh
@@ -807,7 +847,7 @@ cd "Gerenciador de fichas RPG"
 
 **Os testes de integração precisam do Docker em execução** (os unitários do serviço não). Eles sobem o próprio PostgreSQL 17 descartável com o Testcontainers, então não usam o `.env` nem o banco do `docker compose`. Usar o banco real (e não um banco em memória) é a decisão do [ADR 0002](docs/decisoes/0002-testes-de-caracterizacao-com-testcontainers.md). O mesmo comando roda no GitHub Actions (`.github/workflows/ci.yml`, job `backend`), em push na `main` e em pull requests. O job `frontend` roda `npm ci`, `npx ng build` e `npx ng test --watch=false` em Node 24. O job `e2e` (2.4) roda depois dos dois: sobe um PostgreSQL como serviço, empacota e sobe a API com um `JWT_SEGREDO` gerado na hora, sobe o front, instala o Chromium e roda o Playwright; se falhar, guarda o relatório e o rastreamento como artefato.
 
-**Front-end:** 973 testes unitários em 73 arquivos (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.5 (eram 960 em 71 arquivos no 2.4, 887 em 67 arquivos no 2.3, 782 em 61 arquivos no 2.2, 693 em 54 no 2.1i, 495 em 42 no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
+**Front-end:** 1030 testes unitários (Vitest, `cd frontend && npx ng test --watch=false`), sem servidor nem banco, e o build sai sem aviso. Número da última execução, na branch do 2.6 (eram 973 em 73 arquivos no 2.5, 960 em 71 arquivos no 2.4, 887 em 67 arquivos no 2.3, 782 em 61 arquivos no 2.2, 693 em 54 no 2.1i, 495 em 42 no 2.1f, 462 em 39 no 2.1j, 384 em 36 no 2.1h, 309 em 33 no 2.1g, 260 em 29 no 2.1e e 186 em 22 no 2.1d):
 - rotas e shell (topo único, um só `<router-outlet>`, a tela aberta não é recriada ao mudar a largura, as rotas de nova ficha e edição);
 - regras do painel (ferido e sanidade baixa na metade exata, ficha sem o recurso ou com máximo 0, busca sem acento, contadores);
 - o painel (cartões com selo do sistema e barras de PV, SAN e PE, vazio, erro com "Tentar de novo", recarga depois de criar, editar ou excluir, filtros, busca e "Limpar filtros");
@@ -831,7 +871,7 @@ cd "Gerenciador de fichas RPG"
 - Magias e rituais (2.1j): `magias-dnd-aba.spec` (CD e ataque mágico, "—" sem atributo, criar, editar e remover, ordem por nível), `espacos-dnd.spec` (marcar e desmarcar, salvar totais cortando os usados, descanso longo, erro do servidor no campo do nível) e `rituais-ordem-aba.spec` (custo em PE e DT no cartão, criar, editar e remover, ordem por círculo). Os casos novos de `regras-dnd.spec` (CD e ataque mágico nos níveis 1, 5 e 17 e sem atributo), `catalogo-ordem.spec` (custo nos 4 círculos; DT com NEX 5, 35 e 99), `formulario-dnd.spec` (o seletor do atributo de conjuração) e `abas-da-ficha.spec` (as abas de cada sistema) cobrem as contas e a navegação.
 - D&D (2.1e): `regras-dnd.spec` (modificador com 9 dando −1, proficiência por nível, bônus de perícia, especialização e salvaguarda, nas fronteiras), `catalogo-dnd.spec` (6 atributos, 18 perícias, rótulo "Raça" e "Espécie"), `ficha-dnd.spec` (bônus na tela, "Rolar", seletor de modo que volta a Normal, "−" no bônus negativo, "20 natural", anéis Vida e Temporário), `ficha-ordem.spec` (a ficha de Ordem, agora um componente por sistema), `formulario-dnd.spec` (valores iniciais, limites, erro do servidor no campo, edição), `edicao-ficha.spec` (a rota de edição abre o formulário do sistema da ficha) e `formulario-comum.spec` (o que os dois formulários repartem).
 
-**Back-end:** são 619 testes, 0 falhas (número da última execução do `./mvnw verify` na branch do 2.5; eram 596 no 2.4, 575 no 2.3, 517 no 2.2, 466 no 2.1i, 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
+**Back-end:** são 656 testes, 0 falhas (número da última execução do `./mvnw -B clean verify` na branch do 2.6; eram 619 no 2.5, 596 no 2.4, 575 no 2.3, 517 no 2.2, 466 no 2.1i, 386 no 2.1j e no 2.1f, 302 no 2.1h, 245 no 2.1g, 210 no 2.1e e 137 no 2.1d):
 
 | Grupo | O que cobre |
 | --- | --- |
@@ -922,6 +962,8 @@ Cada decisão tem um registro curto (contexto, decisão, alternativas e consequ�
 - [0025 Trava otimista na ficha](docs/decisoes/0025-trava-otimista-na-ficha.md): `@Version` na ficha, o `PUT` com a versão lida e o 409, as rotas de um clique que sobem a versão sem enviá-la, e por que não trava pessimista nem "a última gravação vence".
 - [0026 Rolagens ao vivo com STOMP](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md): o `RegistroDeRolagens` chamado pelas três rotas, a publicação só depois do commit, o token no `CONNECT` com inscrição só para membros, o broker em memória e os limites conhecidos (a conexão aberta depois de o token vencer ou de a pessoa ser removida); e por que não SSE, polling, AOP nem o front enviando o resultado.
 - [0027 Login com Google e ligação de contas](docs/decisoes/0027-login-com-google-e-ligacao-de-contas.md): o *ID token* conferido na API com um decoder RS256 privado (JWKS do Google, `aud`, `iss`, `exp`), as regras de conta na ordem (e-mail não verificado, `google_sub`, e-mail, conta nova) e a senha apagada na ligação contra o *pre-account takeover*; e por que não o `oauth2-client` do Spring nem a biblioteca do Google.
+- [0028 Hospedagem gratuita e publicação pelo CI](docs/decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md): Cloudflare Pages, Render (Docker) e Neon, a CSP sem `'unsafe-inline'` no `script-src` e o Early Hints do Pages desligado, o CDS no `docker build` (128 s → 63 s a 0,1 CPU), o job `deploy` depois dos testes e a API que dorme.
+- [0029 Conta de demonstração e limite de tentativas](docs/decisoes/0029-conta-de-demonstracao-e-limite-de-tentativas.md): o `POST /auth/demo` com mesa e convite para a segunda aba, a sessão demo no `sessionStorage`, a limpeza que roda ao acordar e a cada 6 h, o limite por IP em memória com 429 e o que ele não cobre; fecha os dois riscos do ADR 0022.
 
 ## Perguntas técnicas (roteiro de entrevista)
 
@@ -1119,15 +1161,37 @@ Porque numa mesa ao vivo chegam rolagens novas o tempo todo. Com `offset`, a pá
 **Como o teste de ponta a ponta prova que a mesa funciona ao vivo?**
 Com o Playwright, em duas sessões de navegador isoladas, como duas pessoas: o mestre cria a campanha e deixa o painel aberto; a jogadora entra pelo link, cria a ficha e rola Furtividade; e o teste espera o texto da rolagem aparecer no painel do mestre, sem recarregar. Esperar pelo texto (e não por um `sleep`) é o que evita teste instável. Isso exercita juntos o cadastro, o convite, a gravação, o WebSocket e a tela, o que nenhum teste unitário faz. No CI, o job `e2e` sobe o PostgreSQL, a API e o front do zero.
 
+**Por que a API gratuita dorme e você não a mantém acordada?**
+Porque o plano gratuito do Render dá 750 h por mês, e um ping a cada poucos minutos gastaria essa cota e criaria uma dependência de fora, só para esconder uma limitação. Preferi ser honesto com quem usa: o front consulta `/actuator/health/liveness` ao abrir e, se a API não responder em 3 s, mostra a faixa "Acordando o servidor gratuito…" e tenta de novo até ela subir. Esse caminho de saúde não consulta o banco, então também não acorda o Neon à toa. O custo é cerca de 1 min no primeiro acesso depois de 15 min parado; com mais orçamento, o plano pago do Render acabaria com isso.
+
+**Como você fez a JVM subir mais depressa com 0,1 CPU?**
+Com o CDS (*Class Data Sharing*) do Java 21. No `docker build`, um *training run* sobe a aplicação até o fim do carregamento (`-Dspring.context.exit=onRefresh`, sem banco) e grava as classes já lidas num arquivo; no arranque de verdade, a JVM o reaproveita. Medi no Docker local, com `--cpus 0.1` e 512 MB: de 128 s para 63 s, com cerca de 220 MiB de memória. O preço é uma imagem cerca de 140 MB maior. A medida no Render eu ainda não fiz; só confirmo o número do teste local.
+
+**Qual problema a CSP deu no Cloudflare Pages?**
+Três. O Angular 22 injetava um `<script>` em linha para o CSS crítico, e a minha CSP não tem `'unsafe-inline'` no `script-src` (é isso que protege o refresh do `localStorage` contra XSS), então desliguei `optimization.styles.inlineCritical`. O worker de física do dado 3D nasce de um `blob:`, o que pediu `worker-src 'self' blob:`. E o Pages gera sozinho um header `Link` (Early Hints) com caminhos relativos a partir dos `modulepreload`: numa rota como `/fichas/5`, o navegador pedia `/fichas/chunk-*.js` e recebia o HTML do `index.html`. Resolvi com `! Link` no `_headers`. Por isso, em produção, conferi os headers com `curl -I` e abri as rotas profundas direto.
+
+**Como funciona o "Ver demonstração" sem criar bagunça no banco?**
+O `POST /auth/demo` (só com o perfil `demo`) cria um visitante temporário com uma "Mesa de demonstração" e duas fichas. Quem abre o convite numa segunda aba entra como jogador de demonstração na mesma mesa, e a rolagem dele aparece ao vivo no painel do mestre. Para a bagunça não crescer, o endpoint tem limite (5 a cada 10 min por IP) e uma limpeza apaga as contas demo com mais de 24 h, com tudo o que é delas. Como a API dorme, a limpeza roda no `ApplicationReadyEvent` e a cada 6 h: um agendamento diário poderia nunca rodar.
+
+**Por que a sessão demo fica no `sessionStorage` e não no `localStorage`?**
+Porque o `sessionStorage` é por aba, e assim o mestre e o jogador de demonstração convivem no mesmo navegador. No `localStorage`, a segunda conta trocaria a primeira na renovação do token. A demo nunca apaga o `localStorage`, então a conta normal de outras abas continua. O custo é que duplicar uma aba copia o `sessionStorage`, e a detecção de reuso do refresh derruba as duas cópias, o que só atinge a demo ([ADR 0029](docs/decisoes/0029-conta-de-demonstracao-e-limite-de-tentativas.md)).
+
+**Como o limite de tentativas sabe o IP do visitante atrás do proxy do Render, e o que ele não cobre?**
+Com `server.forward-headers-strategy=native`, o Tomcat só confia no `X-Forwarded-For` de um proxy interno, então o cliente não consegue escolher o IP escrevendo o próprio cabeçalho. O limite é uma janela fixa em memória, por IP e por rota (10 por minuto em login, registro e Google; 5 a cada 10 min na demo), e responde 429 com `Retry-After`. Por ficar em memória, ele some a cada reinício e só vale para uma instância; se o projeto escalasse, eu trocaria por Redis ou Bucket4j. Redes compartilhadas (uma empresa, uma universidade) também dividem o mesmo IP.
+
+**Por que publicar pelo CI e não pelas integrações nativas do Render e do Pages?**
+Porque as integrações nativas publicam a cada push, mesmo com o CI vermelho. O job `deploy` só roda em *push* na `main`, depois de `backend`, `frontend` e `e2e` passarem, com os segredos num environment (`producao`) do GitHub. Ele compila o front, chama o *deploy hook* do Render (com o auto-deploy dele desligado) e roda `wrangler pages deploy`. O custo é ter três segredos no GitHub e manter o fluxo.
+
 ## Próximos passos
 
 A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 
-- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f), os ataques com a rolagem livre (2.1i), o **login (2.2)**, as **campanhas (2.3)**, as **rolagens ao vivo (2.4)** e o **login com Google (2.5)** já estão prontos.
-- **Riscos registrados para o deploy:** sem limite de tentativas de login nem de consulta de convite, e os refresh vencidos não são apagados ([ADR 0022](docs/decisoes/0022-autenticacao-propria-com-jwt-e-refresh-rotacionado.md)). O perfil `demo` (contas de demonstração com uma campanha pronta) entra no 2.6, junto com o link público.
+- As abas da ficha (2.1g a 2.1j), o dado animado (2.1f), os ataques com a rolagem livre (2.1i), o **login (2.2)**, as **campanhas (2.3)**, as **rolagens ao vivo (2.4)** e o **login com Google (2.5)** já estão prontos. O **deploy gratuito (2.6)** está em revisão (PR) e tem o link público.
+- **Riscos do ADR 0022 tratados no 2.6:** o limite de tentativas de login e a limpeza dos refresh vencidos ([ADR 0029](docs/decisoes/0029-conta-de-demonstracao-e-limite-de-tentativas.md)). Continua sem limite a consulta de convite (`GET /convites/{codigo}`).
 - **Riscos registrados nas rolagens ao vivo (2.4):** a conexão aberta continua valendo depois de o token vencer ou de a pessoa ser removida da campanha, e o broker em memória serve a uma instância só ([ADR 0026](docs/decisoes/0026-rolagens-ao-vivo-com-stomp.md)).
-- **Para o 2.6 (Google):** a origem do Pages no cliente OAuth, o status Em produção e a CSP liberando `accounts.google.com`; o ID token pode ser reapresentado enquanto vale, sem `nonce` ([ADR 0027](docs/decisoes/0027-login-com-google-e-ligacao-de-contas.md)).
-- **2.6 Deploy** gratuito, com link público e o perfil `demo`.
+- **Login com Google:** o ID token pode ser reapresentado enquanto vale, sem `nonce` ([ADR 0027](docs/decisoes/0027-login-com-google-e-ligacao-de-contas.md)).
+- **Depois do merge do 2.6 (tarefas do Arthur):** conferir que o job `deploy` publica pela `main`, devolver o Render para a `main` e medir o arranque a frio no Render (hoje só há a medida do Docker local). O Google Cloud precisa ter a origem do Pages e o status Em produção para o login com Google funcionar para qualquer pessoa.
+- **Limites do deploy gratuito** ([ADR 0028](docs/decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md)): a API dorme, o limite de tentativas some a cada reinício, e Redis ou Bucket4j (e um broker externo) só entram se houver mais de uma instância.
 
 ## O que este projeto demonstra
 
@@ -1153,6 +1217,7 @@ A fase 2 (mesa ao vivo) segue o roteiro da seção "Status da modernização":
 - Autenticação com Spring Security: JWT de acesso curto, refresh rotacionado por família com detecção de reuso, senha em BCrypt, dono da ficha num ponto só (404 para a ficha de outra pessoa) e, no Angular, interceptor e guards com renovação única entre abas (`navigator.locks`), sem mudar nenhuma asserção dos 466 testes que já existiam.
 - Autorização por papel com 404 × 403 decidida num ponto só e testada célula a célula, uma regra de integridade garantida pelo banco (chave estrangeira composta com `on delete set null` de uma coluna) e trava otimista (`@Version`) com o conflito tratado na tela.
 - Tempo real com WebSocket (STOMP): rolagem gravada por um registro explícito e publicada só depois do commit, token no `CONNECT` com inscrição só para membros, cursor em vez de offset no histórico e um teste de ponta a ponta no CI (Playwright, duas sessões de navegador) que prova a mesa ao vivo.
+- Deploy gratuito de ponta a ponta (Cloudflare Pages, Render com Docker e Neon), com publicação pelo CI só depois dos testes, CSP sem `'unsafe-inline'` no `script-src`, arranque da JVM a 0,1 CPU medido e reduzido com CDS (128 s → 63 s no Docker local), conta de demonstração com limpeza agendada e limite de tentativas por IP.
 
 ## Contexto do portfólio
 
