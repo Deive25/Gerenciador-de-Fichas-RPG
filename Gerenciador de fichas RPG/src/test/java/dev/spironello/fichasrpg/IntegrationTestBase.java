@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -30,6 +31,9 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({ RelogioDeTesteConfig.class, AutenticacaoDeTesteConfig.class, ChavesDoGoogleDeTeste.class })
+// O limite de tentativas do /auth/* (2.6) é de 10 por minuto por IP; os testes fazem mais logins que isso no mesmo "IP" (o MockMvc
+// é sempre 127.0.0.1), então aqui ele é folgado. Quem testa o limite (LimiteDeTentativasTest) declara os seus valores.
+@TestPropertySource(properties = { "app.limite.auth.max=100000", "app.limite.demo.max=100000" })
 public abstract class IntegrationTestBase {
 
 	// Mesma versão do docker-compose.yml, para testar no banco que se usa de verdade.

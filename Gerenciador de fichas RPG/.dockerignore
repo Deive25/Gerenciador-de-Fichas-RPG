@@ -1,0 +1,7 @@
+target/
+bin/
+.env
+*.log
+.idea/
+.vscode/
+HELP.md
