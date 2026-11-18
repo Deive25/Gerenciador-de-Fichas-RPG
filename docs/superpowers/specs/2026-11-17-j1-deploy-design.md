@@ -145,6 +145,7 @@ Pôr o J1 num link público e gratuito, com dois usos:
 
    Os escopos são só `openid email profile`, então não há verificação do Google.
 7. Medir o arranque frio no primeiro deploy. Se a página do Render + a JVM passarem de 2 min, testar CDS antes de qualquer outra mudança.
+   - **Atualização:** o CDS já entrou no Dockerfile, depois de medir no Docker local a 0,1 CPU e 512 MB: 128 s sem CDS e 63 s com CDS ([ADR 0028](../../decisoes/0028-hospedagem-gratuita-e-publicacao-pelo-ci.md)). A medida no Render fica para o primeiro arranque a frio.
 
 ## 9. Testes
 - **API (Testcontainers):**
