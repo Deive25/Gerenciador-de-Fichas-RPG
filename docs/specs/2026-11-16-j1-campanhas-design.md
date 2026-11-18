@@ -68,7 +68,7 @@ create index ix_ficha_campanha on ficha (campanha_id);
 alter table ficha add column versao bigint not null default 0;
 ```
 
-- **A chave estrangeira composta (escolha do Opus)** liga a ficha à participação do dono na campanha, e não só à campanha. Com isso, o banco garante a regra "a ficha só fica numa campanha da qual o dono participa". Quando a participação some (o jogador sai ou é removido, ou a campanha é apagada e leva as participações junto), o `on delete set null (campanha_id)` devolve as fichas a "sem campanha" sozinho, sem código no serviço. Isso exige o PostgreSQL 15 ou mais novo, e o projeto usa o 17 no compose, no Testcontainers e no Neon.
+- **A chave estrangeira composta (decisão de implementação)** liga a ficha à participação do dono na campanha, e não só à campanha. Com isso, o banco garante a regra "a ficha só fica numa campanha da qual o dono participa". Quando a participação some (o jogador sai ou é removido, ou a campanha é apagada e leva as participações junto), o `on delete set null (campanha_id)` devolve as fichas a "sem campanha" sozinho, sem código no serviço. Isso exige o PostgreSQL 15 ou mais novo, e o projeto usa o 17 no compose, no Testcontainers e no Neon.
 - O índice parcial `ux_participacao_um_mestre` garante no máximo um mestre por campanha. O serviço cria a campanha e a participação do mestre na mesma transação.
 - As 5 fichas existentes ficam com `campanha_id` nulo e `versao` 0. Nenhum dado muda.
 - **Entidades:** `Campanha` e `Participacao` (chave composta) num pacote `campanha`, como o `auth` do 2.2. Na `Ficha`, `campanhaId` entra como coluna simples, igual ao `donoId`, e `versao` entra com `@Version`. Na herança JOINED, a versão fica na tabela-raiz.
@@ -144,7 +144,7 @@ alter table ficha add column versao bigint not null default 0;
 
 - O `PUT /fichas/{id}` compara a `versao` do pedido com a do banco e, se forem diferentes, responde **409 "Esta ficha mudou enquanto você editava. Recarregue para ver a versão nova."**. A `ObjectOptimisticLockingFailureException`, a corrida entre dois pedidos simultâneos, vira o mesmo 409.
 - Toda gravação da linha da ficha sobe a versão, inclusive a edição rápida de PV (`PATCH /recursos`), moedas, espaços de magia e a troca de campanha (`PUT /fichas/{id}/campanha`). Essas rotas **não** enviam versão, porque cada clique grava só o próprio valor. As listas (itens, magias, ataques, habilidades) e o retrato são linhas próprias e não mexem na versão.
-- Nessas rotas sem versão, o conflito só acontece quando dois pedidos se sobrepõem no servidor (milissegundos), e não com cliques em sequência, porque cada pedido lê a versão atual. Se acontecer, a mesma exceção vira o mesmo 409 (um tratador só no `ApiExceptionHandler`), sem nova tentativa automática. A tela mostra a mensagem e recarrega a ficha (escolha do Opus: raro demais para justificar um laço de nova tentativa).
+- Nessas rotas sem versão, o conflito só acontece quando dois pedidos se sobrepõem no servidor (milissegundos), e não com cliques em sequência, porque cada pedido lê a versão atual. Se acontecer, a mesma exceção vira o mesmo 409 (um tratador só no `ApiExceptionHandler`), sem nova tentativa automática. A tela mostra a mensagem e recarrega a ficha (decisão de implementação: raro demais para justificar um laço de nova tentativa).
 
 ## 7. Frontend
 
@@ -196,8 +196,8 @@ O visual segue o do redesign (cartões, botões e cores atuais). Não há tela n
 
 ## 10. Processo
 
-- Processo enxuto, como no 2.2: um plano curto; **backup do banco antes da V11**; dois desenvolvedores Sonnet em paralelo (back e front, com o contrato do plano); um verificador Sonnet no fim; a conferência no navegador pelo Opus com duas contas de teste, apagadas no fim (as fichas do Arthur não são tocadas).
-- Regras nos briefs: com o `ng serve` no ar, nada de `npm ci`/`npm install`; com a API no ar, o Maven roda numa cópia da pasta.
+- Processo enxuto, como no 2.2: um plano curto; **backup do banco antes da V11**; back e front em paralelo (com o contrato do plano); uma revisão independente no fim; a conferência no navegador com duas contas de teste, apagadas no fim (as fichas do Arthur não são tocadas).
+- Regras de cada tarefa: com o `ng serve` no ar, nada de `npm ci`/`npm install`; com a API no ar, o Maven roda numa cópia da pasta.
 - Branch `feat/campanhas` a partir da `main` (`5ae7565`). O PR é criado com o CI verde, e o merge só acontece quando o Arthur pede.
 
 ## 11. Riscos
@@ -205,7 +205,7 @@ O visual segue o do redesign (cartões, botões e cores atuais). Não há tela n
 | Risco | Mitigação |
 |---|---|
 | Link de convite vazado | O mestre renova o código e remove quem entrou |
-| Um serviço novo buscar a ficha sem passar pelo `AcessoAFicha` | Regra registrada no ADR 0024 e no comentário do componente; o verificador procura `FichaRepository` fora dele |
+| Um serviço novo buscar a ficha sem passar pelo `AcessoAFicha` | Regra registrada no ADR 0024 e no comentário do componente; a revisão de cada incremento procura `FichaRepository` fora dele |
 | A versão sobe também na edição rápida, então o 409 pode aparecer mesmo sem conflito real no mesmo campo | Raro numa mesa; o aviso explica e o "Recarregar" resolve |
 | Força bruta no código do convite | 71 bits tornam a tentativa inviável; o limite de pedidos fica para o 2.6, junto com o do login |
 
