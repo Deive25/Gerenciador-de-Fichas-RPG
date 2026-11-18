@@ -104,7 +104,7 @@ alter table usuario add constraint uk_usuario_google_sub unique (google_sub);
 - Nada de CHECK que exija senha ou `google_sub`: o `legado` não tem nenhum dos dois, de propósito.
 - `Usuario` ganha `googleSub`, mais um método `ligarAoGoogle(sub)` que grava o `sub` e anula a senha.
 - `RefreshTokenRepository` ganha `revogarTodasDoUsuario(usuarioId, quando)`, um `UPDATE` só.
-- **Antes de aplicar a V13 no banco local:** o `pg_dump` vai para `antes-da-v13.sql`, no scratchpad, fora do repositório. As 5 fichas do Arthur (2, 7, 8, 9 e 13) não mudam.
+- **Antes de aplicar a V13 no banco local:** o `pg_dump` vai para `antes-da-v13.sql`, numa pasta temporária, fora do repositório. As 5 fichas do Arthur (2, 7, 8, 9 e 13) não mudam.
 
 ## 6. Frontend
 
@@ -168,10 +168,10 @@ alter table usuario add constraint uk_usuario_google_sub unique (google_sub);
 
 **Playwright:** sem mudança (escolha 6).
 
-**Conferência no navegador** (Opus, com o Arthur):
-- o Arthur faz o login real com a conta de teste dele. **Quem digita a senha do Google é ele, e não o Claude**;
+**Conferência no navegador** (com o Arthur):
+- o Arthur faz o login real com a conta de teste dele. **Quem digita a senha do Google é o próprio Arthur**;
 - conta nova ou ligada, recarregar a página e continuar logado, sair, voltar pelo convite e 375 px;
-- se o painel do navegador do app bloquear o pop-up do Google, a conferência vai para o Chrome do Arthur.
+- se o navegador de teste bloquear o pop-up do Google, a conferência vai para o Chrome.
 
 ## 8. Documentação
 
@@ -183,21 +183,21 @@ alter table usuario add constraint uk_usuario_google_sub unique (google_sub);
   - o "como rodar" ganha uma nota: o Client ID já vem configurado, o público do Google está em Teste, e só os usuários de teste entram;
   - entram as linhas dos testes novos.
 - **Roteiro de entrevista:** uma pergunta, "Como você validou o login com Google e por que apagou a senha na ligação?".
-- **`estado.md`:** atualizado ao fim, pela skill `atualizar-documentacao`. Fica anotado, para o 2.6, que a CSP precisa liberar `accounts.google.com` (script, frame e connect).
+- **`estado.md`:** atualizado ao fim. Fica anotado, para o 2.6, que a CSP precisa liberar `accounts.google.com` (script, frame e connect).
 
 ## 9. Processo
 
 É o processo enxuto:
 1. **Preparação:** a branch `feat/login-google`, a partir da `main` (`8f5e396`), e o backup do banco antes da V13.
-2. **Desenvolvimento:** **dois desenvolvedores Sonnet em paralelo**, um no backend e outro no front. O contrato da §4 é fixo.
-3. **Verificação:** **um verificador Sonnet no fim**, pela skill `revisar-codigo`.
+2. **Desenvolvimento:** **backend e front em paralelo**. O contrato da §4 é fixo.
+3. **Verificação:** **uma revisão independente no fim**.
 4. **Conferência no navegador** (§7).
 5. **PR** com o CI verde. O merge só acontece quando o Arthur pedir.
 
-**Regras que vão nos briefs:**
+**Regras de cada tarefa:**
 - nada de `npm ci` ou `npm install` com o `ng serve` no ar, e nenhuma dependência nova no front;
-- com a API no ar, o Maven só roda numa cópia da pasta, no scratchpad (por causa do devtools);
-- o backup é feito antes de disparar o desenvolvedor do backend.
+- com a API no ar, o Maven só roda numa cópia da pasta, numa pasta temporária (por causa do devtools);
+- o backup é feito antes de começar o backend.
 
 ## 10. Riscos
 
@@ -207,5 +207,5 @@ alter table usuario add constraint uk_usuario_google_sub unique (google_sub);
 | O Google troca as chaves | O `JWKSourceBuilder` rebaixa o JWKS quando aparece um `kid` desconhecido |
 | O JWKS do Google fica fora do ar | O login pelo Google falha com 401, e o login por senha continua funcionando. As chaves ficam em cache |
 | O público em Teste barra quem não é usuário de teste | É o esperado até o 2.6 (status Em produção). O README avisa |
-| O pop-up do Google é bloqueado no painel do navegador do app | A conferência real vai para o Chrome do Arthur |
+| O pop-up do Google é bloqueado no navegador de teste | A conferência real vai para o Chrome |
 | A V13 é aplicada sem querer pelo devtools | O backup antes, e o Maven só numa cópia da pasta com a API no ar |

@@ -32,7 +32,7 @@ O Arthur não gostou do 2.1 no computador, que mostra dois painéis lado a lado.
 
 ## 2. Incrementos
 
-Cada incremento passa pelo fluxo da fase 2: dev Sonnet → verificador Sonnet separado → documentação → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur para os PRs da fase 2 vale aqui. Todos ficam **antes do 2.2 (login)**.
+Cada incremento passa pelo fluxo da fase 2: desenvolvimento → revisão independente → documentação → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur para os PRs da fase 2 vale aqui. Todos ficam **antes do 2.2 (login)**.
 
 | Inc. | Entrega | Pronto quando |
 |---|---|---|

@@ -33,7 +33,7 @@ O grupo do Arthur joga Ordem Paranormal e D&D. O app passa a criar e usar fichas
 
 ## 2. Incrementos
 
-Mesmo fluxo da fase 2: TDD → verificador separado → documentação → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur para os PRs da fase 2 vale aqui.
+Mesmo fluxo da fase 2: TDD → revisão independente → documentação → PR com o CI verde, mesclado como *merge commit*. A autorização do Arthur para os PRs da fase 2 vale aqui.
 
 | Inc. | Entrega | Pronto quando |
 |---|---|---|
