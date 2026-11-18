@@ -3,3 +3,6 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+  # O Pages gera sozinho um header Link (Early Hints) a partir dos modulepreload do index.html, com caminhos relativos;
+  # numa rota como /fichas/5 o navegador pede /fichas/chunk-*.js e recebe HTML. Sem ele, valem os links do HTML (base "/").
+  ! Link
